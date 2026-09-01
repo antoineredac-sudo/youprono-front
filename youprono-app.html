@@ -1,0 +1,2368 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouProno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#25408f;
+    --surface:#2d4a9e;
+    --surface-raised:#3554ab;
+    --border:#4361b8;
+    --red:#da1f3d;
+    --red-dim:#a8172f;
+    --gold:#e8b923;
+    --text:#f5f5f7;
+    --text-dim:#c2cae8;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Inter',-apple-system,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  h1,h2,h3,.display{
+    font-family:'Oswald',sans-serif;
+    font-weight:600;
+    letter-spacing:0.01em;
+  }
+  .screen{ display:none; flex:1; flex-direction:column; }
+  .screen.active{ display:flex; }
+
+  /* --- Écran Auth --- */
+  #screen-auth{
+    justify-content:center;
+    align-items:center;
+    padding:32px 24px;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(218,31,61,0.22), transparent 60%),
+      var(--bg);
+  }
+  .auth-box{ width:100%; max-width:380px; }
+  .brand{
+    text-align:center;
+    margin-bottom:40px;
+  }
+  .you{ color:var(--gold); }
+  .prono{ color:var(--red); }
+  .brand h1{ font-size:34px; line-height:1.1; }
+  .brand p{ color:var(--gold); font-size:14px; margin-top:8px; }
+
+  .tab-switch{
+    display:flex;
+    background:var(--surface);
+    border-radius:10px;
+    padding:4px;
+    margin-bottom:28px;
+  }
+  .tab-switch button{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--text-dim);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:10px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .tab-switch button.active{
+    background:var(--red);
+    color:var(--text);
+  }
+
+  label{
+    display:block;
+    font-size:13px;
+    color:var(--gold);
+    margin-bottom:6px;
+    margin-top:16px;
+  }
+  label:first-of-type{ margin-top:0; }
+  input[type=text], input[type=password]{
+    width:100%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:13px 14px;
+    color:var(--text);
+    font-size:16px;
+    font-family:'Inter',sans-serif;
+  }
+  input:focus{ outline:none; border-color:var(--red); }
+
+  button.primary{
+    width:100%;
+    margin-top:24px;
+    background:var(--red);
+    color:var(--text);
+    border:none;
+    border-radius:8px;
+    padding:14px;
+    font-size:16px;
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+  }
+  button.primary:active{ background:var(--red-dim); }
+  button.primary:disabled{ opacity:0.5; }
+
+  .field-error{
+    color:var(--red);
+    font-size:13px;
+    margin-top:10px;
+    display:none;
+  }
+  .field-error.show{ display:block; }
+
+  /* --- Cadre général de l'app (après connexion) --- */
+  #app-shell{ display:none; flex:1; flex-direction:column; }
+  #app-shell.active{ display:flex; }
+
+  header.topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 20px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+  }
+  header.topbar .display{ font-size:18px; color:var(--gold); }
+  header.topbar .who{ font-size:13px; color:var(--text-dim); }
+
+  main{ flex:1; padding:24px 20px 90px 20px; max-width:520px; width:100%; margin:0 auto; }
+
+  nav.tabbar{
+    position:fixed;
+    bottom:0; left:0; right:0;
+    display:flex;
+    background:var(--surface);
+    border-top:1px solid var(--border);
+    padding:8px 0 max(8px, env(safe-area-inset-bottom)) 0;
+  }
+  nav.tabbar button{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--text-dim);
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:500;
+    padding:8px 4px;
+    cursor:pointer;
+  }
+  nav.tabbar button.active{ color:var(--red); }
+
+  .placeholder{
+    color:var(--text-dim);
+    text-align:center;
+    padding:60px 20px;
+    font-size:15px;
+    line-height:1.6;
+  }
+
+  /* --- Carte du prochain match --- */
+  .match-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:28px 20px;
+    text-align:center;
+  }
+  .match-competition{
+    color:var(--gold);
+    font-size:13px;
+    font-weight:500;
+    margin-bottom:10px;
+  }
+  .match-teams{
+    font-family:'Oswald',sans-serif;
+    font-size:22px;
+    font-weight:600;
+    line-height:1.3;
+  }
+  .match-teams .vs{ color:var(--text-dim); margin:0 8px; font-weight:400; }
+  .match-date{
+    color:var(--text-dim);
+    font-size:14px;
+    margin-top:8px;
+    text-transform:capitalize;
+  }
+
+  .countdown-label{
+    color:var(--gold);
+    font-size:13px;
+    font-weight:500;
+    margin-top:24px;
+  }
+
+  .countdown{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin:12px 0 24px 0;
+  }
+  .cd-unit{
+    background:var(--surface-raised);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 6px;
+    width:64px;
+  }
+  .cd-unit span{
+    display:block;
+    font-family:'Oswald',sans-serif;
+    font-size:26px;
+    font-weight:600;
+    color:var(--text);
+  }
+  .cd-unit small{
+    display:block;
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:2px;
+  }
+
+  button.cta-play{
+    width:100%;
+    background:var(--red);
+    color:var(--text);
+    border:none;
+    border-radius:10px;
+    padding:16px;
+    font-family:'Oswald',sans-serif;
+    font-size:18px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    cursor:pointer;
+  }
+  button.cta-play:active{ background:var(--red-dim); }
+
+  .deadline-note{
+    color:var(--text-dim);
+    font-size:12px;
+    margin-top:16px;
+    line-height:1.5;
+  }
+
+  /* --- Accueil : match précédent et calendrier --- */
+  .prev-match-banner{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:16px;
+    cursor:pointer;
+  }
+  .prev-match-info{ font-size:13px; }
+  .prev-match-info small{ display:block; color:var(--text-dim); font-size:11px; margin-top:2px; }
+  .prev-match-cta{ color:var(--red); font-size:13px; font-weight:600; }
+
+  .calendar-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 12px;
+    border-radius:8px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    margin-bottom:6px;
+    font-size:13px;
+  }
+  .calendar-date{ color:var(--text-dim); width:70px; flex-shrink:0; }
+  .calendar-teams{ flex:1; }
+  .calendar-competition{ color:var(--text-dim); font-size:11px; text-align:right; }
+
+  /* --- Écran de composition --- */
+  .play-title{
+    background:var(--red);
+    color:var(--text);
+    text-align:center;
+    font-family:'Oswald',sans-serif;
+    font-size:18px;
+    font-weight:600;
+    padding:14px;
+    border-radius:10px;
+  }
+  .squad-count{
+    text-align:center;
+    color:var(--gold);
+    font-size:14px;
+    font-weight:500;
+    margin:20px 0 12px 0;
+  }
+  .player-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 14px;
+    border-radius:10px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    margin-bottom:8px;
+    cursor:pointer;
+  }
+  .player-row.picked{ border-color:var(--red); background:var(--surface-raised); }
+  .player-shirt{
+    width:32px; height:32px;
+    border-radius:50%;
+    background:var(--surface-raised);
+    border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald',sans-serif;
+    font-size:14px;
+    color:var(--text-dim);
+    flex-shrink:0;
+  }
+  .player-row.picked .player-shirt{ background:var(--red); color:var(--text); border-color:var(--red); }
+  .player-name{ flex:1; font-size:15px; }
+  .player-order{
+    font-family:'Oswald',sans-serif;
+    color:var(--gold);
+    font-size:15px;
+    min-width:20px;
+    text-align:right;
+  }
+
+  button.cta-play:disabled{ opacity:0.4; cursor:not-allowed; }
+
+  /* --- Écran de possession --- */
+  .possession-teams{
+    display:flex;
+    justify-content:space-between;
+    margin:28px 0 12px 0;
+  }
+  .possession-team{ text-align:center; flex:1; }
+  .possession-pct{
+    font-family:'Oswald',sans-serif;
+    font-size:38px;
+    font-weight:600;
+    color:var(--text);
+  }
+  .possession-team:first-child .possession-pct{ color:var(--red); }
+  .possession-label{
+    font-size:13px;
+    color:var(--text-dim);
+    margin-top:4px;
+  }
+
+  .possession-bar{
+    height:14px;
+    border-radius:7px;
+    overflow:hidden;
+    background:var(--surface-raised);
+    border:1px solid var(--border);
+  }
+  .possession-bar-psg{
+    height:100%;
+    background:var(--red);
+  }
+
+  .possession-slider{
+    width:100%;
+    margin:24px 0 32px 0;
+    -webkit-appearance:none;
+    appearance:none;
+    height:6px;
+    border-radius:3px;
+    background:var(--border);
+    outline:none;
+  }
+  .possession-slider::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:26px; height:26px;
+    border-radius:50%;
+    background:var(--red);
+    border:3px solid var(--text);
+    cursor:pointer;
+  }
+  .possession-slider::-moz-range-thumb{
+    width:26px; height:26px;
+    border-radius:50%;
+    background:var(--red);
+    border:3px solid var(--text);
+    cursor:pointer;
+  }
+
+  /* --- Écrans de statistiques comparatives (tirs, fautes, centres) --- */
+  .stat-heading{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:14px;
+    font-weight:500;
+    margin-top:20px;
+  }
+  .stat-row{ margin-top:24px; }
+  .stat-row-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:6px;
+  }
+  .stat-team-name{ font-size:14px; color:var(--text-dim); }
+  .stat-value{
+    font-family:'Oswald',sans-serif;
+    font-size:24px;
+    font-weight:600;
+    color:var(--text);
+  }
+  .stat-bar-track{
+    height:16px;
+    border-radius:8px;
+    background:var(--surface-raised);
+    border:1px solid var(--border);
+    overflow:hidden;
+  }
+  .stat-bar-fill{ height:100%; transition:width 0.1s; }
+  .stat-bar-red{ background:var(--red); }
+  .stat-bar-opp{ background:#4a5fa0; }
+
+  .stat-controls{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-top:10px;
+  }
+  .stat-controls input[type=range]{
+    flex:1;
+    -webkit-appearance:none;
+    appearance:none;
+    height:4px;
+    border-radius:2px;
+    background:var(--border);
+    outline:none;
+  }
+  .stat-controls input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:18px; height:18px;
+    border-radius:50%;
+    background:var(--text);
+    cursor:pointer;
+  }
+  .stat-controls input[type=range]::-moz-range-thumb{
+    width:18px; height:18px;
+    border-radius:50%;
+    background:var(--text);
+    cursor:pointer;
+    border:none;
+  }
+  .stepper-btn{
+    width:34px; height:34px;
+    border-radius:50%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-size:18px;
+    line-height:1;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .stepper-btn:active{ background:var(--surface-raised); }
+
+  /* --- Écran des fautes : anneaux circulaires --- */
+  .ring-pair{
+    display:flex;
+    justify-content:space-around;
+    margin:28px 0 24px 0;
+  }
+  .ring-block{ text-align:center; }
+  .ring-vs-label{
+    display:flex;
+    align-items:center;
+    color:var(--text-dim);
+    font-size:14px;
+    font-weight:500;
+  }
+  .ring-wrap{ position:relative; width:120px; height:120px; margin:0 auto 8px auto; }
+  .ring-svg{ display:block; }
+  .ring-track{ fill:none; stroke:var(--border); stroke-width:10; }
+  .ring-fill{ fill:none; stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset 0.1s; }
+  .ring-fill-red{ stroke:var(--red); }
+  .ring-fill-opp{ stroke:#4a5fa0; }
+  .ring-center{
+    position:absolute; top:0; left:0; right:0; bottom:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald',sans-serif;
+    font-size:28px;
+    font-weight:600;
+    color:var(--text);
+  }
+
+  /* --- Écran des centres : colonnes verticales --- */
+  .column-pair{
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    gap:24px;
+    margin:28px 0 24px 0;
+    height:180px;
+  }
+  .column-block{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    height:100%;
+    justify-content:flex-end;
+  }
+  .column-value{
+    font-family:'Oswald',sans-serif;
+    font-size:20px;
+    font-weight:600;
+    color:var(--text);
+    margin-bottom:8px;
+  }
+  .column-track{
+    width:56px;
+    height:120px;
+    background:var(--surface-raised);
+    border:1px solid var(--border);
+    border-radius:10px;
+    display:flex;
+    align-items:flex-end;
+    overflow:hidden;
+  }
+  .column-fill{
+    width:100%;
+    transition:height 0.1s;
+  }
+  .column-fill-red{ background:var(--red); }
+  .column-fill-opp{ background:#4a5fa0; }
+  .column-vs-label{
+    color:var(--text-dim);
+    font-size:14px;
+    font-weight:500;
+    align-self:center;
+  }
+
+  /* --- Écran du score : tableau de marque --- */
+  .scoreboard{
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    gap:18px;
+    margin:36px 0 20px 0;
+  }
+  .score-slot{ text-align:center; }
+  .score-select{
+    -webkit-appearance:none;
+    appearance:none;
+    width:84px;
+    height:84px;
+    background:var(--surface-raised);
+    border:2px solid var(--border);
+    border-radius:14px;
+    font-family:'Oswald',sans-serif;
+    font-size:40px;
+    font-weight:600;
+    color:var(--text);
+    text-align:center;
+    text-align-last:center;
+    cursor:pointer;
+    margin-bottom:8px;
+  }
+  .score-select:focus{ outline:none; border-color:var(--red); }
+  .score-slot:first-child .score-select{ border-color:var(--red); color:var(--red); }
+  .score-dash{
+    font-family:'Oswald',sans-serif;
+    font-size:32px;
+    color:var(--text-dim);
+    margin-top:26px;
+  }
+
+  /* --- Écran Récapitulatif --- */
+  .recap-section{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:10px;
+  }
+  .recap-label{ color:var(--text-dim); font-size:12px; margin-bottom:4px; }
+  .recap-value{ font-size:15px; font-weight:500; }
+  .recap-label-row{ display:flex; justify-content:space-between; align-items:center; }
+  .recap-edit-link{ color:var(--red); font-size:12px; cursor:pointer; }
+  .recap-edit-row{ display:flex; gap:12px; margin-top:6px; }
+  .recap-edit-field{ flex:1; }
+  .recap-edit-field label{ display:block; font-size:11px; color:var(--text-dim); margin-bottom:4px; }
+  .recap-edit-field input{
+    width:100%;
+    background:var(--surface-raised);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:9px 10px;
+    color:var(--text);
+    font-size:15px;
+    font-family:'Inter',sans-serif;
+  }
+  .recap-edit-field input:focus{ outline:none; border-color:var(--red); }
+
+  /* --- Écran Résultats --- */
+  .results-banner{
+    text-align:center;
+    margin-bottom:20px;
+  }
+  .results-score-line{
+    font-family:'Oswald',sans-serif;
+    font-size:24px;
+    font-weight:600;
+  }
+  .results-date{
+    color:var(--text-dim);
+    font-size:13px;
+    margin-top:4px;
+    text-transform:capitalize;
+  }
+
+  .results-total-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:24px;
+    text-align:center;
+    margin-bottom:20px;
+  }
+  .results-total-label{ color:var(--text-dim); font-size:13px; }
+  .results-total-value{
+    font-family:'Oswald',sans-serif;
+    font-size:48px;
+    font-weight:600;
+    color:var(--gold);
+    margin-top:4px;
+  }
+  .results-rank{ color:var(--text-dim); font-size:13px; margin-top:6px; }
+
+  .result-category{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:10px;
+  }
+  .result-cat-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:8px;
+  }
+  .result-cat-name{ font-size:14px; font-weight:600; color:var(--text); }
+  .result-cat-points{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--red); }
+  .result-cat-row{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    color:var(--text-dim);
+    padding:2px 0;
+  }
+  .result-cat-row b{ color:var(--text); font-weight:500; }
+
+  .compo-compare{ display:flex; gap:16px; margin-top:10px; }
+  .compo-col{ flex:1; }
+  .compo-col-label{ color:var(--text-dim); font-size:11px; margin-bottom:4px; }
+  .compo-name{ display:block; font-size:13px; padding:2px 0; }
+  .compo-wrong{ text-decoration:line-through; color:var(--text-dim); }
+
+  /* --- Écrans Groupes --- */
+  .small-link{
+    display:block;
+    text-align:center;
+    color:var(--text-dim);
+    font-size:14px;
+    margin-top:16px;
+    cursor:pointer;
+  }
+
+  .back-link{
+    display:inline-block;
+    color:var(--text-dim);
+    font-size:13px;
+    margin-top:10px;
+    cursor:pointer;
+  }
+
+  .group-actions{ display:flex; flex-direction:column; gap:12px; margin-top:24px; }
+  button.cta-play-outline{
+    width:100%;
+    background:none;
+    color:var(--red);
+    border:2px solid var(--red);
+    border-radius:10px;
+    padding:13px;
+    font-family:'Oswald',sans-serif;
+    font-size:16px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    cursor:pointer;
+  }
+
+  .group-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:10px;
+    cursor:pointer;
+  }
+  .group-card-name{ font-family:'Oswald',sans-serif; font-size:17px; font-weight:600; }
+  .group-card-meta{ color:var(--text-dim); font-size:13px; margin-top:2px; }
+
+  .group-invite-box{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:20px;
+    text-align:center;
+    margin:20px 0;
+  }
+  .group-invite-label{ color:var(--text-dim); font-size:13px; }
+  .group-invite-code{
+    font-family:'Oswald',sans-serif;
+    font-size:32px;
+    font-weight:600;
+    color:var(--gold);
+    letter-spacing:0.1em;
+    margin-top:6px;
+  }
+
+  .group-season-info{ text-align:center; color:var(--text-dim); font-size:13px; margin-bottom:16px; }
+
+  .ranking-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 14px;
+    border-radius:10px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    margin-bottom:8px;
+  }
+  .ranking-rank{
+    font-family:'Oswald',sans-serif;
+    font-size:16px;
+    font-weight:600;
+    color:var(--text-dim);
+    width:24px;
+  }
+  .ranking-rank.top{ color:var(--gold); }
+  .ranking-name{ flex:1; font-size:15px; }
+  .ranking-score{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--red); }
+
+  /* --- Tableau de bord --- */
+  .dash-grid-2x2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:24px;
+  }
+  .dash-cell{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px;
+  }
+  .dash-cell-label{
+    text-transform:uppercase;
+    color:var(--text-dim);
+    font-size:12px;
+  }
+  .dash-cell-value{
+    font-family:'Oswald',sans-serif;
+    font-size:28px;
+    font-weight:600;
+    color:var(--text);
+    margin-top:4px;
+  }
+
+  .dash-history-label{ color:var(--text-dim); font-size:13px; margin-bottom:10px; }
+
+  /* --- Classement général --- */
+  .ranking-tabs{
+    display:flex;
+    background:var(--surface);
+    border-radius:10px;
+    padding:4px;
+    margin:16px 0;
+  }
+  .ranking-tab{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--text-dim);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    text-transform:uppercase;
+    padding:10px 4px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .ranking-tab.active{ background:var(--red); color:var(--text); }
+
+  .ranking-me-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px;
+    text-align:center;
+    margin-bottom:16px;
+  }
+  .ranking-me-label{ text-transform:uppercase; color:var(--text-dim); font-size:12px; }
+  .ranking-me-value{
+    font-family:'Oswald',sans-serif;
+    font-size:32px;
+    font-weight:600;
+    color:var(--gold);
+    margin-top:2px;
+  }
+  .ranking-me-rank{ color:var(--text-dim); font-size:13px; margin-top:4px; }
+
+  .ranking-table-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:8px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    margin-bottom:6px;
+    font-size:13px;
+  }
+  .ranking-table-row.me{ border-color:var(--red); }
+  .rt-rank{ width:26px; color:var(--text-dim); font-family:'Oswald',sans-serif; }
+  .rt-name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rt-games{ width:36px; text-align:right; color:var(--text-dim); }
+  .rt-score{ width:60px; text-align:right; font-family:'Oswald',sans-serif; color:var(--red); }
+
+  /* --- FAQ --- */
+  .faq-list{ margin-top:16px; }
+  .faq-item{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:10px;
+  }
+  .faq-q{
+    font-family:'Oswald',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .faq-a{ color:var(--text-dim); font-size:13px; line-height:1.6; margin-bottom:8px; }
+  .faq-a:last-child{ margin-bottom:0; }
+  .dash-history-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 14px;
+    border-radius:10px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    margin-bottom:8px;
+    cursor:pointer;
+  }
+  .dash-history-match{ font-size:13px; }
+  .dash-history-score{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--gold); }
+</style>
+</head>
+<body>
+
+<!-- ===== ÉCRAN AUTH ===== -->
+<section id="screen-auth" class="screen active">
+  <div class="auth-box">
+    <div class="brand">
+      <h1><span class="you">You</span><span class="prono">Prono</span></h1>
+      <p>On va voir qui sont les vrais experts du PSG.</p>
+    </div>
+
+    <div class="tab-switch">
+      <button id="tab-login" class="active" onclick="switchAuthTab('login')">Connexion</button>
+      <button id="tab-register" onclick="switchAuthTab('register')">Inscription</button>
+    </div>
+
+    <div id="auth-form">
+      <label>Pseudo</label>
+      <input type="text" id="auth-username" autocomplete="username" placeholder="Ton pseudo">
+
+      <label>Mot de passe</label>
+      <input type="password" id="auth-password" autocomplete="current-password" placeholder="Ton mot de passe">
+
+      <div class="field-error" id="auth-error"></div>
+
+      <button class="primary" id="auth-submit" onclick="submitAuth()">Se connecter</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== APPLICATION (après connexion) ===== -->
+<div id="app-shell">
+  <header class="topbar">
+    <span class="display"><span class="you">You</span><span class="prono">Prono</span></span>
+    <span class="who" id="who-am-i"></span>
+  </header>
+
+  <main>
+    <section id="view-home" class="view">
+      <div id="home-loading" class="placeholder">Chargement du prochain match…</div>
+
+      <div id="home-prev-match" style="display:none;"></div>
+
+      <div id="home-match-card" class="match-card" style="display:none;">
+        <div class="match-competition" id="match-competition"></div>
+        <div class="match-teams">
+          <span id="match-home-name"></span>
+          <span class="vs">—</span>
+          <span id="match-away-name"></span>
+        </div>
+        <div class="match-date" id="match-date"></div>
+
+        <p class="countdown-label">Fin des pronos dans :</p>
+        <div class="countdown">
+          <div class="cd-unit"><span id="cd-days">00</span><small>jours</small></div>
+          <div class="cd-unit"><span id="cd-hours">00</span><small>heures</small></div>
+          <div class="cd-unit"><span id="cd-minutes">00</span><small>min</small></div>
+          <div class="cd-unit"><span id="cd-seconds">00</span><small>sec</small></div>
+        </div>
+
+        <button class="cta-play" id="home-play-btn" onclick="goToComposition()">Jouer</button>
+
+        <p class="deadline-note" id="deadline-note"></p>
+      </div>
+
+      <div id="home-calendar-label" class="dash-history-label" style="display:none; margin-top:24px;">prochains matchs</div>
+      <div id="home-calendar"></div>
+
+      <div id="home-no-match" class="placeholder" style="display:none;">Aucun match à venir pour l'instant.</div>
+    </section>
+    <section id="view-play" class="view" style="display:none;">
+      <h2 class="play-title">Choisis tes 11 titulaires</h2>
+      <span class="back-link" onclick="switchView('home')">← Retour à l'accueil</span>
+
+      <div class="squad-count" id="squad-count">0 / 11 joueurs sélectionnés</div>
+
+      <div id="squad-list"></div>
+
+      <button class="cta-play" id="composition-next-btn" onclick="goToNextStep()" disabled>Suivant</button>
+    </section>
+    <section id="view-possession" class="view" style="display:none;">
+      <h2 class="play-title">Qui aura la possession ?</h2>
+      <span class="back-link" onclick="switchView('play'); renderSquad();">← Retour</span>
+
+      <div class="possession-teams">
+        <div class="possession-team">
+          <div class="possession-pct" id="poss-psg-pct">50%</div>
+          <div class="possession-label">PSG</div>
+        </div>
+        <div class="possession-team">
+          <div class="possession-pct" id="poss-opp-pct">50%</div>
+          <div class="possession-label" id="poss-opp-label">Adversaire</div>
+        </div>
+      </div>
+
+      <div class="possession-bar"><div class="possession-bar-psg" id="possession-bar-psg" style="width:50%;"></div></div>
+
+      <input type="range" min="0" max="100" step="0.1" value="50" id="possession-slider" class="possession-slider" oninput="updatePossession(this.value)">
+
+      <button class="cta-play" onclick="goToNextStepPossession()">Suivant</button>
+    </section>
+    <section id="view-shots" class="view" style="display:none;">
+      <h2 class="play-title">TIRS</h2>
+      <span class="back-link" onclick="enterPossessionScreen()">← Retour</span>
+
+      <div class="stat-row">
+        <div class="stat-row-head">
+          <span class="stat-team-name">PSG</span>
+          <span class="stat-value" id="shots-psg-value">10</span>
+        </div>
+        <div class="stat-bar-track"><div class="stat-bar-fill stat-bar-red" id="shots-psg-bar"></div></div>
+        <div class="stat-controls">
+          <button class="stepper-btn" onclick="adjustShots('psg',-1)">−</button>
+          <input type="range" min="0" max="50" value="10" id="shots-psg-slider" oninput="setShots('psg',this.value)">
+          <button class="stepper-btn" onclick="adjustShots('psg',1)">+</button>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-row-head">
+          <span class="stat-team-name" id="shots-opp-name">Adversaire</span>
+          <span class="stat-value" id="shots-opp-value">10</span>
+        </div>
+        <div class="stat-bar-track"><div class="stat-bar-fill stat-bar-opp" id="shots-opp-bar"></div></div>
+        <div class="stat-controls">
+          <button class="stepper-btn" onclick="adjustShots('opp',-1)">−</button>
+          <input type="range" min="0" max="50" value="10" id="shots-opp-slider" oninput="setShots('opp',this.value)">
+          <button class="stepper-btn" onclick="adjustShots('opp',1)">+</button>
+        </div>
+      </div>
+
+      <button class="cta-play" style="margin-top:32px;" onclick="goToNextStepShots()">Suivant</button>
+    </section>
+    <section id="view-fouls" class="view" style="display:none;">
+      <h2 class="play-title">FAUTES</h2>
+      <span class="back-link" onclick="enterShotsScreen()">← Retour</span>
+
+      <div class="ring-pair">
+        <div class="ring-block">
+          <div class="ring-wrap">
+            <svg width="120" height="120" viewBox="0 0 120 120" class="ring-svg">
+              <circle cx="60" cy="60" r="50" class="ring-track"/>
+              <circle cx="60" cy="60" r="50" class="ring-fill ring-fill-red" id="fouls-psg-ring" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="ring-center" id="fouls-psg-value">10</div>
+          </div>
+          <div class="stat-team-name">PSG</div>
+        </div>
+        <div class="ring-block">
+          <div class="ring-wrap">
+            <svg width="120" height="120" viewBox="0 0 120 120" class="ring-svg">
+              <circle cx="60" cy="60" r="50" class="ring-track"/>
+              <circle cx="60" cy="60" r="50" class="ring-fill ring-fill-opp" id="fouls-opp-ring" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="ring-center" id="fouls-opp-value">10</div>
+          </div>
+          <div class="stat-team-name" id="fouls-opp-name">Adversaire</div>
+        </div>
+      </div>
+
+      <div class="stat-controls">
+        <button class="stepper-btn" onclick="adjustFouls('psg',-1)">−</button>
+        <input type="range" min="0" max="50" value="10" id="fouls-psg-slider" oninput="setFouls('psg',this.value)">
+        <button class="stepper-btn" onclick="adjustFouls('psg',1)">+</button>
+      </div>
+      <div class="stat-controls" style="margin-top:16px;">
+        <button class="stepper-btn" onclick="adjustFouls('opp',-1)">−</button>
+        <input type="range" min="0" max="50" value="10" id="fouls-opp-slider" oninput="setFouls('opp',this.value)">
+        <button class="stepper-btn" onclick="adjustFouls('opp',1)">+</button>
+      </div>
+
+      <button class="cta-play" style="margin-top:32px;" onclick="goToNextStepFouls()">Suivant</button>
+    </section>
+    <section id="view-crosses" class="view" style="display:none;">
+      <h2 class="play-title">CENTRES</h2>
+      <span class="back-link" onclick="enterFoulsScreen()">← Retour</span>
+
+      <div class="column-pair">
+        <div class="column-block">
+          <div class="column-value" id="crosses-psg-value">10</div>
+          <div class="column-track"><div class="column-fill column-fill-red" id="crosses-psg-fill"></div></div>
+          <div class="stat-team-name">PSG</div>
+        </div>
+        <div class="column-block">
+          <div class="column-value" id="crosses-opp-value">10</div>
+          <div class="column-track"><div class="column-fill column-fill-opp" id="crosses-opp-fill"></div></div>
+          <div class="stat-team-name" id="crosses-opp-name">Adversaire</div>
+        </div>
+      </div>
+
+      <div class="stat-controls">
+        <button class="stepper-btn" onclick="adjustCrosses('psg',-1)">−</button>
+        <input type="range" min="0" max="50" value="10" id="crosses-psg-slider" oninput="setCrosses('psg',this.value)">
+        <button class="stepper-btn" onclick="adjustCrosses('psg',1)">+</button>
+      </div>
+      <div class="stat-controls" style="margin-top:16px;">
+        <button class="stepper-btn" onclick="adjustCrosses('opp',-1)">−</button>
+        <input type="range" min="0" max="50" value="10" id="crosses-opp-slider" oninput="setCrosses('opp',this.value)">
+        <button class="stepper-btn" onclick="adjustCrosses('opp',1)">+</button>
+      </div>
+
+      <button class="cta-play" style="margin-top:32px;" onclick="goToNextStepCrosses()">Suivant</button>
+    </section>
+    <section id="view-score" class="view" style="display:none;">
+      <h2 class="play-title">SCORE</h2>
+      <span class="back-link" onclick="enterCrossesScreen()">← Retour</span>
+
+      <div class="scoreboard">
+        <div class="score-slot">
+          <select class="score-select" id="score-psg-select"></select>
+          <div class="stat-team-name">PSG</div>
+        </div>
+        <div class="score-dash">–</div>
+        <div class="score-slot">
+          <select class="score-select" id="score-opp-select"></select>
+          <div class="stat-team-name" id="score-opp-name">Adversaire</div>
+        </div>
+      </div>
+
+      <button class="cta-play" style="margin-top:32px;" onclick="goToRecap()">Voir le récapitulatif</button>
+    </section>
+    <section id="view-recap" class="view" style="display:none;">
+      <h2 class="play-title">RÉCAPITULATIF</h2>
+      <span class="back-link" onclick="enterScoreScreen()">← Retour</span>
+
+      <div class="recap-section">
+        <div class="recap-label-row">
+          <div class="recap-label">Composition</div>
+          <span class="recap-edit-link" onclick="switchView('play'); renderSquad();">Modifier</span>
+        </div>
+        <div class="recap-value" id="recap-players"></div>
+      </div>
+
+      <div class="recap-section">
+        <div class="recap-label">Possession (%)</div>
+        <div class="recap-edit-row">
+          <div class="recap-edit-field">
+            <label>PSG</label>
+            <input type="number" step="0.1" min="0" max="100" id="recap-possession-psg">
+          </div>
+          <div class="recap-edit-field">
+            <label id="recap-possession-opp-label">Adversaire</label>
+            <input type="number" step="0.1" min="0" max="100" id="recap-possession-opp">
+          </div>
+        </div>
+      </div>
+
+      <div class="recap-section">
+        <div class="recap-label">Tirs</div>
+        <div class="recap-edit-row">
+          <div class="recap-edit-field">
+            <label>PSG</label>
+            <input type="number" step="1" min="0" max="50" id="recap-shots-psg">
+          </div>
+          <div class="recap-edit-field">
+            <label id="recap-shots-opp-label">Adversaire</label>
+            <input type="number" step="1" min="0" max="50" id="recap-shots-opp">
+          </div>
+        </div>
+      </div>
+
+      <div class="recap-section">
+        <div class="recap-label">Fautes</div>
+        <div class="recap-edit-row">
+          <div class="recap-edit-field">
+            <label>PSG</label>
+            <input type="number" step="1" min="0" max="50" id="recap-fouls-psg">
+          </div>
+          <div class="recap-edit-field">
+            <label id="recap-fouls-opp-label">Adversaire</label>
+            <input type="number" step="1" min="0" max="50" id="recap-fouls-opp">
+          </div>
+        </div>
+      </div>
+
+      <div class="recap-section">
+        <div class="recap-label">Centres</div>
+        <div class="recap-edit-row">
+          <div class="recap-edit-field">
+            <label>PSG</label>
+            <input type="number" step="1" min="0" max="50" id="recap-crosses-psg">
+          </div>
+          <div class="recap-edit-field">
+            <label id="recap-crosses-opp-label">Adversaire</label>
+            <input type="number" step="1" min="0" max="50" id="recap-crosses-opp">
+          </div>
+        </div>
+      </div>
+
+      <div class="recap-section">
+        <div class="recap-label">Score</div>
+        <div class="recap-edit-row">
+          <div class="recap-edit-field">
+            <label>PSG</label>
+            <input type="number" step="1" min="0" max="10" id="recap-score-psg">
+          </div>
+          <div class="recap-edit-field">
+            <label id="recap-score-opp-label">Adversaire</label>
+            <input type="number" step="1" min="0" max="10" id="recap-score-opp">
+          </div>
+        </div>
+      </div>
+
+      <button class="cta-play" style="margin-top:24px;" onclick="submitPrediction()" id="submit-prediction-btn">Valider mon prono</button>
+    </section>
+    <section id="view-results" class="view" style="display:none;">
+      <div id="results-loading" class="placeholder">Chargement des résultats…</div>
+      <div id="results-empty" class="placeholder" style="display:none;">
+        Pas encore de résultat pour ce match — reviens une fois qu'il aura été joué et noté.
+      </div>
+      <div id="results-content" style="display:none;">
+        <div class="results-banner">
+          <div class="results-score-line" id="results-score-line"></div>
+          <div class="results-date" id="results-date"></div>
+        </div>
+
+        <div class="results-total-card">
+          <div class="results-total-label">Ta note sur ce match</div>
+          <div class="results-total-value" id="results-total-value">0</div>
+          <div class="results-rank" id="results-rank"></div>
+        </div>
+
+        <div id="results-categories"></div>
+      </div>
+    </section>
+    <section id="view-groups" class="view" style="display:none;">
+      <h2 class="play-title">MES GROUPES</h2>
+
+      <div id="groups-list"></div>
+
+      <div class="group-actions">
+        <button class="cta-play" onclick="switchView('group-create')">Créer un groupe</button>
+        <button class="cta-play-outline" onclick="switchView('group-join')">Rejoindre un groupe</button>
+      </div>
+    </section>
+    <section id="view-group-create" class="view" style="display:none;">
+      <h2 class="play-title">CRÉER UN GROUPE</h2>
+      <label>Nom du groupe</label>
+      <input type="text" id="group-create-name" placeholder="Les Copains du Parc">
+      <div class="field-error" id="group-create-error"></div>
+      <button class="cta-play" style="margin-top:24px;" onclick="createGroup()">Créer</button>
+      <span class="small-link" onclick="switchView('groups')">Annuler</span>
+    </section>
+    <section id="view-group-join" class="view" style="display:none;">
+      <h2 class="play-title">REJOINDRE UN GROUPE</h2>
+      <label>Code d'invitation</label>
+      <input type="text" id="group-join-code" placeholder="ABC123">
+      <div class="field-error" id="group-join-error"></div>
+      <button class="cta-play" style="margin-top:24px;" onclick="joinGroup()">Rejoindre</button>
+      <span class="small-link" onclick="switchView('groups')">Annuler</span>
+    </section>
+    <section id="view-group-detail" class="view" style="display:none;">
+      <h2 class="play-title" id="group-detail-name">GROUPE</h2>
+      <div class="group-invite-box">
+        <div class="group-invite-label">Code d'invitation à partager</div>
+        <div class="group-invite-code" id="group-detail-code"></div>
+        <button class="cta-play-outline" style="margin-top:16px;" onclick="shareGroupOnWhatsApp()">Partager sur WhatsApp</button>
+      </div>
+      <div class="group-season-info" id="group-detail-season"></div>
+      <div id="group-detail-ranking"></div>
+      <span class="small-link" onclick="switchView('groups')">← Retour à mes groupes</span>
+    </section>
+    <section id="view-profile" class="view" style="display:none;">
+      <h2 class="play-title">TABLEAU DE BORD</h2>
+
+      <div id="dashboard-loading" class="placeholder">Chargement…</div>
+
+      <div id="dashboard-content" style="display:none;">
+        <div class="dash-grid-2x2">
+          <div class="dash-cell">
+            <div class="dash-cell-label">coef expert</div>
+            <div class="dash-cell-value" id="dash-average"></div>
+          </div>
+          <div class="dash-cell">
+            <div class="dash-cell-label">classement</div>
+            <div class="dash-cell-value" id="dash-rank"></div>
+          </div>
+          <div class="dash-cell">
+            <div class="dash-cell-label">assiduité</div>
+            <div class="dash-cell-value" id="dash-bonus"></div>
+          </div>
+          <div class="dash-cell">
+            <div class="dash-cell-label">record</div>
+            <div class="dash-cell-value" id="dash-record"></div>
+          </div>
+        </div>
+
+        <div class="dash-history-label">mon historique</div>
+        <div id="dash-history"></div>
+
+        <button class="cta-play-outline" style="margin-top:20px;" onclick="goToRanking()">Voir le classement complet</button>
+        <button class="cta-play-outline" style="margin-top:12px;" onclick="switchView('faq')">FAQ</button>
+      </div>
+
+      <button class="cta-play-outline" style="margin-top:12px;" onclick="logout()">Se déconnecter</button>
+    </section>
+    <section id="view-ranking" class="view" style="display:none;">
+      <h2 class="play-title">CLASSEMENT</h2>
+      <span class="back-link" onclick="goToProfile()">← Retour</span>
+
+      <div class="ranking-tabs">
+        <button class="ranking-tab active" id="ranking-tab-final" onclick="switchRankingTab('final')">coefficient expert</button>
+        <button class="ranking-tab" id="ranking-tab-record" onclick="switchRankingTab('record')">note record</button>
+      </div>
+
+      <div class="ranking-me-card">
+        <div class="ranking-me-label" id="ranking-me-label">coef expert</div>
+        <div class="ranking-me-value" id="ranking-me-score">–</div>
+        <div class="ranking-me-rank" id="ranking-me-rank"></div>
+      </div>
+
+      <div id="ranking-loading" class="placeholder">Chargement…</div>
+      <div id="ranking-table"></div>
+    </section>
+    <section id="view-faq" class="view" style="display:none;">
+      <h2 class="play-title">FAQ</h2>
+      <span class="back-link" onclick="goToProfile()">← Retour</span>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q">Quel est le but du jeu YOUPRONO ?</div>
+          <p class="faq-a">Ton défi est de deviner la composition et le déroulement du prochain match du PSG jusqu'à 24h avant le coup d'envoi - et cela lors de tous les matchs du PSG, quelle que soit la compétition officielle dans laquelle le club est engagé.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Quelles sont les règles du jeu YOUPRONO ?</div>
+          <p class="faq-a">Les règles sont simples : tu dois répondre à 6 questions 24h avant coup d'envoi du prochain match du PSG. Il y a 6 questions que nous préférons appeler des prédictions.</p>
+          <p class="faq-a">1) Quelle sera la composition des 11 titulaires ?<br>2) Quelle sera la possession de balle du PSG ?<br>3) Combien de tirs vont être effectués par chacune des 2 équipes ?<br>4) Combien de centres vont être effectués par chacune des 2 équipes ?<br>5) Combien de fautes vont être effectuées par chacune des 2 équipes ?<br>6) Quel sera le score final de la rencontre ?</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Est-il possible de modifier les prédictions ?</div>
+          <p class="faq-a">Oui sur ton profil, tu peux les modifier jusqu'à 24h avant le coup d'envoi du match. Une fois le compte à rebours terminé, toute modification devient impossible.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Pourquoi avons-nous choisi ces prédictions ?</div>
+          <p class="faq-a">Parce qu'elles permettent de déterminer ton niveau d'expertise du PSG et du football en général.</p>
+          <p class="faq-a">Est-ce que l'entraîneur va faire tourner ? Est-ce que le match va être engagé ?</p>
+          <p class="faq-a">Y aura-t-il beaucoup d'occasions ?</p>
+          <p class="faq-a">Le jeu se déroulera-t-il dans l'axe du terrain ou sur les côtés ?</p>
+          <p class="faq-a">Et surtout, qui sera le vainqueur ?</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Comment les points sont-ils calculés ?</div>
+          <p class="faq-a">Nous comparons tes prédictions avec les statistiques officielles du match à l'aide de formules plus ou moins complexes qui ont été testées et éprouvées depuis plusieurs mois.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Est-ce que toutes les prédictions valent autant de points ?</div>
+          <p class="faq-a">Non. Il y a des prédictions plus importantes, plus elles révèlent ton expertise et ta connaissance de l'actualité du club, plus elles ont d'importance - dans l'ordre : la composition, le score, la possession, les tirs, les fautes et les centres.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Quand est-ce que j'ai accès à mon résultat ?</div>
+          <p class="faq-a">Environ 15 minutes après la fin du match, le temps que les statistiques soient consolidées et comparées aux prédictions de tous les participants.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Que représente le COEF EXPERT ?</div>
+          <p class="faq-a">C'est la moyenne de tous tes résultats obtenus match après match. C'est lui qui détermine ta place au classement général. Mais attention ton assiduité peut te rapporter des points aussi.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Mon assiduité me rapporte-t-elle des points ?</div>
+          <p class="faq-a">Le bonus assiduité permet de gagner des points précieux et de grappiller quelques places au classement. Ici, chaque match est important, chaque match a la même valeur et la fidélité d'un supporter est une qualité qui mérite aussi d'être récompensée.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Si je loupe un match, est-ce que j'aurais 0/100 ?</div>
+          <p class="faq-a">Bien sûr que non. Tu n'auras aucune note. En revanche, ton bonus d'assiduité va diminuer et ça peut faire la différence à la fin.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Puis-je m'inscrire en cours de jeu ?</div>
+          <p class="faq-a">Bien sûr, tu es le bienvenu à tout moment du jeu. Tu pourras prouver ta valeur au classement My Record dès le premier match par exemple et remonter rapidement au classement général en étant assidu.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">A quoi correspond la note "My Record" ?</div>
+          <p class="faq-a">C'est le meilleur résultat obtenu sur un match depuis ton inscription au jeu. Un classement est même dédié à cette note et celui qui aura eu la meilleure note en fin de saison sera récompensé. La note "record" ne tient pas compte de l'assiduité.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Que se passe-t-il en cas de match nul et en cas de prolongations et/ou tirs au but ?</div>
+          <p class="faq-a">Nous prenons en compte les résultats à la fin du temps réglementaire sans prendre en compte les prolongations et les tirs au but. Nous faisons ce choix pour que tout le monde soit sur un pied d'égalité.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Faut-il jouer un certain nombre de matchs pour prétendre à la victoire finale ?</div>
+          <p class="faq-a">Oui. Seuls les participants qui auront participé à plus de 50% des matchs du PSG depuis la mise en ligne du site jusqu'à la fin de saison peuvent prétendre au titre et au trophée du YouProno of Paris. Les autres participants seront quand même classés.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="active" data-view="home" onclick="switchView('home')">Accueil</button>
+    <button data-view="results" onclick="goToResults()">Résultats</button>
+    <button data-view="groups" onclick="goToGroups()">Groupes</button>
+    <button data-view="profile" onclick="goToProfile()">Profil</button>
+  </nav>
+</div>
+
+<script>
+const API_BASE = 'https://youprono-back.onrender.com';
+const LS_AUTH = 'youprono_auth';
+
+let authMode = 'login';
+
+function switchAuthTab(mode){
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode==='login');
+  document.getElementById('tab-register').classList.toggle('active', mode==='register');
+  document.getElementById('auth-submit').textContent = mode==='login' ? 'Se connecter' : 'Créer mon compte';
+  document.getElementById('auth-error').classList.remove('show');
+}
+
+function getAuth(){
+  const raw = localStorage.getItem(LS_AUTH);
+  return raw ? JSON.parse(raw) : null;
+}
+
+function showError(msg){
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+async function submitAuth(){
+  const displayName = document.getElementById('auth-username').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const btn = document.getElementById('auth-submit');
+
+  if(!displayName || !password){
+    showError('Merci de remplir ton pseudo et ton mot de passe.');
+    return;
+  }
+
+  btn.disabled = true;
+  document.getElementById('auth-error').classList.remove('show');
+
+  const endpoint = authMode === 'login' ? '/User/Login' : '/User/Register';
+
+  try{
+    const res = await fetch(API_BASE + endpoint, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ displayName, password })
+    });
+    const json = await res.json();
+
+    if(!json.success){
+      const msg = authMode === 'login'
+        ? 'Pseudo ou mot de passe incorrect.'
+        : 'Ce pseudo est déjà pris, ou une erreur est survenue.';
+      showError(msg);
+      btn.disabled = false;
+      return;
+    }
+
+    localStorage.setItem(LS_AUTH, JSON.stringify({ token: json.data, displayName }));
+    enterApp();
+  }catch(e){
+    showError('Impossible de contacter le serveur. Est-il bien démarré ?');
+  }
+  btn.disabled = false;
+}
+
+function enterApp(){
+  const auth = getAuth();
+  document.getElementById('screen-auth').classList.remove('active');
+  document.getElementById('app-shell').classList.add('active');
+  document.getElementById('who-am-i').textContent = auth ? auth.displayName : '';
+  loadHomeMatch();
+}
+
+let psgTeamIdCache = null;
+async function getPsgTeamId(){
+  if(psgTeamIdCache) return psgTeamIdCache;
+  const res = await fetch(`${API_BASE}/Team/ByName/${encodeURIComponent('Paris Saint-Germain')}`);
+  const json = await res.json();
+  psgTeamIdCache = json.data.page[0].id;
+  return psgTeamIdCache;
+}
+
+function formatMatchDate(d){
+  const jour = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  const heure = d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  return jour + ' · ' + heure;
+}
+
+let matchKickoff = null;
+let predictionsDeadline = null;
+let countdownInterval = null;
+
+function updateCountdown(){
+  const now = new Date();
+  let diff = Math.max(0, predictionsDeadline - now);
+  const days = Math.floor(diff / 86400000); diff -= days*86400000;
+  const hours = Math.floor(diff / 3600000); diff -= hours*3600000;
+  const minutes = Math.floor(diff / 60000); diff -= minutes*60000;
+  const seconds = Math.floor(diff / 1000);
+
+  document.getElementById('cd-days').textContent = String(days).padStart(2,'0');
+  document.getElementById('cd-hours').textContent = String(hours).padStart(2,'0');
+  document.getElementById('cd-minutes').textContent = String(minutes).padStart(2,'0');
+  document.getElementById('cd-seconds').textContent = String(seconds).padStart(2,'0');
+
+  const btn = document.getElementById('home-play-btn');
+  if(btn && predictionsDeadline){
+    const closed = now >= predictionsDeadline;
+    btn.disabled = closed;
+    btn.textContent = closed ? 'Pronostics fermés' : (hasPredictionForCurrentMatch ? 'Modifier mon prono' : 'Jouer');
+  }
+}
+
+async function loadHomeMatch(){
+  try{
+    const teamId = await getPsgTeamId();
+
+    const [calRes, prevRes] = await Promise.all([
+      fetch(`${API_BASE}/Match/ByTeamId/${teamId}?OnlyNextMatches=true&limit=4`).then(r=>r.json()),
+      fetch(`${API_BASE}/Match/Previous/${teamId}`).then(r=>r.json())
+    ]);
+
+    const upcoming = (calRes.success && calRes.data.page.length) ? calRes.data.page : [];
+    const match = upcoming.length ? upcoming[0] : null;
+
+    document.getElementById('home-loading').style.display = 'none';
+
+    if(!match){
+      document.getElementById('home-no-match').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('home-match-card').style.display = 'block';
+    currentMatch = match;
+    document.getElementById('match-home-name').textContent = match.homeTeam.name;
+    document.getElementById('match-away-name').textContent = match.awayTeam.name;
+    document.getElementById('match-competition').textContent =
+      (match.competition && match.competition.name) ? match.competition.name : 'Prochain match du PSG';
+
+    matchKickoff = new Date(match.dateTime);
+    document.getElementById('match-date').textContent = "Coup d'envoi : " + formatMatchDate(matchKickoff);
+
+    predictionsDeadline = new Date(matchKickoff.getTime() - 24*60*60*1000);
+    document.getElementById('deadline-note').textContent =
+      "Les pronostics ferment toujours 24h avant le coup d'envoi, soit le " + formatMatchDate(predictionsDeadline) + '.';
+
+    if(countdownInterval) clearInterval(countdownInterval);
+    updateCountdown();
+    countdownInterval = setInterval(updateCountdown, 1000);
+
+    checkExistingPrediction();
+
+    // Calendrier des prochains matchs (les 3 suivants, sous la carte principale)
+    const rest = upcoming.slice(1);
+    if(rest.length){
+      document.getElementById('home-calendar-label').style.display = 'block';
+      document.getElementById('home-calendar').innerHTML = rest.map(m => {
+        const d = new Date(m.dateTime);
+        const dateLabel = d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+        const comp = (m.competition && m.competition.name) ? m.competition.name : '';
+        return `
+          <div class="calendar-row">
+            <span class="calendar-date">${dateLabel}</span>
+            <span class="calendar-teams">${m.homeTeam.name} – ${m.awayTeam.name}</span>
+            <span class="calendar-competition">${comp}</span>
+          </div>`;
+      }).join('');
+    }
+
+    // Lien vers les résultats du match précédent, si un pronostic existait pour lui
+    if(prevRes.success && prevRes.data){
+      const prevMatch = prevRes.data;
+      const userId = getUserId();
+      const predCheck = await fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${prevMatch.id}/${teamId}`).then(r=>r.json());
+      if(predCheck.success && predCheck.data){
+        const d = new Date(prevMatch.dateTime);
+        document.getElementById('home-prev-match').style.display = 'block';
+        document.getElementById('home-prev-match').innerHTML = `
+          <div class="prev-match-banner" onclick="goToResults('${prevMatch.id}')">
+            <div class="prev-match-info">
+              ${prevMatch.homeTeam.name} / ${prevMatch.awayTeam.name}
+              <small>${d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' })}</small>
+            </div>
+            <span class="prev-match-cta">Résultats →</span>
+          </div>`;
+      }
+    }
+  }catch(e){
+    document.getElementById('home-loading').textContent = 'Impossible de charger le prochain match.';
+  }
+}
+
+let hasPredictionForCurrentMatch = false;
+
+async function checkExistingPrediction(){
+  try{
+    const userId = getUserId();
+    const teamId = await getPsgTeamId();
+    if(!userId || !currentMatch){ return; }
+
+    const res = await fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${currentMatch.id}/${teamId}`);
+    const json = await res.json();
+    hasPredictionForCurrentMatch = !!(json.success && json.data);
+  }catch(e){
+    hasPredictionForCurrentMatch = false;
+  }
+  updatePlayButtonLabel();
+}
+
+function updatePlayButtonLabel(){
+  const btn = document.getElementById('home-play-btn');
+  if(btn){
+    btn.textContent = hasPredictionForCurrentMatch ? 'Modifier mon prono' : 'Jouer';
+    btn.onclick = hasPredictionForCurrentMatch ? jumpToEditRecap : goToComposition;
+  }
+}
+
+async function jumpToEditRecap(){
+  const userId = getUserId();
+  const teamId = await getPsgTeamId();
+
+  if(squadData.length === 0){
+    const teamRes = await fetch(`${API_BASE}/Team/ById/${teamId}`);
+    const teamJson = await teamRes.json();
+    squadData = teamJson.data.players;
+  }
+
+  const res = await fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${currentMatch.id}/${teamId}`);
+  const json = await res.json();
+  if(json.success && json.data){
+    predictionDraft.players = [...json.data.players];
+    predictionDraft.team = { ...json.data.team };
+    predictionDraft.opponent = { ...json.data.opponent };
+    pickedPlayerIds = [...json.data.players];
+    switchView('recap');
+    renderRecap();
+  }
+}
+
+// ===== ÉCRAN RÉSULTATS =====
+async function goToResults(matchId){
+  switchView('results');
+  await enterResultsScreen(matchId);
+}
+
+function extractRealStats(matchResult){
+  const isPsgHome = matchResult.homeTeam.name === 'Paris Saint-Germain';
+  return {
+    team: isPsgHome ? matchResult.homeTeam : matchResult.awayTeam,
+    opponent: isPsgHome ? matchResult.awayTeam : matchResult.homeTeam,
+    isPsgHome
+  };
+}
+
+function fmtNum(n){
+  if(n === null || n === undefined) return '–';
+  n = Math.round(n * 1000) / 1000; // évite les erreurs d'arrondi flottant au-delà de 3 décimales
+  if(Number.isInteger(n)) return String(n);
+  let s = n.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+  return s.replace('.', ',');
+}
+
+async function enterResultsScreen(matchId){
+  document.getElementById('results-loading').style.display = 'block';
+  document.getElementById('results-empty').style.display = 'none';
+  document.getElementById('results-content').style.display = 'none';
+
+  if(!matchId){
+    if(!currentMatch){ await loadHomeMatch(); }
+    if(!currentMatch){
+      document.getElementById('results-loading').textContent = "Aucun match à afficher pour l'instant.";
+      return;
+    }
+    matchId = currentMatch.id;
+  }
+
+  try{
+    const userId = getUserId();
+    const teamId = await getPsgTeamId();
+
+    // On déclenche le vrai calcul du back (le moteur de notation avec ses coefficients),
+    // plutôt que d'espérer qu'il ait déjà été lancé ailleurs.
+    await fetch(`${API_BASE}/UserStats/Update/${userId}/${matchId}/${teamId}`, { method:'PUT' });
+
+    const [predRes, statsRes, matchDetailRes] = await Promise.all([
+      fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${matchId}/${teamId}`).then(r=>r.json()),
+      fetch(`${API_BASE}/UserStats/ByUserMatchTeam/${userId}/${matchId}/${teamId}`).then(r=>r.json()),
+      fetch(`${API_BASE}/Match/ById/${matchId}?detailed=true`).then(r=>r.json())
+    ]);
+
+    document.getElementById('results-loading').style.display = 'none';
+
+    if(!predRes.success || !statsRes.success || !statsRes.data || !matchDetailRes.success){
+      document.getElementById('results-empty').style.display = 'block';
+      return;
+    }
+
+    renderResults(predRes.data, statsRes.data, matchDetailRes.data);
+    document.getElementById('results-content').style.display = 'block';
+  }catch(e){
+    document.getElementById('results-loading').style.display = 'none';
+    document.getElementById('results-empty').style.display = 'block';
+  }
+}
+
+function renderResults(prediction, stats, matchDetail){
+  const real = extractRealStats(stats.matchResult);
+
+  document.getElementById('results-score-line').textContent =
+    stats.matchResult.homeTeam.name + ' ' + stats.matchResult.homeTeam.score +
+    ' – ' + stats.matchResult.awayTeam.score + ' ' + stats.matchResult.awayTeam.name;
+  document.getElementById('results-date').textContent = formatMatchDate(new Date(stats.matchResult.dateTime));
+
+  const totalNote = stats.result.team.total || 0;
+  document.getElementById('results-total-value').textContent = fmtNum(totalNote);
+  document.getElementById('results-rank').textContent =
+    stats.result.rank > 0 ? 'Classé ' + stats.result.rank + '/' + stats.nblayer + ' sur ce match' : '';
+
+  const opponentName = getOpponentName();
+
+  const categories = [
+    { key:'possession', label:'Possession', unit:'%' },
+    { key:'shots', label:'Tirs', unit:'' },
+    { key:'fouls', label:'Fautes', unit:'' },
+    { key:'crosses', label:'Centres', unit:'' },
+    { key:'score', label:'Score', unit:'' }
+  ];
+
+  let html = '';
+  categories.forEach(cat=>{
+    const accuracy = stats.result.team[cat.key]?.formula || 0;
+    html += `
+      <div class="result-category">
+        <div class="result-cat-head">
+          <span class="result-cat-name">${cat.label}</span>
+          <span class="result-cat-points">${fmtNum(accuracy)}/100</span>
+        </div>
+        <div class="result-cat-row">
+          <span>PSG</span>
+          <span>Toi : <b>${fmtNum(prediction.team[cat.key])}${cat.unit}</b> · Réel : <b>${fmtNum(real.team[cat.key])}${cat.unit}</b></span>
+        </div>
+        <div class="result-cat-row">
+          <span>${opponentName}</span>
+          <span>Toi : <b>${fmtNum(prediction.opponent[cat.key])}${cat.unit}</b> · Réel : <b>${fmtNum(real.opponent[cat.key])}${cat.unit}</b></span>
+        </div>
+      </div>`;
+  });
+
+  const isPsgHome = matchDetail.homeTeam.name === 'Paris Saint-Germain';
+  const realTeamPlayers = (isPsgHome ? matchDetail.homeTeam.players : matchDetail.awayTeam.players) || [];
+  const realIds = new Set(realTeamPlayers.map(p => p.id));
+
+  const predictedNamesHtml = prediction.players.map(id => {
+    const p = squadData.find(sp => sp.id === id);
+    const name = p ? p.firstName + ' ' + p.lastName : id.slice(0,8) + '…';
+    const correct = realIds.has(id);
+    return `<span class="compo-name ${correct ? '' : 'compo-wrong'}">${name}</span>`;
+  }).join('');
+
+  const realNamesHtml = realTeamPlayers.map(p => `<span class="compo-name">${p.firstName} ${p.lastName}</span>`).join('');
+
+  const compoAccuracy = stats.result.team.composition?.formula || 0;
+  html += `
+    <div class="result-category">
+      <div class="result-cat-head">
+        <span class="result-cat-name">Composition</span>
+        <span class="result-cat-points">${fmtNum(compoAccuracy)}/100</span>
+      </div>
+      <div class="compo-compare">
+        <div class="compo-col">
+          <div class="compo-col-label">Toi</div>
+          ${predictedNamesHtml}
+        </div>
+        <div class="compo-col">
+          <div class="compo-col-label">Réel</div>
+          ${realNamesHtml}
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('results-categories').innerHTML = html;
+}
+
+// ===== ÉCRANS GROUPES =====
+async function goToGroups(){
+  switchView('groups');
+  await enterGroupsScreen();
+}
+
+async function enterGroupsScreen(){
+  const userId = getUserId();
+  const list = document.getElementById('groups-list');
+  list.innerHTML = '<div class="placeholder">Chargement…</div>';
+
+  try{
+    const res = await fetch(`${API_BASE}/Group/ByUserId/${userId}`);
+    const json = await res.json();
+    const groups = (json.success && json.data) ? json.data : [];
+
+    if(groups.length === 0){
+      list.innerHTML = '<div class="placeholder">Tu ne fais partie d\'aucun groupe pour l\'instant.</div>';
+      return;
+    }
+
+    list.innerHTML = groups.map(g => `
+      <div class="group-card" onclick="openGroupDetail('${g.id}')">
+        <div class="group-card-name">${g.name}</div>
+        <div class="group-card-meta">${g.memberCount} membre${g.memberCount > 1 ? 's' : ''}</div>
+      </div>`).join('');
+  }catch(e){
+    list.innerHTML = '<div class="placeholder">Impossible de charger tes groupes.</div>';
+  }
+}
+
+async function createGroup(){
+  const name = document.getElementById('group-create-name').value.trim();
+  const errEl = document.getElementById('group-create-error');
+  errEl.classList.remove('show');
+
+  if(!name){
+    errEl.textContent = 'Merci de donner un nom à ton groupe.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  try{
+    const userId = getUserId();
+    const res = await fetch(`${API_BASE}/Group/Create/${userId}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name })
+    });
+    const json = await res.json();
+    if(!json.success){
+      errEl.textContent = "Impossible de créer le groupe : " + (json.message || 'erreur inconnue');
+      errEl.classList.add('show');
+      return;
+    }
+    document.getElementById('group-create-name').value = '';
+    openGroupDetail(json.data.id);
+  }catch(e){
+    errEl.textContent = "Impossible de contacter le serveur.";
+    errEl.classList.add('show');
+  }
+}
+
+async function joinGroup(){
+  const code = document.getElementById('group-join-code').value.trim().toUpperCase();
+  const errEl = document.getElementById('group-join-error');
+  errEl.classList.remove('show');
+
+  if(!code){
+    errEl.textContent = 'Merci de saisir un code.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  try{
+    const userId = getUserId();
+    const res = await fetch(`${API_BASE}/Group/Join/${code}/${userId}`, { method:'POST' });
+    const json = await res.json();
+    if(!json.success){
+      errEl.textContent = json.message || "Ce code n'est pas valide, ou le groupe est déjà complet.";
+      errEl.classList.add('show');
+      return;
+    }
+    document.getElementById('group-join-code').value = '';
+    switchView('groups');
+    enterGroupsScreen();
+  }catch(e){
+    errEl.textContent = "Impossible de contacter le serveur.";
+    errEl.classList.add('show');
+  }
+}
+
+let currentGroupId = null;
+let currentGroupName = '';
+
+function shareGroupOnWhatsApp(){
+  const code = document.getElementById('group-detail-code').textContent;
+  const message = `Rejoins mon groupe "${currentGroupName}" sur YouProno ! Utilise ce code pour me retrouver : ${code}`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank');
+}
+
+// ===== ÉCRAN CLASSEMENT =====
+let rankingCache = { final: null, record: null };
+
+async function goToRanking(){
+  switchView('ranking');
+  await loadRanking('final');
+  document.getElementById('ranking-tab-final').classList.add('active');
+  document.getElementById('ranking-tab-record').classList.remove('active');
+}
+
+function switchRankingTab(tab){
+  document.getElementById('ranking-tab-final').classList.toggle('active', tab === 'final');
+  document.getElementById('ranking-tab-record').classList.toggle('active', tab === 'record');
+  loadRanking(tab);
+}
+
+async function loadRanking(tab){
+  const loadingEl = document.getElementById('ranking-loading');
+  loadingEl.style.display = 'block';
+  loadingEl.textContent = 'Chargement…';
+  document.getElementById('ranking-table').innerHTML = '';
+
+  try{
+    let list = rankingCache[tab];
+    if(!list){
+      const teamId = await getPsgTeamId();
+      const endpoint = tab === 'final' ? 'RankingByResultFinalTotal' : 'RankingByResultTotal';
+      const res = await fetch(`${API_BASE}/UserStats/${endpoint}/${teamId}`);
+      const json = await res.json();
+      list = (json.success && json.data) ? json.data : [];
+      rankingCache[tab] = list;
+    }
+
+    loadingEl.style.display = 'none';
+
+    const userId = getUserId();
+    const me = list.find(u => u.id === userId);
+    document.getElementById('ranking-me-label').textContent = tab === 'final' ? 'coef expert' : 'note record';
+    document.getElementById('ranking-me-score').textContent = me ? fmtNum(me.score) : '–';
+    document.getElementById('ranking-me-rank').textContent = me ? ('#' + me.rank + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '')) : '';
+
+    document.getElementById('ranking-table').innerHTML = list.map(u => `
+      <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
+        <span class="rt-rank">#${u.rank}</span>
+        <span class="rt-name">@${u.userName}</span>
+        <span class="rt-games">${u.games}</span>
+        <span class="rt-score">${fmtNum(u.score)}</span>
+      </div>`).join('');
+  }catch(e){
+    loadingEl.textContent = 'Impossible de charger le classement.';
+  }
+}
+
+async function openGroupDetail(groupId){
+  currentGroupId = groupId;
+  switchView('group-detail');
+  const rankingEl = document.getElementById('group-detail-ranking');
+  rankingEl.innerHTML = '<div class="placeholder">Chargement…</div>';
+
+  try{
+    const res = await fetch(`${API_BASE}/Group/ById/${groupId}`);
+    const json = await res.json();
+    if(!json.success){
+      rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce groupe.</div>';
+      return;
+    }
+    const g = json.data;
+    currentGroupName = g.name;
+    document.getElementById('group-detail-name').textContent = g.name.toUpperCase();
+    document.getElementById('group-detail-code').textContent = g.inviteCode;
+    document.getElementById('group-detail-season').textContent =
+      g.isSeasonComplete
+        ? 'Saison terminée — ' + g.matchesCounted + '/10 matchs'
+        : g.matchesCounted + '/10 matchs joués cette saison';
+
+    rankingEl.innerHTML = g.ranking.map(r => `
+      <div class="ranking-row">
+        <span class="ranking-rank ${r.rank === 1 ? 'top' : ''}">${r.rank}</span>
+        <span class="ranking-name">${r.displayName}</span>
+        <span class="ranking-score">${fmtNum(r.totalScore)}</span>
+      </div>`).join('');
+  }catch(e){
+    rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce groupe.</div>';
+  }
+}
+
+async function goToProfile(){
+  switchView('profile');
+  await loadDashboard();
+}
+
+async function loadDashboard(){
+  const loadingEl = document.getElementById('dashboard-loading');
+  loadingEl.style.display = 'block';
+  loadingEl.textContent = 'Chargement…';
+  document.getElementById('dashboard-content').style.display = 'none';
+
+  try{
+    const userId = getUserId();
+    const teamId = await getPsgTeamId();
+
+    const [globalRes, historyRes] = await Promise.all([
+      fetch(`${API_BASE}/UserStats/GlobalStats/${userId}/${teamId}`).then(r => r.json()),
+      fetch(`${API_BASE}/UserStats/ByUserTeam/${userId}/${teamId}?page=1&limit=10`).then(r => r.json())
+    ]);
+
+    if(!globalRes.success){
+      loadingEl.textContent = 'Impossible de charger tes statistiques.';
+      return;
+    }
+
+    const g = globalRes.data;
+    document.getElementById('dash-rank').textContent = g.rank > 0 ? '#' + g.rank : '–';
+    document.getElementById('dash-average').textContent = fmtRecapNum(g.expertCoef || 0);
+    document.getElementById('dash-record').textContent = fmtRecapNum(g.record || 0);
+    document.getElementById('dash-bonus').textContent = fmtRecapNum((g.bonus || 0) * 100) + '%';
+
+    const history = (historyRes.success && historyRes.data && historyRes.data.page) ? historyRes.data.page : [];
+    const historyEl = document.getElementById('dash-history');
+
+    if(history.length === 0){
+      historyEl.innerHTML = '<div class="placeholder">Aucun match pronostiqué pour l\'instant.</div>';
+    } else {
+      historyEl.innerHTML = history.map(h => {
+        const dateLabel = new Date(h.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+        const scoreLabel = h.score ? fmtRecapNum(h.score) : 'en attente';
+        return `
+          <div class="dash-history-row" onclick="goToResults('${h.matchId}')">
+            <span class="dash-history-match">vs ${h.opponent} · ${dateLabel}</span>
+            <span class="dash-history-score">${scoreLabel}</span>
+          </div>`;
+      }).join('');
+    }
+
+    loadingEl.style.display = 'none';
+    document.getElementById('dashboard-content').style.display = 'block';
+  }catch(e){
+    loadingEl.textContent = 'Impossible de charger tes statistiques.';
+  }
+}
+
+function logout(){
+  localStorage.removeItem(LS_AUTH);
+  document.getElementById('app-shell').classList.remove('active');
+  document.getElementById('screen-auth').classList.add('active');
+  document.getElementById('auth-username').value = '';
+  document.getElementById('auth-password').value = '';
+}
+
+function switchView(name){
+  document.querySelectorAll('nav.tabbar button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view === name);
+  });
+  document.querySelectorAll('main .view').forEach(v=>{
+    v.style.display = (v.id === 'view-' + name) ? 'block' : 'none';
+  });
+}
+
+// --- Démarrage : si déjà connecté, on saute directement dans l'app ---
+if(getAuth()){ enterApp(); }
+
+// ===== ÉCRAN DE COMPOSITION =====
+let currentMatch = null;
+let squadData = [];
+let pickedPlayerIds = [];
+let predictionDraft = { players: [], team: {}, opponent: {} };
+
+const POSITION_ORDER = { 'Gardien':0, 'Défenseur':1, 'Milieu':2, 'Attaquant':3 };
+const POSITION_PLURAL = { 'Gardien':'Gardiens', 'Défenseur':'Défenseurs', 'Milieu':'Milieux', 'Attaquant':'Attaquants' };
+
+async function goToComposition(){
+  switchView('play');
+  await enterCompositionScreen();
+}
+
+async function enterCompositionScreen(){
+  if(!currentMatch){ await loadHomeMatch(); }
+  if(!currentMatch) return;
+
+  if(squadData.length === 0){
+    const teamId = await getPsgTeamId();
+    const res = await fetch(`${API_BASE}/Team/ById/${teamId}`);
+    const json = await res.json();
+    squadData = json.data.players;
+  }
+
+  renderSquad();
+}
+
+function renderSquad(){
+  const list = document.getElementById('squad-list');
+  const sorted = [...squadData].sort((a,b)=> (POSITION_ORDER[a.position] ?? 99) - (POSITION_ORDER[b.position] ?? 99));
+
+  let html = '';
+  sorted.forEach(p=>{
+    const order = pickedPlayerIds.indexOf(p.id);
+    const isPicked = order >= 0;
+    html += `
+      <div class="player-row ${isPicked?'picked':''}" onclick="togglePlayer('${p.id}')">
+        <div class="player-shirt">${p.shirtNumber || '-'}</div>
+        <div class="player-name">${p.firstName} ${p.lastName}</div>
+        <div class="player-order">${isPicked ? order+1 : ''}</div>
+      </div>`;
+  });
+  list.innerHTML = html;
+
+  document.getElementById('squad-count').textContent = pickedPlayerIds.length + ' / 11 joueurs sélectionnés';
+  document.getElementById('composition-next-btn').disabled = pickedPlayerIds.length !== 11;
+}
+
+function togglePlayer(id){
+  const idx = pickedPlayerIds.indexOf(id);
+  if(idx >= 0){
+    pickedPlayerIds.splice(idx,1);
+  } else {
+    if(pickedPlayerIds.length >= 11) return;
+    pickedPlayerIds.push(id);
+  }
+  renderSquad();
+}
+
+function goToNextStep(){
+  predictionDraft.players = [...pickedPlayerIds];
+  switchView('possession');
+  enterPossessionScreen();
+}
+
+// ===== ÉCRAN DE POSSESSION =====
+function enterPossessionScreen(){
+  if(currentMatch){
+    const isPsgHome = currentMatch.homeTeam.name === 'Paris Saint-Germain';
+    const opponent = isPsgHome ? currentMatch.awayTeam.name : currentMatch.homeTeam.name;
+    document.getElementById('poss-opp-label').textContent = opponent;
+  }
+  const existing = predictionDraft.team.possession !== undefined ? predictionDraft.team.possession : 50;
+  document.getElementById('possession-slider').value = existing;
+  updatePossession(existing);
+  switchView('possession');
+}
+
+function updatePossession(val){
+  val = parseFloat(val);
+  const opp = parseFloat((100 - val).toFixed(1));
+  document.getElementById('poss-psg-pct').textContent = val.toFixed(1).replace('.', ',') + '%';
+  document.getElementById('poss-opp-pct').textContent = opp.toFixed(1).replace('.', ',') + '%';
+  document.getElementById('possession-bar-psg').style.width = val + '%';
+}
+
+function goToNextStepPossession(){
+  const val = parseFloat(document.getElementById('possession-slider').value);
+  predictionDraft.team.possession = val;
+  predictionDraft.opponent.possession = parseFloat((100 - val).toFixed(1));
+  enterShotsScreen();
+}
+
+// ===== ÉCRAN DES TIRS =====
+function getOpponentName(){
+  if(!currentMatch) return 'Adversaire';
+  const isPsgHome = currentMatch.homeTeam.name === 'Paris Saint-Germain';
+  return isPsgHome ? currentMatch.awayTeam.name : currentMatch.homeTeam.name;
+}
+
+function enterShotsScreen(){
+  document.getElementById('shots-opp-name').textContent = getOpponentName();
+  const psgVal = predictionDraft.team.shots !== undefined ? predictionDraft.team.shots : 10;
+  const oppVal = predictionDraft.opponent.shots !== undefined ? predictionDraft.opponent.shots : 10;
+  document.getElementById('shots-psg-slider').value = psgVal;
+  document.getElementById('shots-opp-slider').value = oppVal;
+  setShots('psg', psgVal);
+  setShots('opp', oppVal);
+  switchView('shots');
+}
+
+function setShots(side, val){
+  val = parseInt(val);
+  const max = parseInt(document.getElementById('shots-'+side+'-slider').max);
+  document.getElementById('shots-'+side+'-value').textContent = val;
+  document.getElementById('shots-'+side+'-bar').style.width = Math.min(100,(val/max)*100) + '%';
+}
+
+function adjustShots(side, delta){
+  const slider = document.getElementById('shots-'+side+'-slider');
+  let val = Math.max(0, Math.min(parseInt(slider.max), parseInt(slider.value) + delta));
+  slider.value = val;
+  setShots(side, val);
+}
+
+function goToNextStepShots(){
+  predictionDraft.team.shots = parseInt(document.getElementById('shots-psg-slider').value);
+  predictionDraft.opponent.shots = parseInt(document.getElementById('shots-opp-slider').value);
+  enterFoulsScreen();
+}
+
+// ===== ÉCRAN DES FAUTES =====
+const RING_R = 50;
+const RING_CIRC = 2 * Math.PI * RING_R;
+
+function enterFoulsScreen(){
+  document.getElementById('fouls-opp-name').textContent = getOpponentName();
+  const psgVal = predictionDraft.team.fouls !== undefined ? predictionDraft.team.fouls : 10;
+  const oppVal = predictionDraft.opponent.fouls !== undefined ? predictionDraft.opponent.fouls : 10;
+  document.getElementById('fouls-psg-slider').value = psgVal;
+  document.getElementById('fouls-opp-slider').value = oppVal;
+  setFouls('psg', psgVal);
+  setFouls('opp', oppVal);
+  switchView('fouls');
+}
+
+function setFouls(side, val){
+  val = parseInt(val);
+  const max = parseInt(document.getElementById('fouls-'+side+'-slider').max);
+  document.getElementById('fouls-'+side+'-value').textContent = val;
+  const fraction = Math.min(1, val/max);
+  const ring = document.getElementById('fouls-'+side+'-ring');
+  ring.style.strokeDasharray = RING_CIRC;
+  ring.style.strokeDashoffset = RING_CIRC * (1 - fraction);
+}
+
+function adjustFouls(side, delta){
+  const slider = document.getElementById('fouls-'+side+'-slider');
+  let val = Math.max(0, Math.min(parseInt(slider.max), parseInt(slider.value) + delta));
+  slider.value = val;
+  setFouls(side, val);
+}
+
+function goToNextStepFouls(){
+  predictionDraft.team.fouls = parseInt(document.getElementById('fouls-psg-slider').value);
+  predictionDraft.opponent.fouls = parseInt(document.getElementById('fouls-opp-slider').value);
+  enterCrossesScreen();
+}
+
+// ===== ÉCRAN DES CENTRES =====
+function enterCrossesScreen(){
+  document.getElementById('crosses-opp-name').textContent = getOpponentName();
+  const psgVal = predictionDraft.team.crosses !== undefined ? predictionDraft.team.crosses : 10;
+  const oppVal = predictionDraft.opponent.crosses !== undefined ? predictionDraft.opponent.crosses : 10;
+  document.getElementById('crosses-psg-slider').value = psgVal;
+  document.getElementById('crosses-opp-slider').value = oppVal;
+  setCrosses('psg', psgVal);
+  setCrosses('opp', oppVal);
+  switchView('crosses');
+}
+
+function setCrosses(side, val){
+  val = parseInt(val);
+  const max = parseInt(document.getElementById('crosses-'+side+'-slider').max);
+  document.getElementById('crosses-'+side+'-value').textContent = val;
+  const fraction = Math.min(1, val/max);
+  document.getElementById('crosses-'+side+'-fill').style.height = (fraction*100) + '%';
+}
+
+function adjustCrosses(side, delta){
+  const slider = document.getElementById('crosses-'+side+'-slider');
+  let val = Math.max(0, Math.min(parseInt(slider.max), parseInt(slider.value) + delta));
+  slider.value = val;
+  setCrosses(side, val);
+}
+
+function goToNextStepCrosses(){
+  predictionDraft.team.crosses = parseInt(document.getElementById('crosses-psg-slider').value);
+  predictionDraft.opponent.crosses = parseInt(document.getElementById('crosses-opp-slider').value);
+  enterScoreScreen();
+}
+
+// ===== ÉCRAN DU SCORE =====
+function populateScoreSelect(id){
+  const sel = document.getElementById(id);
+  sel.innerHTML = '';
+  for(let i=0; i<=10; i++){
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = i;
+    sel.appendChild(opt);
+  }
+  sel.value = 0;
+}
+
+function enterScoreScreen(){
+  document.getElementById('score-opp-name').textContent = getOpponentName();
+  populateScoreSelect('score-psg-select');
+  populateScoreSelect('score-opp-select');
+  if(predictionDraft.team.score !== undefined) document.getElementById('score-psg-select').value = predictionDraft.team.score;
+  if(predictionDraft.opponent.score !== undefined) document.getElementById('score-opp-select').value = predictionDraft.opponent.score;
+  switchView('score');
+}
+
+function decodeJwtPayload(token){
+  try{
+    const base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    const json = decodeURIComponent(
+      atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+    );
+    return JSON.parse(json);
+  }catch(e){ return null; }
+}
+
+function getUserId(){
+  const auth = getAuth();
+  if(!auth || !auth.token) return null;
+  const payload = decodeJwtPayload(auth.token);
+  return payload ? payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] : null;
+}
+
+function goToRecap(){
+  predictionDraft.team.score = parseInt(document.getElementById('score-psg-select').value);
+  predictionDraft.opponent.score = parseInt(document.getElementById('score-opp-select').value);
+  renderRecap();
+  switchView('recap');
+}
+
+function fmtRecapNum(n){
+  return Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
+}
+
+function renderRecap(){
+  const opponentName = getOpponentName();
+
+  const playerNames = predictionDraft.players.map(id => {
+    const p = squadData.find(sp => sp.id === id);
+    return p ? p.firstName + ' ' + p.lastName : '?';
+  });
+  document.getElementById('recap-players').textContent = playerNames.join(', ');
+
+  document.getElementById('recap-possession-opp-label').textContent = opponentName;
+  document.getElementById('recap-shots-opp-label').textContent = opponentName;
+  document.getElementById('recap-fouls-opp-label').textContent = opponentName;
+  document.getElementById('recap-crosses-opp-label').textContent = opponentName;
+  document.getElementById('recap-score-opp-label').textContent = opponentName;
+
+  document.getElementById('recap-possession-psg').value = predictionDraft.team.possession;
+  document.getElementById('recap-possession-opp').value = predictionDraft.opponent.possession;
+  document.getElementById('recap-shots-psg').value = predictionDraft.team.shots;
+  document.getElementById('recap-shots-opp').value = predictionDraft.opponent.shots;
+  document.getElementById('recap-fouls-psg').value = predictionDraft.team.fouls;
+  document.getElementById('recap-fouls-opp').value = predictionDraft.opponent.fouls;
+  document.getElementById('recap-crosses-psg').value = predictionDraft.team.crosses;
+  document.getElementById('recap-crosses-opp').value = predictionDraft.opponent.crosses;
+  document.getElementById('recap-score-psg').value = predictionDraft.team.score;
+  document.getElementById('recap-score-opp').value = predictionDraft.opponent.score;
+}
+
+async function submitPrediction(){
+  if(predictionsDeadline && new Date() >= predictionsDeadline){
+    alert("Les pronostics sont fermés pour ce match : le délai de 24h avant le coup d'envoi est passé.");
+    switchView('home');
+    return;
+  }
+
+  const btn = document.getElementById('submit-prediction-btn');
+  btn.disabled = true;
+  btn.textContent = 'Envoi en cours…';
+
+  predictionDraft.team.possession = parseFloat(document.getElementById('recap-possession-psg').value);
+  predictionDraft.opponent.possession = parseFloat(document.getElementById('recap-possession-opp').value);
+  predictionDraft.team.shots = parseInt(document.getElementById('recap-shots-psg').value);
+  predictionDraft.opponent.shots = parseInt(document.getElementById('recap-shots-opp').value);
+  predictionDraft.team.fouls = parseInt(document.getElementById('recap-fouls-psg').value);
+  predictionDraft.opponent.fouls = parseInt(document.getElementById('recap-fouls-opp').value);
+  predictionDraft.team.crosses = parseInt(document.getElementById('recap-crosses-psg').value);
+  predictionDraft.opponent.crosses = parseInt(document.getElementById('recap-crosses-opp').value);
+  predictionDraft.team.score = parseInt(document.getElementById('recap-score-psg').value);
+  predictionDraft.opponent.score = parseInt(document.getElementById('recap-score-opp').value);
+
+  try{
+    const userId = getUserId();
+    const teamId = await getPsgTeamId();
+
+    const payload = {
+      userId: userId,
+      matchId: currentMatch.id,
+      teamId: teamId,
+      players: predictionDraft.players,
+      team: predictionDraft.team,
+      opponent: predictionDraft.opponent
+    };
+
+    const res = await fetch(`${API_BASE}/UserMatch`, {
+      method: hasPredictionForCurrentMatch ? 'PUT' : 'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+
+    if(json.success){
+      hasPredictionForCurrentMatch = true;
+      updatePlayButtonLabel();
+      alert('Pronostic enregistré !');
+      switchView('home');
+    } else {
+      alert("Échec de l'enregistrement : " + (json.message || 'erreur inconnue'));
+    }
+  }catch(e){
+    alert("Impossible de contacter le serveur.");
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Valider mon prono';
+}
+</script>
+
+</body>
+</html>
