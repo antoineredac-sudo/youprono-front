@@ -127,38 +127,55 @@
   #app-shell.active{ display:flex; }
 
   header.topbar{
+    position:relative;
     display:flex;
     align-items:center;
     justify-content:space-between;
     padding:16px 20px;
     border-bottom:1px solid var(--border);
     background:var(--surface);
+    z-index:60;
   }
+  header.topbar .left{ display:flex; align-items:center; gap:10px; }
   header.topbar .display{ font-size:18px; color:var(--gold); }
   header.topbar .who{ font-size:13px; color:var(--text-dim); }
-
-  main{ flex:1; padding:24px 20px 90px 20px; max-width:520px; width:100%; margin:0 auto; }
-
-  nav.tabbar{
-    position:fixed;
-    bottom:0; left:0; right:0;
-    display:flex;
-    background:var(--surface);
-    border-top:1px solid var(--border);
-    padding:8px 0 max(8px, env(safe-area-inset-bottom)) 0;
-  }
-  nav.tabbar button{
-    flex:1;
+  .menu-toggle{
     background:none;
     border:none;
-    color:var(--text-dim);
+    color:var(--text);
+    font-size:20px;
+    line-height:1;
+    cursor:pointer;
+    padding:2px 4px;
+  }
+
+  main{ flex:1; padding:24px 20px 24px 20px; max-width:520px; width:100%; margin:0 auto; }
+
+  .dropdown-menu{
+    position:absolute;
+    top:100%;
+    left:0;
+    right:0;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    box-shadow:0 10px 20px rgba(0,0,0,0.35);
+    z-index:50;
+  }
+  .dropdown-menu button{
+    display:block;
+    width:100%;
+    text-align:left;
+    background:none;
+    border:none;
+    border-top:1px solid var(--border);
+    color:var(--text);
     font-family:'Inter',sans-serif;
-    font-size:12px;
+    font-size:15px;
     font-weight:500;
-    padding:8px 4px;
+    padding:14px 20px;
     cursor:pointer;
   }
-  nav.tabbar button.active{ color:var(--red); }
+  .dropdown-menu button.active{ color:var(--red); }
 
   .placeholder{
     color:var(--text-dim);
@@ -908,8 +925,19 @@
 <!-- ===== APPLICATION (après connexion) ===== -->
 <div id="app-shell">
   <header class="topbar">
-    <span class="display"><span class="you">You</span><span class="prono">Prono</span></span>
+    <div class="left">
+      <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+      <span class="display"><span class="you">You</span><span class="prono">Prono</span></span>
+    </div>
     <span class="who" id="who-am-i"></span>
+
+    <div class="dropdown-menu" id="dropdown-menu" style="display:none;">
+      <button data-view="home" onclick="navFromMenu('home')">Prochain match</button>
+      <button data-view="results" onclick="navFromMenu('results')">Résultats</button>
+      <button data-view="groups" onclick="navFromMenu('groups')">Groupes</button>
+      <button data-view="profile" onclick="navFromMenu('profile')">Profil</button>
+      <button data-view="faq" onclick="navFromMenu('faq')">FAQ</button>
+    </div>
   </header>
 
   <main>
@@ -1266,7 +1294,6 @@
         <div id="dash-history"></div>
 
         <button class="cta-play-outline" style="margin-top:20px;" onclick="goToRanking()">Voir le classement complet</button>
-        <button class="cta-play-outline" style="margin-top:12px;" onclick="switchView('faq')">FAQ</button>
       </div>
 
       <button class="cta-play-outline" style="margin-top:12px;" onclick="logout()">Se déconnecter</button>
@@ -1291,7 +1318,7 @@
     </section>
     <section id="view-faq" class="view" style="display:none;">
       <h2 class="play-title">FAQ</h2>
-      <span class="back-link" onclick="goToProfile()">← Retour</span>
+      <span class="back-link" onclick="switchView('home')">← Retour</span>
 
       <div class="faq-list">
         <div class="faq-item">
@@ -1371,13 +1398,6 @@
       </div>
     </section>
   </main>
-
-  <nav class="tabbar">
-    <button class="active" data-view="home" onclick="switchView('home')">Accueil</button>
-    <button data-view="results" onclick="goToResults()">Résultats</button>
-    <button data-view="groups" onclick="goToGroups()">Groupes</button>
-    <button data-view="profile" onclick="goToProfile()">Profil</button>
-  </nav>
 </div>
 
 <script>
@@ -2014,12 +2034,30 @@ function logout(){
 }
 
 function switchView(name){
-  document.querySelectorAll('nav.tabbar button').forEach(b=>{
+  document.querySelectorAll('.dropdown-menu button').forEach(b=>{
     b.classList.toggle('active', b.dataset.view === name);
   });
   document.querySelectorAll('main .view').forEach(v=>{
     v.style.display = (v.id === 'view-' + name) ? 'block' : 'none';
   });
+}
+
+function toggleMenu(){
+  const menu = document.getElementById('dropdown-menu');
+  menu.style.display = (menu.style.display === 'none') ? 'block' : 'none';
+}
+
+function closeMenu(){
+  document.getElementById('dropdown-menu').style.display = 'none';
+}
+
+function navFromMenu(name){
+  closeMenu();
+  if(name === 'home'){ switchView('home'); }
+  else if(name === 'results'){ goToResults(); }
+  else if(name === 'groups'){ goToGroups(); }
+  else if(name === 'profile'){ goToProfile(); }
+  else if(name === 'faq'){ switchView('faq'); }
 }
 
 // --- Démarrage : si déjà connecté, on saute directement dans l'app ---
