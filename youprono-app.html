@@ -1680,9 +1680,24 @@ async function enterResultsScreen(matchId){
     const userId = getUserId();
     const teamId = await getPsgTeamId();
 
+    if(squadData.length === 0){
+      const teamRes = await fetch(`${API_BASE}/Team/ById/${teamId}`);
+      const teamJson = await teamRes.json();
+      squadData = teamJson.data.players;
+    }
+
     // On déclenche le vrai calcul du back (le moteur de notation avec ses coefficients),
     // plutôt que d'espérer qu'il ait déjà été lancé ailleurs.
-    await fetch(`${API_BASE}/UserStats/Update/${userId}/${matchId}/${teamId}`, { method:'PUT' });
+    const updateRes = await fetch(`${API_BASE}/UserStats/Update/${userId}/${matchId}/${teamId}`, { method:'PUT' });
+    const updateJson = await updateRes.json();
+
+    if(!updateJson.success){
+      document.getElementById('results-loading').style.display = 'none';
+      const emptyEl = document.getElementById('results-empty');
+      emptyEl.textContent = "Ce match n'a pas encore été joué — reviens une fois le coup de sifflet final donné et les statistiques officielles saisies.";
+      emptyEl.style.display = 'block';
+      return;
+    }
 
     const [predRes, statsRes, matchDetailRes] = await Promise.all([
       fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${matchId}/${teamId}`).then(r=>r.json()),
