@@ -1969,10 +1969,13 @@ async function openGroupDetail(groupId){
     currentGroupName = g.name;
     document.getElementById('group-detail-name').textContent = g.name.toUpperCase();
     document.getElementById('group-detail-code').textContent = g.inviteCode;
+    const seasonLength = g.seasonLength ?? 10;
+    const played = g.matchesPlayed ?? 0;
+    const motMatch = played > 1 ? 'matchs joués' : 'match joué';
     document.getElementById('group-detail-season').textContent =
       g.isSeasonComplete
-        ? 'Saison terminée — ' + g.matchesCounted + '/10 matchs'
-        : g.matchesCounted + '/10 matchs programmés cette saison';
+        ? 'Saison terminée — ' + played + '/' + seasonLength + ' ' + motMatch
+        : played + '/' + seasonLength + ' ' + motMatch + ' cette saison';
 
     rankingEl.innerHTML = g.ranking.map(r => `
       <div class="ranking-row">
