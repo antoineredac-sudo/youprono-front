@@ -122,6 +122,19 @@
   }
   .field-error.show{ display:block; }
 
+  .auth-invite{
+    display:none;
+    background:var(--surface);
+    border:1px solid var(--gold);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:24px;
+    font-size:14px;
+    line-height:1.5;
+    color:var(--text);
+  }
+  .auth-invite strong{ color:var(--gold); }
+
   /* --- Cadre général de l'app (après connexion) --- */
   #app-shell{ display:none; flex:1; flex-direction:column; }
   #app-shell.active{ display:flex; }
@@ -915,6 +928,8 @@
       <p>On va voir qui sont les vrais experts du PSG.</p>
     </div>
 
+    <div class="auth-invite" id="auth-invite-banner"></div>
+
     <div class="tab-switch">
       <button id="tab-login" class="active" onclick="switchAuthTab('login')">Connexion</button>
       <button id="tab-register" onclick="switchAuthTab('register')">Inscription</button>
@@ -1484,6 +1499,7 @@ function enterApp(){
   document.getElementById('app-shell').classList.add('active');
   document.getElementById('who-am-i').textContent = auth ? auth.displayName : '';
   loadHomeMatch();
+  if(pendingInviteCode){ acceptPendingInvite(); }
 }
 
 let psgTeamIdCache = null;
@@ -1910,7 +1926,15 @@ let currentGroupName = '';
 
 function shareGroupOnWhatsApp(){
   const code = document.getElementById('group-detail-code').textContent;
-  const message = `Rejoins mon groupe "${currentGroupName}" sur YouProno ! Utilise ce code pour me retrouver : ${code}`;
+  const auth = getAuth();
+  const moi = (auth && auth.displayName) ? auth.displayName : 'un ami';
+  const lien = siteBaseUrl() + '?groupe=' + encodeURIComponent(code);
+
+  const message =
+    `Si t'es cap d'affronter des experts du PSG, rejoins ${moi} dans le groupe « ${currentGroupName} » :\n`
+    + `${lien}\n\n`
+    + `Code du groupe si besoin : ${code}`;
+
   window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank');
 }
 
@@ -2104,6 +2128,72 @@ function navFromMenu(name){
   else if(name === 'groups'){ goToGroups(); }
   else if(name === 'profile'){ goToProfile(); }
   else if(name === 'faq'){ switchView('faq'); }
+}
+
+// ===== INVITATION PAR LIEN =====
+// Un lien de partage ressemble à : .../youprono-app.html?groupe=ABC123
+// On récupère le code au chargement, on le garde de côté, et on fait rejoindre
+// le groupe dès que la personne est connectée (ou dès qu'elle vient de s'inscrire).
+var pendingInviteCode = null;
+
+function siteBaseUrl(){
+  return (location.origin && location.origin !== 'null')
+    ? location.origin + location.pathname
+    : 'https://youprono-front.onrender.com/youprono-app.html';
+}
+
+(function captureInviteFromUrl(){
+  var code = '';
+  try{
+    code = (new URLSearchParams(window.location.search).get('groupe') || '').trim().toUpperCase();
+  }catch(e){ return; }
+  if(!code) return;
+
+  pendingInviteCode = code;
+
+  // On efface le paramètre de l'URL : un rechargement ne doit pas rejouer l'opération.
+  try{ history.replaceState(null, '', window.location.pathname); }catch(e){}
+
+  // Personne pas encore connectée : on lui explique pourquoi elle est là.
+  if(!getAuth()){
+    var banner = document.getElementById('auth-invite-banner');
+    if(banner){
+      banner.innerHTML = 'On t\'invite à rejoindre un groupe sur YouProno (code <strong>'
+        + code + '</strong>).<br>Crée ton compte et on t\'y ajoute tout de suite.';
+      banner.style.display = 'block';
+    }
+    switchAuthTab('register');
+  }
+})();
+
+async function acceptPendingInvite(){
+  var code = pendingInviteCode;
+  pendingInviteCode = null;
+  if(!code) return;
+
+  switchView('groups');
+
+  try{
+    const userId = getUserId();
+    const res = await fetch(`${API_BASE}/Group/Join/${code}/${userId}`, { method:'POST' });
+    const json = await res.json();
+
+    await enterGroupsScreen();
+
+    if(json.success) return;
+
+    // Échec (code périmé, groupe complet, déjà membre…) : on ne laisse pas
+    // l'invité dans le vide, on prérenseigne le code et on affiche la raison.
+    document.getElementById('group-join-code').value = code;
+    const errEl = document.getElementById('group-join-error');
+    errEl.textContent = json.message || "On n'a pas pu te faire rejoindre ce groupe automatiquement.";
+    errEl.classList.add('show');
+  }catch(e){
+    document.getElementById('group-join-code').value = code;
+    const errEl = document.getElementById('group-join-error');
+    errEl.textContent = "Impossible de contacter le serveur. Réessaie avec le bouton ci-dessus.";
+    errEl.classList.add('show');
+  }
 }
 
 // --- Démarrage : si déjà connecté, on saute directement dans l'app ---
