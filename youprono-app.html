@@ -1972,7 +1972,7 @@ async function openGroupDetail(groupId){
     document.getElementById('group-detail-season').textContent =
       g.isSeasonComplete
         ? 'Saison terminée — ' + g.matchesCounted + '/10 matchs'
-        : g.matchesCounted + '/10 matchs joués cette saison';
+        : g.matchesCounted + '/10 matchs programmés cette saison';
 
     rankingEl.innerHTML = g.ranking.map(r => `
       <div class="ranking-row">
