@@ -1518,7 +1518,7 @@ async function loadHomeMatch(){
     const teamId = await getPsgTeamId();
 
     const [calRes, prevRes] = await Promise.all([
-      fetch(`${API_BASE}/Match/ByTeamId/${teamId}?OnlyNextMatches=true&limit=4`).then(r=>r.json()),
+      fetch(`${API_BASE}/Match/ByTeamId/${teamId}?OnlyNextMatches=true&limit=8`).then(r=>r.json()),
       fetch(`${API_BASE}/Match/Previous/${teamId}`).then(r=>r.json())
     ]);
 
