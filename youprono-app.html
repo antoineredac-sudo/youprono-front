@@ -2033,10 +2033,16 @@ async function loadDashboard(){
     }
 
     const g = globalRes.data;
-    document.getElementById('dash-rank').textContent = g.rank > 0 ? '#' + g.rank : '–';
+
+    // Le back renvoie un bonus d'assiduité de 1 (soit 100 %) tant que le joueur
+    // n'a aucun match noté — un chiffre flatteur mais faux. On n'affiche donc
+    // l'assiduité qu'une fois le joueur réellement classé, comme la tuile voisine.
+    const hasPlayed = g.rank > 0;
+
+    document.getElementById('dash-rank').textContent = hasPlayed ? '#' + g.rank : '–';
     document.getElementById('dash-average').textContent = fmtRecapNum(g.expertCoef || 0);
     document.getElementById('dash-record').textContent = fmtRecapNum(g.record || 0);
-    document.getElementById('dash-bonus').textContent = fmtRecapNum((g.bonus || 0) * 100) + '%';
+    document.getElementById('dash-bonus').textContent = hasPlayed ? fmtRecapNum((g.bonus || 0) * 100) + '%' : '–';
 
     const history = (historyRes.success && historyRes.data && historyRes.data.page) ? historyRes.data.page : [];
     const historyEl = document.getElementById('dash-history');
