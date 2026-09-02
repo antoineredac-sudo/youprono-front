@@ -802,6 +802,17 @@
   }
 
   .dash-history-label{ color:var(--text-dim); font-size:13px; margin-bottom:10px; }
+  .group-champion{
+    background:var(--gold);
+    color:#1b2a5e;
+    font-weight:800;
+    text-align:center;
+    padding:16px 14px;
+    border-radius:12px;
+    margin-bottom:14px;
+    font-size:17px;
+    line-height:1.35;
+  }
 
   /* --- Classement général --- */
   .ranking-tabs{
@@ -1262,6 +1273,7 @@
         <button class="cta-play-outline" style="margin-top:16px;" onclick="shareGroupOnWhatsApp()">Partager sur WhatsApp</button>
       </div>
       <div class="group-season-info" id="group-detail-season"></div>
+      <div class="group-champion" id="group-detail-champion" style="display:none;"></div>
       <div id="group-detail-ranking"></div>
       <span class="small-link" onclick="switchView('groups')">← Retour à mes groupes</span>
     </section>
@@ -1969,13 +1981,20 @@ async function openGroupDetail(groupId){
     currentGroupName = g.name;
     document.getElementById('group-detail-name').textContent = g.name.toUpperCase();
     document.getElementById('group-detail-code').textContent = g.inviteCode;
-    const seasonLength = g.seasonLength ?? 10;
+    const seasonLength = g.seasonLength ?? 5;
     const played = g.matchesPlayed ?? 0;
     const motMatch = played > 1 ? 'matchs joués' : 'match joué';
     document.getElementById('group-detail-season').textContent =
-      g.isSeasonComplete
-        ? 'Saison terminée — ' + played + '/' + seasonLength + ' ' + motMatch
-        : played + '/' + seasonLength + ' ' + motMatch + ' cette saison';
+      played + '/' + seasonLength + ' ' + motMatch + ' sur ce mini-championnat';
+
+    const championEl = document.getElementById('group-detail-champion');
+    if(g.championName){
+      championEl.textContent = g.championName + ' remporte le mini-championnat.';
+      championEl.style.display = 'block';
+    } else {
+      championEl.textContent = '';
+      championEl.style.display = 'none';
+    }
 
     rankingEl.innerHTML = g.ranking.map(r => `
       <div class="ranking-row">
