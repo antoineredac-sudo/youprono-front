@@ -767,6 +767,14 @@
   }
 
   .group-season-info{ text-align:center; color:var(--text-dim); font-size:13px; margin-bottom:16px; }
+  .group-deadline{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:13px;
+    line-height:1.5;
+    margin:12px 0 20px;
+  }
+  .group-deadline strong{ color:var(--gold); }
 
   .ranking-row{
     display:flex;
@@ -1290,6 +1298,11 @@
       </div>
       <div class="group-season-info" id="group-detail-season"></div>
       <div class="group-champion" id="group-detail-champion" style="display:none;"></div>
+      <div id="group-calendar-block" style="display:none;">
+        <div class="dash-history-label" id="group-calendar-label"></div>
+        <div id="group-calendar"></div>
+        <div class="group-deadline" id="group-calendar-deadline"></div>
+      </div>
       <div id="group-detail-ranking"></div>
       <span class="small-link" onclick="switchView('groups')">← Retour à mes groupes</span>
     </section>
@@ -1991,6 +2004,67 @@ async function loadRanking(tab){
   }
 }
 
+// Affiche les matchs du PSG qu'il reste à disputer dans le mini-championnat du
+// groupe, et la date à laquelle le classement sera définitivement figé.
+// Hypothèse : les matchs comptabilisés sont les prochains matchs du PSG dans
+// l'ordre chronologique, à hauteur de (seasonLength - matchesPlayed).
+async function loadGroupCalendar(seasonLength, played){
+  const block = document.getElementById('group-calendar-block');
+  const labelEl = document.getElementById('group-calendar-label');
+  const listEl = document.getElementById('group-calendar');
+  const deadlineEl = document.getElementById('group-calendar-deadline');
+
+  block.style.display = 'none';
+  listEl.innerHTML = '';
+  deadlineEl.innerHTML = '';
+
+  const restants = seasonLength - played;
+  if(restants <= 0) return;  // mini-championnat terminé : rien à annoncer
+
+  try{
+    const teamId = await getPsgTeamId();
+    const res = await fetch(`${API_BASE}/Match/ByTeamId/${teamId}?OnlyNextMatches=true&limit=12`);
+    const json = await res.json();
+    const upcoming = (json.success && json.data && json.data.page) ? json.data.page : [];
+    if(!upcoming.length) return;
+
+    const matchs = upcoming.slice(0, restants);
+
+    labelEl.textContent = (restants === 1)
+      ? 'le match qui décidera du classement'
+      : 'les matchs qui décideront du classement';
+
+    listEl.innerHTML = matchs.map(m => {
+      const d = new Date(m.dateTime);
+      return `
+        <div class="calendar-row">
+          <span class="calendar-date">${d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' })}</span>
+          <span class="calendar-teams">${m.homeTeam.name} – ${m.awayTeam.name}</span>
+          <span class="calendar-time">${d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}</span>
+        </div>`;
+    }).join('');
+
+    if(matchs.length < restants){
+      // Le calendrier officiel n'a pas encore tous les matchs : on le dit
+      // plutôt que d'annoncer une date de fin qui serait fausse.
+      const manquants = restants - matchs.length;
+      deadlineEl.textContent = (manquants === 1)
+        ? 'Un dernier match viendra clore le mini-championnat, sa date n\'est pas encore connue.'
+        : manquants + ' autres matchs viendront clore le mini-championnat, leurs dates ne sont pas encore connues.';
+    } else {
+      const fin = new Date(matchs[matchs.length - 1].dateTime);
+      const finLabel = fin.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+      deadlineEl.innerHTML = (matchs.length === 1)
+        ? 'Le classement sera définitif après ce match, le <strong>' + finLabel + '</strong>.'
+        : 'Le classement sera définitif le <strong>' + finLabel + '</strong>, après le dernier match.';
+    }
+
+    block.style.display = 'block';
+  }catch(e){
+    // Le calendrier est un bonus : s'il échoue, l'écran du groupe reste utilisable.
+  }
+}
+
 async function openGroupDetail(groupId){
   currentGroupId = groupId;
   switchView('group-detail');
@@ -2013,6 +2087,10 @@ async function openGroupDetail(groupId){
     const motMatch = played > 1 ? 'matchs joués' : 'match joué';
     document.getElementById('group-detail-season').textContent =
       played + '/' + seasonLength + ' ' + motMatch + ' sur ce mini-championnat';
+
+    // Les matchs restants du mini-championnat (chargement en parallèle : le
+    // classement s'affiche sans attendre le calendrier).
+    loadGroupCalendar(seasonLength, played);
 
     const championEl = document.getElementById('group-detail-champion');
     if(g.championName){
