@@ -299,6 +299,7 @@
   }
   .calendar-date{ color:var(--text-dim); width:70px; flex-shrink:0; }
   .calendar-teams{ flex:1; }
+  .calendar-time{ color:var(--text-dim); text-align:right; flex-shrink:0; padding-left:10px; }
   .calendar-competition{ color:var(--text-dim); font-size:11px; text-align:right; }
 
   /* --- Écran de composition --- */
@@ -1571,12 +1572,14 @@ async function loadHomeMatch(){
       document.getElementById('home-calendar').innerHTML = rest.map(m => {
         const d = new Date(m.dateTime);
         const dateLabel = d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
-        const comp = (m.competition && m.competition.name) ? m.competition.name : '';
+        // L'heure du coup d'envoi : elle indique aussi au joueur quand ses pronos
+        // fermeront, puisque la clôture tombe 24h avant.
+        const timeLabel = d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
         return `
           <div class="calendar-row">
             <span class="calendar-date">${dateLabel}</span>
             <span class="calendar-teams">${m.homeTeam.name} – ${m.awayTeam.name}</span>
-            <span class="calendar-competition">${comp}</span>
+            <span class="calendar-time">${timeLabel}</span>
           </div>`;
       }).join('');
     }
