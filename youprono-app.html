@@ -1615,6 +1615,10 @@ function enterApp(){
   document.getElementById('screen-auth').classList.remove('active');
   document.getElementById('app-shell').classList.add('active');
   document.getElementById('who-am-i').textContent = auth ? auth.displayName : '';
+  // On revient toujours sur l'accueil en entrant dans le jeu. Sans cette ligne,
+  // l'écran affiché reste celui d'avant la déconnexion — c'est-à-dire le profil,
+  // puisque c'est là que se trouve le bouton « Se déconnecter ».
+  switchView('home');
   loadHomeMatch();
   if(pendingInviteCode){ acceptPendingInvite(); }
 }
