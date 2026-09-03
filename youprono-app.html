@@ -1004,6 +1004,16 @@
 
       <div id="home-prev-match" style="display:none;"></div>
 
+      <div id="home-compo-banner" style="display:none;" onclick="goToCompoNote()">
+        <div class="prev-match-banner">
+          <div class="prev-match-info">
+            La compo officielle est tombée
+            <small>Découvre ta note de composition</small>
+          </div>
+          <span class="prev-match-cta">Voir →</span>
+        </div>
+      </div>
+
       <div id="home-match-card" class="match-card" style="display:none;">
         <div class="match-competition" id="match-competition"></div>
         <div class="match-teams">
@@ -1344,6 +1354,28 @@
       <span class="small-link" onclick="switchView('groups')">← Retour à mes groupes</span>
       <span class="small-link" style="margin-top:8px;" onclick="leaveGroup()">Quitter le groupe</span>
     </section>
+    <section id="view-compo" class="view" style="display:none;">
+      <div id="compo-loading" class="placeholder">Chargement de la composition…</div>
+
+      <div id="compo-content" style="display:none;">
+        <div class="results-banner">
+          <div class="results-score-line" id="compo-match-line"></div>
+          <div class="results-date" id="compo-match-date"></div>
+        </div>
+
+        <div class="results-total-card">
+          <div class="results-total-label">Ta note de composition</div>
+          <div class="results-total-value" id="compo-note-value">0</div>
+          <div class="results-rank" id="compo-found-line"></div>
+        </div>
+
+        <div id="compo-detail"></div>
+
+        <p class="deadline-note" id="compo-footnote"></p>
+      </div>
+
+      <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
+    </section>
     <section id="view-confirm" class="view" style="display:none;">
       <h2 class="play-title" id="confirm-title">Pronostic enregistré</h2>
 
@@ -1656,7 +1688,8 @@ async function loadHomeMatch(){
     updateCountdown();
     countdownInterval = setInterval(updateCountdown, 1000);
 
-    checkExistingPrediction();
+    await checkExistingPrediction();
+    checkOfficialComposition();
 
     // Calendrier des prochains matchs (les 3 suivants, sous la carte principale)
     const rest = upcoming.slice(1);
@@ -1715,6 +1748,127 @@ async function checkExistingPrediction(){
     hasPredictionForCurrentMatch = false;
   }
   updatePlayButtonLabel();
+}
+
+// ===== NOTE DE COMPOSITION =====
+// Résultat partiel, disponible dès que la compo officielle est saisie, donc
+// bien avant le coup d'envoi. Elle est calculée ici, côté joueur, et n'est
+// jamais enregistrée : le moteur du serveur reste seul maître des vraies notes,
+// qu'il ne calcule qu'une fois le match passé en "Played".
+
+let officialCompoPlayers = null;
+
+async function ensureSquadLoaded(){
+  if(squadData.length === 0){
+    const teamId = await getPsgTeamId();
+    const res = await fetch(`${API_BASE}/Team/ById/${teamId}`);
+    const json = await res.json();
+    squadData = (json.success && json.data && json.data.players) ? json.data.players : [];
+  }
+}
+
+// Récupère les onze titulaires du PSG pour le match en cours, s'ils ont été
+// saisis. Tant qu'ils ne le sont pas, la liste est vide et le bandeau reste
+// caché : rien à annoncer.
+async function checkOfficialComposition(){
+  const banner = document.getElementById('home-compo-banner');
+  officialCompoPlayers = null;
+  if(banner) banner.style.display = 'none';
+
+  try{
+    if(!currentMatch || !hasPredictionForCurrentMatch) return;
+    const teamId = await getPsgTeamId();
+    const res = await fetch(`${API_BASE}/Match/ById/${currentMatch.id}`);
+    const json = await res.json();
+    if(!json.success || !json.data) return;
+
+    const side = (json.data.homeTeam && json.data.homeTeam.id === teamId) ? json.data.homeTeam : json.data.awayTeam;
+    const titulaires = ((side && side.players) ? side.players : [])
+      .filter(p => !(p.position && p.position.toUpperCase() === 'SUBSTITUTE'));
+
+    if(!titulaires.length) return;
+
+    officialCompoPlayers = titulaires;
+    if(banner) banner.style.display = 'block';
+  }catch(e){ /* pas de compo, pas de bandeau */ }
+}
+
+async function goToCompoNote(){
+  switchView('compo');
+  document.getElementById('compo-loading').style.display = 'block';
+  document.getElementById('compo-content').style.display = 'none';
+
+  try{
+    if(!officialCompoPlayers) await checkOfficialComposition();
+    if(!officialCompoPlayers) throw new Error('compo absente');
+
+    await ensureSquadLoaded();
+
+    const userId = getUserId();
+    const teamId = await getPsgTeamId();
+    const predRes = await fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${currentMatch.id}/${teamId}`);
+    const predJson = await predRes.json();
+    if(!predJson.success || !predJson.data) throw new Error('pronostic absent');
+
+    renderCompoNote(predJson.data.players || []);
+    document.getElementById('compo-loading').style.display = 'none';
+    document.getElementById('compo-content').style.display = 'block';
+  }catch(e){
+    document.getElementById('compo-loading').textContent =
+      "La composition officielle n'est pas encore disponible pour ce match.";
+  }
+}
+
+function renderCompoNote(predictedIds){
+  const realIds = new Set(officialCompoPlayers.map(p => p.id));
+  let trouves = 0;
+  officialCompoPlayers.forEach(p => { if(predictedIds.indexOf(p.id) !== -1) trouves++; });
+
+  // Exactement la formule du serveur : titulaires trouvés sur onze, ramenés sur cent.
+  const note = Math.round((trouves / 11) * 100 * 10000) / 10000;
+
+  document.getElementById('compo-match-line').textContent =
+    currentMatch.homeTeam.name + ' – ' + currentMatch.awayTeam.name;
+  document.getElementById('compo-match-date').textContent =
+    "Coup d'envoi : " + formatMatchDate(new Date(currentMatch.dateTime));
+
+  document.getElementById('compo-note-value').textContent = fmtNote(note);
+  document.getElementById('compo-found-line').textContent =
+    trouves + (trouves > 1 ? ' titulaires trouvés sur 11' : ' titulaire trouvé sur 11');
+
+  const nomDe = (id) => {
+    const officiel = officialCompoPlayers.find(p => p.id === id);
+    if(officiel) return officiel.firstName + ' ' + officiel.lastName;
+    const p = squadData.find(sp => sp.id === id);
+    return p ? p.firstName + ' ' + p.lastName : '—';
+  };
+
+  const tonHtml = predictedIds.map(id =>
+    `<span class="compo-name ${realIds.has(id) ? '' : 'compo-wrong'}">${nomDe(id)}</span>`).join('');
+
+  const reelHtml = officialCompoPlayers.map(p =>
+    `<span class="compo-name">${p.firstName} ${p.lastName}</span>`).join('');
+
+  document.getElementById('compo-detail').innerHTML = `
+    <div class="result-category">
+      <div class="result-cat-head">
+        <span class="result-cat-name">Composition</span>
+        <span class="result-cat-points">${fmtNote(note)}/100</span>
+      </div>
+      <div class="compo-compare">
+        <div class="compo-col">
+          <div class="compo-col-label">Toi</div>
+          ${tonHtml}
+        </div>
+        <div class="compo-col">
+          <div class="compo-col-label">Réel</div>
+          ${reelHtml}
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('compo-footnote').textContent =
+    "Ce n'est qu'une partie de ton score. Tu découvriras ta note globale quelques minutes après la fin du match.";
 }
 
 function updatePlayButtonLabel(){
