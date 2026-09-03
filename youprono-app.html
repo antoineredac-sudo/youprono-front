@@ -2546,6 +2546,9 @@ async function loadDashboard(){
 
 function logout(){
   localStorage.removeItem(LS_AUTH);
+  // On range l'écran derrière soi : sans ça, le profil reste affiché sous le
+  // formulaire de connexion et réapparaît tel quel à la prochaine entrée.
+  switchView('home');
   document.getElementById('app-shell').classList.remove('active');
   document.getElementById('screen-auth').classList.add('active');
   document.getElementById('auth-username').value = '';
