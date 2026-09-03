@@ -1327,6 +1327,7 @@
         <button class="cta-play-outline" style="margin-top:16px;" onclick="shareGroupOnWhatsApp()">Partager sur WhatsApp</button>
       </div>
       <span class="small-link" onclick="switchView('groups')">← Retour à mes groupes</span>
+      <span class="small-link" style="margin-top:8px;" onclick="leaveGroup()">Quitter le groupe</span>
     </section>
     <section id="view-profile" class="view" style="display:none;">
       <h2 class="play-title">TABLEAU DE BORD</h2>
@@ -1958,6 +1959,29 @@ async function joinGroup(){
 
 let currentGroupId = null;
 let currentGroupName = '';
+
+// Quitter un groupe. Le code d'invitation est rappelé dans la confirmation :
+// une fois sorti, il n'est plus affiché nulle part, et c'est la seule clé
+// pour revenir sans passer par un autre membre.
+async function leaveGroup(){
+  const code = document.getElementById('group-detail-code').textContent;
+  const ok = confirm("Tu veux vraiment quitter le groupe ?\n\nPour revenir, conserve le code " + code + ".");
+  if(!ok){ return; }
+
+  try{
+    const userId = getUserId();
+    const res = await fetch(`${API_BASE}/Group/Leave/${currentGroupId}/${userId}`, { method:'POST' });
+    const json = await res.json();
+    if(!json.success){
+      alert("Impossible de quitter le groupe : " + (json.message || 'erreur inconnue'));
+      return;
+    }
+    switchView('groups');
+    enterGroupsScreen();
+  }catch(e){
+    alert("Impossible de contacter le serveur.");
+  }
+}
 
 function shareGroupOnWhatsApp(){
   const code = document.getElementById('group-detail-code').textContent;
