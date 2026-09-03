@@ -1817,7 +1817,7 @@ function renderResults(prediction, stats, matchDetail){
   document.getElementById('results-date').textContent = formatMatchDate(new Date(stats.matchResult.dateTime));
 
   const totalNote = stats.result.team.total || 0;
-  document.getElementById('results-total-value').textContent = fmtNum(totalNote);
+  document.getElementById('results-total-value').textContent = fmtNote(totalNote);
   document.getElementById('results-rank').textContent =
     stats.result.rank > 0 ? 'Classé ' + stats.result.rank + '/' + stats.nblayer + ' sur ce match' : '';
 
@@ -2056,7 +2056,7 @@ async function loadRanking(tab){
     const userId = getUserId();
     const me = list.find(u => u.id === userId);
     document.getElementById('ranking-me-label').textContent = tab === 'final' ? 'coef expert' : 'note record';
-    document.getElementById('ranking-me-score').textContent = me ? fmtNum(me.score) : '–';
+    document.getElementById('ranking-me-score').textContent = me ? fmtNote(me.score) : '–';
     document.getElementById('ranking-me-rank').textContent = me ? ('#' + me.rank + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '')) : '';
 
     document.getElementById('ranking-table').innerHTML = list.map(u => `
@@ -2064,7 +2064,7 @@ async function loadRanking(tab){
         <span class="rt-rank">#${u.rank}</span>
         <span class="rt-name">@${u.userName}</span>
         <span class="rt-games">${u.games}</span>
-        <span class="rt-score">${fmtNum(u.score)}</span>
+        <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`).join('');
   }catch(e){
     loadingEl.textContent = 'Impossible de charger le classement.';
@@ -2250,8 +2250,8 @@ async function loadDashboard(){
     const hasPlayed = g.rank > 0;
 
     document.getElementById('dash-rank').textContent = hasPlayed ? '#' + g.rank : '–';
-    document.getElementById('dash-average').textContent = fmtRecapNum(g.expertCoef || 0);
-    document.getElementById('dash-record').textContent = fmtRecapNum(g.record || 0);
+    document.getElementById('dash-average').textContent = fmtNote(g.expertCoef || 0);
+    document.getElementById('dash-record').textContent = fmtNote(g.record || 0);
     document.getElementById('dash-bonus').textContent = hasPlayed ? fmtRecapNum((g.bonus || 0) * 100) + '%' : '–';
 
     const history = (historyRes.success && historyRes.data && historyRes.data.page) ? historyRes.data.page : [];
@@ -2262,10 +2262,14 @@ async function loadDashboard(){
     } else {
       historyEl.innerHTML = history.map(h => {
         const dateLabel = new Date(h.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
-        const scoreLabel = h.score ? fmtRecapNum(h.score) : 'en attente';
+        const scoreLabel = h.score ? fmtNote(h.score) : 'en attente';
+        // Le serveur renvoie parfois un adversaire vide : les équipes créées
+        // depuis la console n'ont pas de nom officiel renseigné. Plutôt que
+        // d'afficher "vs null", on n'affiche alors que la date.
+        const matchLabel = h.opponent ? 'vs ' + h.opponent + ' · ' + dateLabel : dateLabel;
         return `
           <div class="dash-history-row" onclick="goToResults('${h.matchId}')">
-            <span class="dash-history-match">vs ${h.opponent} · ${dateLabel}</span>
+            <span class="dash-history-match">${matchLabel}</span>
             <span class="dash-history-score">${scoreLabel}</span>
           </div>`;
       }).join('');
@@ -2634,6 +2638,14 @@ function goToRecap(){
 
 function fmtRecapNum(n){
   return Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
+}
+
+// Les notes s'affichent toujours avec trois décimales, y compris quand elles
+// tombent rond. Deux joueurs séparés par un millième doivent être départagés à
+// l'écran, sinon le classement affiche des ex aequo qui n'existent pas.
+function fmtNote(n){
+  if(n === null || n === undefined || isNaN(n)) return '–';
+  return Number(n).toFixed(3).replace('.', ',');
 }
 
 function renderRecap(){
