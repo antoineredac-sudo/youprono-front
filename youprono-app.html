@@ -771,6 +771,77 @@
   }
   /* Phrase de l'écran de confirmation uniquement : agrandie et tenue
      sur deux lignes par une coupure choisie. */
+  .trophy-pitch{
+    margin:18px 0 0 0;
+    font-size:17px;
+    line-height:1.4;
+    font-weight:600;
+    text-align:center;
+  }
+  .trophy-case{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:22px 16px 16px 16px;
+    margin:20px 0;
+  }
+  .trophy-shelf{
+    display:flex;
+    justify-content:space-between;
+    gap:6px;
+  }
+  .trophy-slot{ flex:1; text-align:center; }
+  .trophy-medal{
+    width:62px; height:62px;
+    margin:0 auto;
+    border-radius:50%;
+  }
+  .trophy-gem{
+    width:66px; height:60px;
+    display:block;
+    margin:1px auto 0 auto;
+    overflow:visible;
+  }
+  .trophy-medal.ghost{
+    background:var(--bg);
+    border:2px dashed #6b7dc4;
+  }
+  .trophy-label{
+    margin-top:8px;
+    font-size:12px;
+    color:var(--text-dim);
+  }
+  .trophy-ledge{
+    height:9px;
+    border-radius:3px;
+    background:#1D2B63;
+    margin-top:14px;
+  }
+  .trophy-cup-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:22px;
+    padding:18px 0 4px 0;
+  }
+  .trophy-cup{ width:76px; height:90px; flex:none; overflow:visible; }
+  .trophy-percent{
+    font-family:'Oswald',sans-serif;
+    font-size:30px;
+    font-weight:600;
+    color:var(--text-dim);
+    line-height:1.1;
+  }
+  .trophy-percent-label{
+    font-size:12px;
+    color:var(--text-dim);
+  }
+  .trophy-note{
+    font-size:14px;
+    line-height:1.6;
+    color:var(--text-dim);
+    margin:0 0 8px 0;
+  }
   .confirm-pitch{
     margin:0 0 4px 0;
     font-size:20px;
@@ -999,6 +1070,7 @@
       <button data-view="home" onclick="navFromMenu('home')">Prochain match</button>
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="groups" onclick="navFromMenu('groups')">Groupes</button>
+      <button data-view="trophies" onclick="navFromMenu('trophies')">Mes trophées</button>
       <button data-view="invite" onclick="navFromMenu('invite')">Inviter un ami</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Profil</button>
@@ -1460,6 +1532,52 @@
 
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div id="ranking-table"></div>
+    </section>
+    <section id="view-trophies" class="view" style="display:none;">
+      <h2 class="play-title">MES TROPHÉES</h2>
+
+      <p class="trophy-pitch">Finis haut dans les classements de groupe pour remplir ta vitrine de trophées</p>
+
+      <div class="trophy-case">
+        <div class="trophy-shelf">
+          <div class="trophy-slot">
+            <div class="trophy-medal ghost"></div>
+            <div class="trophy-label">Bronze</div>
+          </div>
+          <div class="trophy-slot">
+            <div class="trophy-medal ghost"></div>
+            <div class="trophy-label">Argent</div>
+          </div>
+          <div class="trophy-slot">
+            <div class="trophy-medal ghost"></div>
+            <div class="trophy-label">Or</div>
+          </div>
+          <div class="trophy-slot">
+            <svg class="trophy-gem" viewBox="0 0 70 62" aria-hidden="true"><polygon points="14,4 56,4 66,22 35,58 4,22" fill="#25408f" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/></svg>
+            <div class="trophy-label">Diamant</div>
+          </div>
+        </div>
+        <div class="trophy-ledge"></div>
+
+        <div class="trophy-cup-row">
+          <svg class="trophy-cup" viewBox="0 0 76 90" aria-hidden="true">
+            <path d="M8 8 C-4 13 -4 33 12 39" fill="none" stroke="#6b7dc4" stroke-width="3" stroke-dasharray="5 5"/>
+            <path d="M68 8 C80 13 80 33 64 39" fill="none" stroke="#6b7dc4" stroke-width="3" stroke-dasharray="5 5"/>
+            <polygon points="8,3 68,3 55,55 21,55" fill="#25408f" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/>
+            <rect x="30" y="55" width="16" height="20" fill="#25408f" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/>
+            <rect x="12" y="75" width="52" height="10" rx="2" fill="#25408f" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/>
+          </svg>
+          <div class="trophy-gauge">
+            <div class="trophy-percent">0 %</div>
+            <div class="trophy-percent-label">de ta première coupe</div>
+          </div>
+        </div>
+        <div class="trophy-ledge"></div>
+      </div>
+
+      <p class="trophy-note">Chaque fin de mini-championnat, les mieux classés de chaque groupe reçoivent une médaille. Plus le groupe compte de joueurs, plus le métal est précieux. Les médailles remplissent ta coupe — une fois pleine, elle rejoint ta vitrine et une nouvelle commence.</p>
+
+      <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
     <section id="view-faq" class="view" style="display:none;">
       <h2 class="play-title">FAQ</h2>
@@ -2579,6 +2697,7 @@ function navFromMenu(name){
   else if(name === 'results'){ goToResults(); }
   else if(name === 'groups'){ goToGroups(); }
   else if(name === 'ranking'){ goToRanking(); }
+  else if(name === 'trophies'){ switchView('trophies'); }
   else if(name === 'invite'){ switchView('invite'); }
   else if(name === 'profile'){ goToProfile(); }
   else if(name === 'faq'){ switchView('faq'); }
