@@ -976,8 +976,9 @@
 
     <div class="dropdown-menu" id="dropdown-menu" style="display:none;">
       <button data-view="home" onclick="navFromMenu('home')">Prochain match</button>
-      <button data-view="results" onclick="navFromMenu('results')">Résultats</button>
+      <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="groups" onclick="navFromMenu('groups')">Groupes</button>
+      <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Profil</button>
       <button data-view="faq" onclick="navFromMenu('faq')">FAQ</button>
     </div>
@@ -1735,6 +1736,26 @@ async function enterResultsScreen(matchId){
   document.getElementById('results-content').style.display = 'none';
 
   if(!matchId){
+    // "Dernier résultat" : le dernier match que CE joueur a pronostiqué et
+    // qui a été noté. Celui qui saute un match retrouve donc son résultat
+    // précédent, plutôt qu'un écran vide.
+    // L'historique est déjà trié du plus récent au plus ancien par le back ;
+    // un match non noté y vaut 0, on prend donc la première ligne qui porte
+    // une vraie note.
+    try{
+      const userId = getUserId();
+      const teamId = await getPsgTeamId();
+      const histRes = await fetch(`${API_BASE}/UserStats/ByUserTeam/${userId}/${teamId}?page=1&limit=20`);
+      const histJson = await histRes.json();
+      const rows = (histJson.success && histJson.data && histJson.data.page) ? histJson.data.page : [];
+      const lastNoted = rows.find(r => r.score);
+      if(lastNoted){ matchId = lastNoted.matchId; }
+    }catch(e){
+      // L'historique est indisponible : on retombe sur le comportement d'origine.
+    }
+  }
+
+  if(!matchId){
     if(!currentMatch){ await loadHomeMatch(); }
     if(!currentMatch){
       document.getElementById('results-loading').textContent = "Aucun match à afficher pour l'instant.";
@@ -2288,6 +2309,7 @@ function navFromMenu(name){
   if(name === 'home'){ switchView('home'); }
   else if(name === 'results'){ goToResults(); }
   else if(name === 'groups'){ goToGroups(); }
+  else if(name === 'ranking'){ goToRanking(); }
   else if(name === 'profile'){ goToProfile(); }
   else if(name === 'faq'){ switchView('faq'); }
 }
