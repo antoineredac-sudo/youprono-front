@@ -778,6 +778,25 @@
     font-weight:600;
     text-align:center;
   }
+  .results-badges{
+    margin:22px 0 8px 0;
+    text-align:center;
+  }
+  .results-badges-title{
+    font-size:16px;
+    font-weight:600;
+    margin-bottom:14px;
+  }
+  .results-badges-row{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .results-badge{ width:68px; }
+  .results-badge svg{ width:100%; height:auto; display:block; }
+  .badge-link{ display:inline-block; }
   .badge-grid{
     display:grid;
     grid-template-columns:repeat(4, 1fr);
@@ -1382,6 +1401,8 @@
         </div>
 
         <div id="results-categories"></div>
+
+        <div class="results-badges" id="results-badges"></div>
       </div>
     </section>
     <section id="view-groups" class="view" style="display:none;">
@@ -1591,6 +1612,8 @@
       <h2 class="play-title">MES BADGES</h2>
 
       <p class="trophy-pitch">Chaque coup d'éclat débloque un badge, dès le premier match</p>
+
+      <p class="trophy-pitch" id="badge-count" style="color:#e8b923;"></p>
 
       <div class="badge-grid" id="badge-grid"></div>
 
@@ -2251,6 +2274,7 @@ function renderResults(prediction, stats, matchDetail){
     </div>`;
 
   document.getElementById('results-categories').innerHTML = html;
+  renderResultsBadges(stats);
 }
 
 // ===== ÉCRANS GROUPES =====
@@ -2711,28 +2735,67 @@ function closeMenu(){
 // ===== BADGES =====
 // Vingt badges, cinq lignes de quatre. Rien n'est stocké : le jour où on les
 // branchera, l'état débloqué se recalculera à partir de l'historique du joueur.
+// cat désigne où lire la note, min le seuil à atteindre. Les badges marqués
+// 'serie' dépendent de l'historique et du calendrier : ils restent verrouillés
+// tant qu'on ne les aura pas branchés.
 const BADGES = [
-  { v:'9/11',   l:['compo'] },
-  { v:'10/11',  l:['compo'] },
-  { v:'11/11',  l:['compo'] },
-  { v:'100',    l:['score'] },
-  { v:'80',     l:['au match'] },
-  { v:'85',     l:['au match'] },
-  { v:'90',     l:['au match'] },
-  { v:'95',     l:['au match'] },
-  { v:'90',     l:['possession'] },
-  { v:'95',     l:['possession'] },
-  { v:'90',     l:['tirs'] },
-  { v:'95',     l:['tirs'] },
-  { v:'90',     l:['fautes'] },
-  { v:'95',     l:['fautes'] },
-  { v:'90',     l:['centres'] },
-  { v:'95',     l:['centres'] },
-  { v:'1er',    l:['prono'] },
-  { v:'5',      l:['pronos', "d'affilée"] },
-  { v:'10',     l:['pronos', "d'affilée"] },
-  { v:'3 × 80', l:['au match', "d'affilée"], small:true }
+  { v:'9/11',   l:['compo'],       cat:'composition', min:81.8 },
+  { v:'10/11',  l:['compo'],       cat:'composition', min:90.9 },
+  { v:'11/11',  l:['compo'],       cat:'composition', min:99.9 },
+  { v:'100',    l:['score'],       cat:'score',       min:99.9 },
+  { v:'80',     l:['au match'],    cat:'total',       min:80 },
+  { v:'85',     l:['au match'],    cat:'total',       min:85 },
+  { v:'90',     l:['au match'],    cat:'total',       min:90 },
+  { v:'95',     l:['au match'],    cat:'total',       min:95 },
+  { v:'90',     l:['possession'],  cat:'possession',  min:90 },
+  { v:'95',     l:['possession'],  cat:'possession',  min:95 },
+  { v:'90',     l:['tirs'],        cat:'shots',       min:90 },
+  { v:'95',     l:['tirs'],        cat:'shots',       min:95 },
+  { v:'90',     l:['fautes'],      cat:'fouls',       min:90 },
+  { v:'95',     l:['fautes'],      cat:'fouls',       min:95 },
+  { v:'90',     l:['centres'],     cat:'centres',     min:90 },
+  { v:'95',     l:['centres'],     cat:'centres',     min:95 },
+  { v:'1er',    l:['prono'],       cat:'serie' },
+  { v:'5',      l:['pronos', "d'affilée"], cat:'serie' },
+  { v:'10',     l:['pronos', "d'affilée"], cat:'serie' },
+  { v:'3 × 80', l:['au match', "d'affilée"], cat:'serie', small:true }
 ];
+
+// Renvoie les badges décrochés sur CE match. Les notes viennent telles quelles
+// du serveur : aucune règle n'est recalculée ici, on ne fait que comparer.
+function badgesForMatch(stats){
+  const team = (stats && stats.result && stats.result.team) ? stats.result.team : null;
+  if(!team) return [];
+  const value = {
+    composition: team.composition ? team.composition.formula : null,
+    score:       team.score ? team.score.formula : null,
+    possession:  team.possession ? team.possession.formula : null,
+    shots:       team.shots ? team.shots.formula : null,
+    fouls:       team.fouls ? team.fouls.formula : null,
+    centres:     team.crosses ? team.crosses.formula : null,
+    total:       (team.total !== undefined && team.total !== null) ? team.total : null
+  };
+  return BADGES.filter(b => {
+    if(b.cat === 'serie') return false;
+    const v = value[b.cat];
+    return (v !== null && v !== undefined) && v >= b.min - 0.001;
+  });
+}
+
+function renderResultsBadges(stats){
+  const el = document.getElementById('results-badges');
+  if(!el) return;
+  const won = badgesForMatch(stats);
+  const link = '<span class="small-link badge-link" onclick="goToBadges()">Voir tous les badges à débloquer</span>';
+  if(won.length === 0){
+    el.innerHTML = '<div class="results-badges-title">Aucun badge sur ce match. Il y en a vingt à décrocher.</div>' + link;
+    return;
+  }
+  el.innerHTML = '<div class="results-badges-title">Voilà les badges que tu as débloqués</div>'
+    + '<div class="results-badges-row">' + won.map(b => '<div class="results-badge">' + badgeSvg(b, true) + '</div>').join('') + '</div>'
+    + link;
+}
+
 
 function badgeSvg(b, unlocked){
   const fill   = unlocked ? '#e8b923' : 'var(--bg)';
@@ -2754,10 +2817,54 @@ function badgeSvg(b, unlocked){
        + lines + `</svg>`;
 }
 
-function goToBadges(){
+// Identifiant unique d'un badge, pour comparer sans se fier à l'ordre.
+function badgeKey(b){ return b.v + '|' + b.l.join(' '); }
+
+// La page complète part de l'historique du joueur : chaque match noté est
+// relu, les badges décrochés sont réunis, et l'union allume les hexagones.
+// Rien n'est stocké, rien n'est recalculé : on ne fait que comparer les notes
+// que le serveur a déjà produites.
+async function goToBadges(){
   const grid = document.getElementById('badge-grid');
+  const countEl = document.getElementById('badge-count');
+
+  // Affichage immédiat, tout verrouillé, pour que la page ne reste jamais
+  // blanche pendant que l'historique se charge.
   grid.innerHTML = BADGES.map(b => badgeSvg(b, false)).join('');
+  if(countEl) countEl.textContent = '';
   switchView('badges');
+
+  try{
+    const userId = getUserId();
+    const teamId = await getPsgTeamId();
+    const histJson = await fetch(`${API_BASE}/UserStats/ByUserTeam/${userId}/${teamId}?page=1&limit=50`).then(r => r.json());
+    const rows = (histJson.success && histJson.data && histJson.data.page) ? histJson.data.page : [];
+
+    const noted = rows.filter(r => r.score).map(r => r.matchId);
+    const allStats = await Promise.all(noted.map(id =>
+      fetch(`${API_BASE}/UserStats/ByUserMatchTeam/${userId}/${id}/${teamId}`)
+        .then(r => r.json())
+        .then(j => (j.success && j.data) ? j.data : null)
+        .catch(() => null)
+    ));
+
+    const unlocked = new Set();
+    allStats.forEach(st => { if(st) badgesForMatch(st).forEach(b => unlocked.add(badgeKey(b))); });
+
+    // « 1er prono » se mérite dès l'enregistrement du premier pronostic,
+    // sans attendre que le match soit joué ni noté.
+    if(rows.length > 0) unlocked.add('1er|prono');
+
+    grid.innerHTML = BADGES.map(b => badgeSvg(b, unlocked.has(badgeKey(b)))).join('');
+    if(countEl){
+      const n = unlocked.size;
+      countEl.textContent = n === 0
+        ? 'Aucun badge débloqué pour le moment'
+        : n + (n > 1 ? ' badges débloqués sur 20' : ' badge débloqué sur 20');
+    }
+  }catch(e){
+    // Historique indisponible : la page reste lisible, tout verrouillé.
+  }
 }
 
 function navFromMenu(name){
