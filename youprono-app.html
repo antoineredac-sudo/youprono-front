@@ -1019,7 +1019,7 @@
     </section>
     <section id="view-play" class="view" style="display:none;">
       <h2 class="play-title">Choisis tes 11 titulaires</h2>
-      <span class="back-link" onclick="switchView('home')">← Retour à l'accueil</span>
+      <span class="back-link" id="play-back-link" onclick="leaveComposition()">← Retour à l'accueil</span>
 
       <div class="squad-count" id="squad-count">0 / 11 joueurs sélectionnés</div>
 
@@ -1175,7 +1175,7 @@
       <div class="recap-section">
         <div class="recap-label-row">
           <div class="recap-label">Composition</div>
-          <span class="recap-edit-link" onclick="switchView('play'); renderSquad();">Modifier</span>
+          <span class="recap-edit-link" onclick="editCompositionFromRecap()">Modifier</span>
         </div>
         <div class="recap-value" id="recap-players"></div>
       </div>
@@ -1185,11 +1185,11 @@
         <div class="recap-edit-row">
           <div class="recap-edit-field">
             <label>PSG</label>
-            <input type="number" step="0.1" min="0" max="100" id="recap-possession-psg">
+            <input type="number" step="0.1" min="0" max="100" id="recap-possession-psg" oninput="syncPossession('psg')">
           </div>
           <div class="recap-edit-field">
             <label id="recap-possession-opp-label">Adversaire</label>
-            <input type="number" step="0.1" min="0" max="100" id="recap-possession-opp">
+            <input type="number" step="0.1" min="0" max="100" id="recap-possession-opp" oninput="syncPossession('opp')">
           </div>
         </div>
       </div>
@@ -2396,7 +2396,42 @@ let predictionDraft = { players: [], team: {}, opponent: {} };
 const POSITION_ORDER = { 'Gardien':0, 'Défenseur':1, 'Milieu':2, 'Attaquant':3 };
 const POSITION_PLURAL = { 'Gardien':'Gardiens', 'Défenseur':'Défenseurs', 'Milieu':'Milieux', 'Attaquant':'Attaquants' };
 
+// Quand on retouche la composition depuis le récapitulatif, on ne veut pas
+// refaire les cinq écrans du tunnel : on revient droit au récapitulatif dès
+// les onze joueurs validés. Ce drapeau mémorise d'où l'on vient.
+var editingCompositionFromRecap = false;
+
+async function editCompositionFromRecap(){
+  editingCompositionFromRecap = true;
+  pickedPlayerIds = [...predictionDraft.players];
+  document.getElementById('composition-next-btn').textContent = 'Valider la composition';
+  document.getElementById('play-back-link').textContent = '← Retour au récapitulatif';
+  switchView('play');
+  await enterCompositionScreen();
+}
+
+// Remet l'écran composition dans son état normal, celui du tunnel complet.
+function resetCompositionScreen(){
+  editingCompositionFromRecap = false;
+  document.getElementById('composition-next-btn').textContent = 'Suivant';
+  document.getElementById('play-back-link').textContent = '← Retour à l\'accueil';
+}
+
+function leaveComposition(){
+  if(editingCompositionFromRecap){
+    // On abandonne la retouche : le récapitulatif retrouve la composition
+    // enregistrée, celle du pronostic, et non la sélection en cours.
+    pickedPlayerIds = [...predictionDraft.players];
+    resetCompositionScreen();
+    switchView('recap');
+    renderRecap();
+    return;
+  }
+  switchView('home');
+}
+
 async function goToComposition(){
+  resetCompositionScreen();
   switchView('play');
   await enterCompositionScreen();
 }
@@ -2449,8 +2484,34 @@ function togglePlayer(id){
 
 function goToNextStep(){
   predictionDraft.players = [...pickedPlayerIds];
+  if(editingCompositionFromRecap){
+    resetCompositionScreen();
+    switchView('recap');
+    renderRecap();
+    return;
+  }
   switchView('possession');
   enterPossessionScreen();
+}
+
+// Les deux parts de possession font toujours 100 à elles deux : on complète
+// l'autre champ dès qu'on touche à l'un des deux. Un champ vidé est laissé
+// tranquille, le temps que la personne finisse de taper.
+function syncPossession(source){
+  const psg = document.getElementById('recap-possession-psg');
+  const opp = document.getElementById('recap-possession-opp');
+  const saisi = source === 'psg' ? psg : opp;
+  const autre = source === 'psg' ? opp : psg;
+
+  if(saisi.value === '') return;
+
+  let val = parseFloat(saisi.value);
+  if(isNaN(val)) return;
+  if(val < 0) val = 0;
+  if(val > 100) val = 100;
+
+  const reste = Math.round((100 - val) * 10) / 10;
+  autre.value = reste;
 }
 
 // ===== ÉCRAN DE POSSESSION =====
