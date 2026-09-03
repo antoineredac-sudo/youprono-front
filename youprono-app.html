@@ -1620,6 +1620,23 @@ async function getPsgTeamId(){
   return psgTeamIdCache;
 }
 
+// Le serveur renvoie parfois un nom d'équipe vide pour les équipes créées
+// depuis la console admin. On essaie les champs connus dans l'ordre avant
+// d'abandonner, et on identifie le PSG par son identifiant plutôt que par
+// son nom, qui peut justement être celui qui manque.
+function teamLabel(t, fallback){
+  if(!t) return fallback || 'Adversaire';
+  const n = t.name || t.shortName || t.officialName || t.displayName || t.code;
+  const clean = (n === undefined || n === null) ? '' : String(n).trim();
+  if(clean && clean !== 'null' && clean !== 'undefined') return clean;
+  return fallback || 'Adversaire';
+}
+function isPsgSide(t){
+  if(!t) return false;
+  if(psgTeamIdCache && t.id) return t.id === psgTeamIdCache;
+  return String(t.name || '').indexOf('Paris') === 0;
+}
+
 function formatMatchDate(d){
   const jour = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
   const heure = d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
@@ -2005,9 +2022,15 @@ async function enterResultsScreen(matchId){
 function renderResults(prediction, stats, matchDetail){
   const real = extractRealStats(stats.matchResult);
 
+  // Les noms d'équipe sont lus en priorité sur le détail du match — la même
+  // source que le calendrier, celle qui affiche correctement « AS Monaco ».
+  // La note du match ne sert plus que de secours.
+  const homeLabel = teamLabel(matchDetail.homeTeam, teamLabel(stats.matchResult.homeTeam, 'Domicile'));
+  const awayLabel = teamLabel(matchDetail.awayTeam, teamLabel(stats.matchResult.awayTeam, 'Extérieur'));
+
   document.getElementById('results-score-line').textContent =
-    stats.matchResult.homeTeam.name + ' ' + stats.matchResult.homeTeam.score +
-    ' – ' + stats.matchResult.awayTeam.score + ' ' + stats.matchResult.awayTeam.name;
+    homeLabel + ' ' + stats.matchResult.homeTeam.score +
+    ' – ' + stats.matchResult.awayTeam.score + ' ' + awayLabel;
   document.getElementById('results-date').textContent = formatMatchDate(new Date(stats.matchResult.dateTime));
 
   const totalNote = stats.result.team.total || 0;
@@ -2015,7 +2038,11 @@ function renderResults(prediction, stats, matchDetail){
   document.getElementById('results-rank').textContent =
     stats.result.rank > 0 ? 'Classé ' + stats.result.rank + '/' + stats.nblayer + ' sur ce match' : '';
 
-  const opponentName = getOpponentName();
+  // L'adversaire affiché doit être celui de CE match. getOpponentName() lisait
+  // currentMatch, c'est-à-dire le prochain match du calendrier : sur un résultat
+  // passé, les lignes de détail portaient le nom de la mauvaise équipe.
+  const psgIsHome = isPsgSide(matchDetail.homeTeam);
+  const opponentName = psgIsHome ? awayLabel : homeLabel;
 
   const categories = [
     { key:'possession', label:'Possession', unit:'%' },
@@ -2045,8 +2072,7 @@ function renderResults(prediction, stats, matchDetail){
       </div>`;
   });
 
-  const isPsgHome = matchDetail.homeTeam.name === 'Paris Saint-Germain';
-  const realTeamPlayers = (isPsgHome ? matchDetail.homeTeam.players : matchDetail.awayTeam.players) || [];
+  const realTeamPlayers = (psgIsHome ? matchDetail.homeTeam.players : matchDetail.awayTeam.players) || [];
   const realIds = new Set(realTeamPlayers.map(p => p.id));
 
   const predictedNamesHtml = prediction.players.map(id => {
@@ -2440,9 +2466,10 @@ async function loadDashboard(){
     const userId = getUserId();
     const teamId = await getPsgTeamId();
 
-    const [globalRes, historyRes] = await Promise.all([
+    const [globalRes, historyRes, matchesRes] = await Promise.all([
       fetch(`${API_BASE}/UserStats/GlobalStats/${userId}/${teamId}`).then(r => r.json()),
-      fetch(`${API_BASE}/UserStats/ByUserTeam/${userId}/${teamId}?page=1&limit=10`).then(r => r.json())
+      fetch(`${API_BASE}/UserStats/ByUserTeam/${userId}/${teamId}?page=1&limit=10`).then(r => r.json()),
+      fetch(`${API_BASE}/Match/ByTeamId/${teamId}?limit=50`).then(r => r.json()).catch(() => null)
     ]);
 
     if(!globalRes.success){
@@ -2465,16 +2492,31 @@ async function loadDashboard(){
     const history = (historyRes.success && historyRes.data && historyRes.data.page) ? historyRes.data.page : [];
     const historyEl = document.getElementById('dash-history');
 
+    // Table de correspondance match → adversaire, construite depuis la même
+    // source que le calendrier. Le champ opponent livré avec l'historique est
+    // parfois vide ; celui-ci ne l'est pas. Si la requête échoue, on retombe
+    // simplement sur l'ancien comportement.
+    const opponentByMatch = {};
+    try{
+      const list = (matchesRes && matchesRes.success && matchesRes.data && matchesRes.data.page) ? matchesRes.data.page : [];
+      list.forEach(m => {
+        const opp = isPsgSide(m.homeTeam) ? teamLabel(m.awayTeam, '') : teamLabel(m.homeTeam, '');
+        if(m.id && opp && opp !== 'Adversaire') opponentByMatch[m.id] = opp;
+      });
+    }catch(e){}
+
     if(history.length === 0){
       historyEl.innerHTML = '<div class="placeholder">Aucun match pronostiqué pour l\'instant.</div>';
     } else {
       historyEl.innerHTML = history.map(h => {
         const dateLabel = new Date(h.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
         const scoreLabel = h.score ? fmtNote(h.score) : 'en attente';
-        // Le serveur renvoie parfois un adversaire vide : les équipes créées
-        // depuis la console n'ont pas de nom officiel renseigné. Plutôt que
-        // d'afficher "vs null", on n'affiche alors que la date.
-        const matchLabel = h.opponent ? 'vs ' + h.opponent + ' · ' + dateLabel : dateLabel;
+        // On prend d'abord le nom trouvé dans le calendrier, puis celui livré
+        // avec l'historique, et en dernier recours la date seule plutôt qu'un
+        // "vs null".
+        const rawOpp = (h.opponent === undefined || h.opponent === null) ? '' : String(h.opponent).trim();
+        const opponent = opponentByMatch[h.matchId] || ((rawOpp && rawOpp !== 'null') ? rawOpp : '');
+        const matchLabel = opponent ? 'vs ' + opponent + ' · ' + dateLabel : dateLabel;
         return `
           <div class="dash-history-row" onclick="goToResults('${h.matchId}')">
             <span class="dash-history-match">${matchLabel}</span>
