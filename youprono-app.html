@@ -778,6 +778,13 @@
     font-weight:600;
     text-align:center;
   }
+  .badge-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px 6px;
+    margin:20px 0 24px 0;
+  }
+  .badge-grid svg{ width:100%; height:auto; display:block; }
   .trophy-case{
     background:var(--surface);
     border:1px solid var(--border);
@@ -1071,6 +1078,7 @@
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="groups" onclick="navFromMenu('groups')">Groupes</button>
       <button data-view="trophies" onclick="navFromMenu('trophies')">Mes trophées</button>
+      <button data-view="badges" onclick="navFromMenu('badges')">Mes badges</button>
       <button data-view="invite" onclick="navFromMenu('invite')">Inviter un ami</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Profil</button>
@@ -1576,6 +1584,15 @@
       </div>
 
       <p class="trophy-note">Chaque fin de mini-championnat, les mieux classés de chaque groupe reçoivent une médaille. Plus le groupe compte de joueurs, plus le métal est précieux. Les médailles remplissent ta coupe — une fois pleine, elle rejoint ta vitrine et une nouvelle commence.</p>
+
+      <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
+    </section>
+    <section id="view-badges" class="view" style="display:none;">
+      <h2 class="play-title">MES BADGES</h2>
+
+      <p class="trophy-pitch">Chaque coup d'éclat débloque un badge, dès le premier match</p>
+
+      <div class="badge-grid" id="badge-grid"></div>
 
       <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
@@ -2691,6 +2708,58 @@ function closeMenu(){
   document.getElementById('dropdown-menu').style.display = 'none';
 }
 
+// ===== BADGES =====
+// Vingt badges, cinq lignes de quatre. Rien n'est stocké : le jour où on les
+// branchera, l'état débloqué se recalculera à partir de l'historique du joueur.
+const BADGES = [
+  { v:'9/11',   l:['compo'] },
+  { v:'10/11',  l:['compo'] },
+  { v:'11/11',  l:['compo'] },
+  { v:'100',    l:['score'] },
+  { v:'80',     l:['au match'] },
+  { v:'85',     l:['au match'] },
+  { v:'90',     l:['au match'] },
+  { v:'95',     l:['au match'] },
+  { v:'90',     l:['possession'] },
+  { v:'95',     l:['possession'] },
+  { v:'90',     l:['tirs'] },
+  { v:'95',     l:['tirs'] },
+  { v:'90',     l:['fautes'] },
+  { v:'95',     l:['fautes'] },
+  { v:'90',     l:['centres'] },
+  { v:'95',     l:['centres'] },
+  { v:'1er',    l:['prono'] },
+  { v:'5',      l:['pronos', "d'affilée"] },
+  { v:'10',     l:['pronos', "d'affilée"] },
+  { v:'3 × 80', l:['au match', "d'affilée"], small:true }
+];
+
+function badgeSvg(b, unlocked){
+  const fill   = unlocked ? '#e8b923' : 'var(--bg)';
+  const stroke = unlocked ? '#c79a2e' : '#6b7dc4';
+  const dash   = unlocked ? '' : ' stroke-dasharray="5 5"';
+  const ink    = unlocked ? '#6e5210' : '#8b99d0';
+  const vSize  = b.small ? 17 : 20;
+  let lines;
+  if(b.l.length === 1){
+    lines = `<text x="46" y="50" text-anchor="middle" fill="${ink}" font-size="${vSize}" font-weight="600">${b.v}</text>`
+          + `<text x="46" y="69" text-anchor="middle" fill="${ink}" font-size="12">${b.l[0]}</text>`;
+  } else {
+    lines = `<text x="46" y="44" text-anchor="middle" fill="${ink}" font-size="${vSize}" font-weight="600">${b.v}</text>`
+          + `<text x="46" y="63" text-anchor="middle" fill="${ink}" font-size="12">${b.l[0]}</text>`
+          + `<text x="46" y="79" text-anchor="middle" fill="${ink}" font-size="12">${b.l[1]}</text>`;
+  }
+  return `<svg viewBox="0 0 92 104" aria-hidden="true">`
+       + `<polygon points="46,2 90,27 90,77 46,102 2,77 2,27" fill="${fill}" stroke="${stroke}" stroke-width="2"${dash}/>`
+       + lines + `</svg>`;
+}
+
+function goToBadges(){
+  const grid = document.getElementById('badge-grid');
+  grid.innerHTML = BADGES.map(b => badgeSvg(b, false)).join('');
+  switchView('badges');
+}
+
 function navFromMenu(name){
   closeMenu();
   if(name === 'home'){ switchView('home'); }
@@ -2698,6 +2767,7 @@ function navFromMenu(name){
   else if(name === 'groups'){ goToGroups(); }
   else if(name === 'ranking'){ goToRanking(); }
   else if(name === 'trophies'){ switchView('trophies'); }
+  else if(name === 'badges'){ goToBadges(); }
   else if(name === 'invite'){ switchView('invite'); }
   else if(name === 'profile'){ goToProfile(); }
   else if(name === 'faq'){ switchView('faq'); }
