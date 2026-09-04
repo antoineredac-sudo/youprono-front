@@ -1165,6 +1165,7 @@
 
     <div class="dropdown-menu" id="dropdown-menu" style="display:none;">
       <button data-view="home" onclick="navFromMenu('home')">Prochain match</button>
+      <button data-view="myprono" onclick="navFromMenu('myprono')">Mon pronostic</button>
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Mon profil</button>
       <button data-view="groups" onclick="navFromMenu('groups')">Mes groupes</button>
@@ -1454,6 +1455,33 @@
       </div>
 
       <button class="cta-play" style="margin-top:24px;" onclick="submitPrediction()" id="submit-prediction-btn">Valider mon prono</button>
+    </section>
+    <section id="view-myprono" class="view" style="display:none;">
+      <div id="myprono-loading" class="placeholder">Chargement de ton pronostic…</div>
+      <div id="myprono-empty" class="placeholder" style="display:none;"></div>
+
+      <div id="myprono-content" style="display:none;">
+        <div id="myprono-noted-banner" style="display:none;" onclick="goToResults()">
+          <div class="prev-match-banner">
+            <div class="prev-match-info">
+              Ce match est noté
+              <small>Découvre ta note et le détail par catégorie</small>
+            </div>
+            <span class="prev-match-cta">Ma note →</span>
+          </div>
+        </div>
+
+        <div class="results-banner">
+          <div class="results-score-line" id="myprono-match-line"></div>
+          <div class="results-date" id="myprono-match-date"></div>
+        </div>
+
+        <div id="myprono-detail"></div>
+
+        <p class="deadline-note" id="myprono-footnote"></p>
+      </div>
+
+      <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
     <section id="view-results" class="view" style="display:none;">
       <div id="results-loading" class="placeholder">Chargement des résultats…</div>
@@ -1920,12 +1948,7 @@ function updateCountdown(){
   document.getElementById('cd-minutes').textContent = String(minutes).padStart(2,'0');
   document.getElementById('cd-seconds').textContent = String(seconds).padStart(2,'0');
 
-  const btn = document.getElementById('home-play-btn');
-  if(btn && predictionsDeadline){
-    const closed = now >= predictionsDeadline;
-    btn.disabled = closed;
-    btn.textContent = closed ? 'Pronostics fermés' : (hasPredictionForCurrentMatch ? 'Modifier mon prono' : 'Jouer');
-  }
+  updatePlayButtonLabel();
 }
 
 async function loadHomeMatch(){
@@ -2148,12 +2171,34 @@ function renderCompoNote(predictedIds){
     "Ce n'est qu'une partie de ton score. Tu découvriras ta note globale quelques minutes après la fin du match.";
 }
 
+// Un seul endroit décide de ce que fait ce bouton. Avant, le compte à rebours
+// changeait le texte chaque seconde pendant que cette fonction changeait l'action :
+// à la fermeture des pronos, le bouton affichait « Pronostics fermés » mais gardait
+// l'ancien clic. Tout est désormais réglé ici, texte et action ensemble.
 function updatePlayButtonLabel(){
   const btn = document.getElementById('home-play-btn');
-  if(btn){
-    btn.textContent = hasPredictionForCurrentMatch ? 'Modifier mon prono' : 'Jouer';
-    btn.onclick = hasPredictionForCurrentMatch ? jumpToEditRecap : goToComposition;
+  if(!btn) return;
+
+  const closed = predictionsDeadline ? (new Date() >= predictionsDeadline) : false;
+
+  if(closed){
+    if(hasPredictionForCurrentMatch){
+      // Le joueur a joué et ne peut plus rien changer : le bouton devient
+      // la porte d'entrée vers sa feuille de match.
+      btn.disabled = false;
+      btn.textContent = 'Voir mon pronostic';
+      btn.onclick = goToMyProno;
+    } else {
+      btn.disabled = true;
+      btn.textContent = 'Pronostics fermés';
+      btn.onclick = null;
+    }
+    return;
   }
+
+  btn.disabled = false;
+  btn.textContent = hasPredictionForCurrentMatch ? 'Modifier mon prono' : 'Jouer';
+  btn.onclick = hasPredictionForCurrentMatch ? jumpToEditRecap : goToComposition;
 }
 
 async function jumpToEditRecap(){
@@ -2176,6 +2221,157 @@ async function jumpToEditRecap(){
     switchView('recap');
     renderRecap();
   }
+}
+
+// ===== ÉCRAN « MON PRONOSTIC » =====
+// La feuille de match du joueur, en lecture seule, entre la fermeture des
+// pronostics et la publication de la note. C'est le document qu'il garde
+// sous les yeux pendant les 90 minutes.
+//
+// Cet écran ne se fie pas au match affiché sur l'accueil : au coup d'envoi,
+// le match en cours quitte la liste des « prochains matchs » et l'accueil
+// bascule sur le suivant. Il cherche donc lui-même, dans cet ordre :
+//   1. le prochain match du calendrier, si ses pronostics sont déjà fermés
+//   2. le dernier match joué
+// et retient le premier des deux pour lequel ce joueur a un pronostic.
+
+function isMatchPlayed(m){
+  return String((m && m.status) || '').toLowerCase() === 'played';
+}
+
+async function findMyPronoMatch(){
+  const teamId = await getPsgTeamId();
+  const userId = getUserId();
+  if(!userId) return { state:'none' };
+
+  const [calJson, prevJson] = await Promise.all([
+    fetch(`${API_BASE}/Match/ByTeamId/${teamId}?OnlyNextMatches=true&limit=8`).then(r=>r.json()).catch(()=>null),
+    fetch(`${API_BASE}/Match/Previous/${teamId}`).then(r=>r.json()).catch(()=>null)
+  ]);
+
+  const candidates = [];
+  let nextStillOpen = null;
+
+  const upcoming = (calJson && calJson.success && calJson.data && calJson.data.page) ? calJson.data.page : [];
+  if(upcoming.length){
+    const next = upcoming[0];
+    const closesAt = new Date(new Date(next.dateTime).getTime() - 24*60*60*1000);
+    if(new Date() >= closesAt) candidates.push(next);
+    else nextStillOpen = next;
+  }
+
+  if(prevJson && prevJson.success && prevJson.data) candidates.push(prevJson.data);
+
+  for(let i=0; i<candidates.length; i++){
+    const m = candidates[i];
+    const res = await fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${m.id}/${teamId}`)
+      .then(r=>r.json()).catch(()=>null);
+    if(res && res.success && res.data){
+      return { state:'ok', match:m, prediction:res.data };
+    }
+  }
+
+  // Rien de fermé à montrer. Si les pronostics du prochain match sont encore
+  // ouverts, on le dit plutôt que d'afficher un écran vide.
+  if(nextStillOpen) return { state:'open' };
+  return { state:'none' };
+}
+
+async function goToMyProno(){
+  switchView('myprono');
+  document.getElementById('myprono-loading').style.display = 'block';
+  document.getElementById('myprono-empty').style.display = 'none';
+  document.getElementById('myprono-content').style.display = 'none';
+
+  try{
+    const found = await findMyPronoMatch();
+
+    if(found.state !== 'ok'){
+      document.getElementById('myprono-loading').style.display = 'none';
+      const empty = document.getElementById('myprono-empty');
+      empty.textContent = (found.state === 'open')
+        ? "Les pronostics du prochain match sont encore ouverts. Tu retrouveras ta feuille de match ici dès qu'ils seront fermés."
+        : "Tu n'as pas de pronostic en cours pour l'instant.";
+      empty.style.display = 'block';
+      return;
+    }
+
+    await ensureSquadLoaded();
+    renderMyProno(found.match, found.prediction);
+
+    document.getElementById('myprono-loading').style.display = 'none';
+    document.getElementById('myprono-content').style.display = 'block';
+  }catch(e){
+    document.getElementById('myprono-loading').style.display = 'none';
+    const empty = document.getElementById('myprono-empty');
+    empty.textContent = "Impossible de charger ton pronostic. Réessaie dans un instant.";
+    empty.style.display = 'block';
+  }
+}
+
+function renderMyProno(match, prediction){
+  const homeLabel = teamLabel(match.homeTeam, 'Domicile');
+  const awayLabel = teamLabel(match.awayTeam, 'Extérieur');
+  const psgIsHome = isPsgSide(match.homeTeam);
+  const opponentName = psgIsHome ? awayLabel : homeLabel;
+
+  document.getElementById('myprono-match-line').textContent = homeLabel + ' – ' + awayLabel;
+  document.getElementById('myprono-match-date').textContent =
+    "Coup d'envoi : " + formatMatchDate(new Date(match.dateTime));
+
+  // Si le match est déjà noté, on ne cache pas la vraie porte : la note.
+  const noted = isMatchPlayed(match);
+  document.getElementById('myprono-noted-banner').style.display = noted ? 'block' : 'none';
+
+  const noms = (prediction.players || []).map(id => {
+    const p = squadData.find(sp => sp.id === id);
+    return p ? p.firstName + ' ' + p.lastName : '—';
+  });
+  const moitie = Math.ceil(noms.length / 2);
+  const colonne = (arr) => arr.map(n => `<span class="compo-name">${n}</span>`).join('');
+
+  let html = `
+    <div class="result-category">
+      <div class="result-cat-head">
+        <span class="result-cat-name">Ton onze de départ</span>
+        <span class="result-cat-points">${noms.length}/11</span>
+      </div>
+      <div class="compo-compare">
+        <div class="compo-col">${colonne(noms.slice(0, moitie))}</div>
+        <div class="compo-col">${colonne(noms.slice(moitie))}</div>
+      </div>
+    </div>`;
+
+  const categories = [
+    { key:'possession', label:'Possession', unit:' %' },
+    { key:'shots', label:'Tirs', unit:'' },
+    { key:'fouls', label:'Fautes', unit:'' },
+    { key:'crosses', label:'Centres', unit:'' },
+    { key:'score', label:'Score', unit:'' }
+  ];
+
+  categories.forEach(cat => {
+    html += `
+      <div class="result-category">
+        <div class="result-cat-head">
+          <span class="result-cat-name">${cat.label}</span>
+        </div>
+        <div class="result-cat-row">
+          <span>PSG</span>
+          <span><b>${fmtNum(prediction.team[cat.key])}${cat.unit}</b></span>
+        </div>
+        <div class="result-cat-row">
+          <span>${opponentName}</span>
+          <span><b>${fmtNum(prediction.opponent[cat.key])}${cat.unit}</b></span>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById('myprono-detail').innerHTML = html;
+
+  document.getElementById('myprono-footnote').textContent = noted
+    ? "Ce pronostic est figé : le match a été noté."
+    : "Ton pronostic est figé depuis la fermeture. Ta note tombera quelques minutes après le coup de sifflet final.";
 }
 
 // ===== ÉCRAN RÉSULTATS =====
@@ -3049,6 +3245,7 @@ function closeMatchNotification(destination){
 function navFromMenu(name){
   closeMenu();
   if(name === 'home'){ switchView('home'); }
+  else if(name === 'myprono'){ goToMyProno(); }
   else if(name === 'results'){ goToResults(); }
   else if(name === 'groups'){ goToGroups(); }
   else if(name === 'ranking'){ goToRanking(); }
