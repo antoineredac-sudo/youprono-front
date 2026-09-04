@@ -1200,7 +1200,6 @@
 
     <div class="dropdown-menu" id="dropdown-menu" style="display:none;">
       <button data-view="home" onclick="navFromMenu('home')">Prochain match</button>
-      <button data-view="myprono" onclick="navFromMenu('myprono')">Mon pronostic</button>
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Mon profil</button>
       <button data-view="groups" onclick="navFromMenu('groups')">Mes groupes</button>
@@ -3411,6 +3410,9 @@ function closeMatchNotification(destination){
 function navFromMenu(name){
   closeMenu();
   if(name === 'home'){ switchView('home'); }
+  // « Mon pronostic » n'a plus d'entrée dans le menu : le bouton de l'accueil
+  // y mène pendant toute la fenêtre utile. L'aiguillage reste ici, prêt à
+  // resservir si un bouton devait un jour y renvoyer à nouveau.
   else if(name === 'myprono'){ goToMyProno(); }
   else if(name === 'results'){ goToResults(); }
   else if(name === 'groups'){ goToGroups(); }
