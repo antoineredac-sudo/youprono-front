@@ -229,6 +229,41 @@
     text-transform:capitalize;
   }
 
+  /* --- Bandeau LIVE de l'accueil --- */
+  .live-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--red);
+    color:#fff;
+    font-family:'Oswald',sans-serif;
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:2px;
+    padding:6px 16px;
+    border-radius:6px;
+    margin-bottom:14px;
+  }
+  .live-badge.waiting{
+    background:var(--surface-raised);
+    border:1px solid var(--border);
+    color:var(--gold);
+    font-size:16px;
+    letter-spacing:1px;
+  }
+  .live-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:#fff;
+    animation:live-pulse 1.4s ease-in-out infinite;
+  }
+  .live-badge.waiting .live-dot{ display:none; }
+  @keyframes live-pulse{
+    0%,100%{ opacity:1; }
+    50%{ opacity:.15; }
+  }
+
   .countdown-label{
     color:var(--gold);
     font-size:13px;
@@ -1195,6 +1230,10 @@
       </div>
 
       <div id="home-match-card" class="match-card" style="display:none;">
+        <div class="live-badge" id="home-live-badge" style="display:none;">
+          <span class="live-dot"></span><span id="home-live-text">LIVE</span>
+        </div>
+
         <div class="match-competition" id="match-competition"></div>
         <div class="match-teams">
           <span id="match-home-name"></span>
@@ -1203,12 +1242,14 @@
         </div>
         <div class="match-date" id="match-date"></div>
 
-        <p class="countdown-label">Fin des pronos dans :</p>
-        <div class="countdown">
-          <div class="cd-unit"><span id="cd-days">00</span><small>jours</small></div>
-          <div class="cd-unit"><span id="cd-hours">00</span><small>heures</small></div>
-          <div class="cd-unit"><span id="cd-minutes">00</span><small>min</small></div>
-          <div class="cd-unit"><span id="cd-seconds">00</span><small>sec</small></div>
+        <div id="home-countdown-block">
+          <p class="countdown-label">Fin des pronos dans :</p>
+          <div class="countdown">
+            <div class="cd-unit"><span id="cd-days">00</span><small>jours</small></div>
+            <div class="cd-unit"><span id="cd-hours">00</span><small>heures</small></div>
+            <div class="cd-unit"><span id="cd-minutes">00</span><small>min</small></div>
+            <div class="cd-unit"><span id="cd-seconds">00</span><small>sec</small></div>
+          </div>
         </div>
 
         <button class="cta-play" id="home-play-btn" onclick="goToComposition()">Jouer</button>
@@ -1951,6 +1992,46 @@ function updateCountdown(){
   updatePlayButtonLabel();
 }
 
+// L'accueil a trois états.
+//   normal  : le prochain match du calendrier, avec son compte à rebours
+//   live    : un match a commencé mais ses résultats ne sont pas encore saisis,
+//             et le coup d'envoi remonte à moins de trois heures
+//   pending : même situation, mais au-delà de trois heures — le match est fini,
+//             on attend la saisie
+// Tant qu'un match n'est pas noté, l'accueil lui reste accroché. Il ne bascule
+// sur l'affiche suivante qu'une fois les statistiques officielles enregistrées.
+let homeMode = 'normal';
+const LIVE_WINDOW_MS = 3*60*60*1000;
+let homeRefreshInterval = null;
+
+// En LIVE, la page ne peut pas deviner qu'Antoine vient de saisir les
+// statistiques. On redemande donc l'état du match toutes les deux minutes,
+// et à chaque retour sur l'onglet. À la bascule, l'annonce de fin de match
+// s'ouvre d'elle-même : le joueur n'a rien à rafraîchir.
+function scheduleHomeRefresh(){
+  if(homeRefreshInterval){ clearInterval(homeRefreshInterval); homeRefreshInterval = null; }
+  if(homeMode !== 'live' && homeMode !== 'pending') return;
+
+  homeRefreshInterval = setInterval(async () => {
+    if(document.hidden) return;
+    const avant = homeMode;
+    await loadHomeMatch();
+    if(avant !== 'normal' && homeMode === 'normal'){ checkMatchNotification(); }
+  }, 120000);
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if(document.hidden) return;
+  if(homeMode !== 'live' && homeMode !== 'pending') return;
+  const avant = homeMode;
+  await loadHomeMatch();
+  if(avant !== 'normal' && homeMode === 'normal'){ checkMatchNotification(); }
+});
+
+function isMatchPlayed(m){
+  return String((m && m.status) || '').toLowerCase() === 'played';
+}
+
 async function loadHomeMatch(){
   try{
     const teamId = await getPsgTeamId();
@@ -1961,38 +2042,92 @@ async function loadHomeMatch(){
     ]);
 
     const upcoming = (calRes.success && calRes.data.page.length) ? calRes.data.page : [];
-    const match = upcoming.length ? upcoming[0] : null;
+    const previous = (prevRes.success && prevRes.data) ? prevRes.data : null;
+
+    // Le serveur classe les matchs par date : au coup d'envoi, celui du soir
+    // quitte les « prochains matchs » et devient le « match précédent ». C'est
+    // là qu'on va le rechercher pour le garder à l'écran.
+    const unscored = (previous && !isMatchPlayed(previous)) ? previous : null;
+
+    homeMode = 'normal';
+    let match = upcoming.length ? upcoming[0] : null;
+
+    if(unscored){
+      match = unscored;
+      homeMode = (Date.now() - new Date(unscored.dateTime).getTime() < LIVE_WINDOW_MS)
+        ? 'live' : 'pending';
+    }
 
     document.getElementById('home-loading').style.display = 'none';
+    document.getElementById('home-prev-match').style.display = 'none';
 
     if(!match){
       document.getElementById('home-no-match').style.display = 'block';
       return;
     }
 
+    document.getElementById('home-no-match').style.display = 'none';
     document.getElementById('home-match-card').style.display = 'block';
     currentMatch = match;
     document.getElementById('match-home-name').textContent = match.homeTeam.name;
     document.getElementById('match-away-name').textContent = match.awayTeam.name;
-    document.getElementById('match-competition').textContent =
-      (match.competition && match.competition.name) ? match.competition.name : 'Prochain match du PSG';
 
     matchKickoff = new Date(match.dateTime);
-    document.getElementById('match-date').textContent = "Coup d'envoi : " + formatMatchDate(matchKickoff);
 
-    predictionsDeadline = new Date(matchKickoff.getTime() - 24*60*60*1000);
-    document.getElementById('deadline-note').textContent =
-      "Les pronostics ferment toujours 24h avant le coup d'envoi, soit le " + formatMatchDate(predictionsDeadline) + '.';
+    const badge = document.getElementById('home-live-badge');
+    const badgeText = document.getElementById('home-live-text');
+    const countdownBlock = document.getElementById('home-countdown-block');
 
-    if(countdownInterval) clearInterval(countdownInterval);
-    updateCountdown();
-    countdownInterval = setInterval(updateCountdown, 1000);
+    if(homeMode === 'normal'){
+      badge.style.display = 'none';
+      countdownBlock.style.display = 'block';
+
+      document.getElementById('match-competition').textContent =
+        (match.competition && match.competition.name) ? match.competition.name : 'Prochain match du PSG';
+      document.getElementById('match-date').textContent = "Coup d'envoi : " + formatMatchDate(matchKickoff);
+
+      predictionsDeadline = new Date(matchKickoff.getTime() - 24*60*60*1000);
+      document.getElementById('deadline-note').textContent =
+        "Les pronostics ferment toujours 24h avant le coup d'envoi, soit le " + formatMatchDate(predictionsDeadline) + '.';
+
+      if(countdownInterval) clearInterval(countdownInterval);
+      updateCountdown();
+      countdownInterval = setInterval(updateCountdown, 1000);
+    } else {
+      // Plus de compte à rebours : il n'y a plus rien à attendre, les
+      // pronostics de ce match sont clos depuis la veille.
+      if(countdownInterval){ clearInterval(countdownInterval); countdownInterval = null; }
+      predictionsDeadline = null;
+
+      badge.style.display = 'inline-flex';
+      countdownBlock.style.display = 'none';
+
+      if(homeMode === 'live'){
+        badge.classList.remove('waiting');
+        badgeText.textContent = 'LIVE';
+        document.getElementById('match-competition').textContent = 'Match en cours';
+        document.getElementById('match-date').textContent =
+          "Coup d'envoi : " + formatMatchDate(matchKickoff);
+        document.getElementById('deadline-note').textContent =
+          "Les pronostics sont fermés. Suis le match avec ta feuille sous les yeux — ta note tombera après le coup de sifflet final.";
+      } else {
+        badge.classList.add('waiting');
+        badgeText.textContent = 'MATCH TERMINÉ';
+        document.getElementById('match-competition').textContent = 'Résultats en cours de saisie';
+        document.getElementById('match-date').textContent = formatMatchDate(matchKickoff);
+        document.getElementById('deadline-note').textContent =
+          "Les statistiques officielles n'ont pas encore été enregistrées. Dès qu'elles le seront, ta note apparaîtra et l'affiche du prochain match reviendra ici.";
+      }
+    }
 
     await checkExistingPrediction();
     checkOfficialComposition();
+    scheduleHomeRefresh();
 
-    // Calendrier des prochains matchs (les 3 suivants, sous la carte principale)
-    const rest = upcoming.slice(1);
+    // Calendrier des prochains matchs, sous la carte principale. En mode normal,
+    // la carte occupe déjà le premier match : on affiche les suivants. En LIVE,
+    // le match du jour n'est plus dans cette liste, donc on l'affiche entière.
+    const rest = (homeMode === 'normal') ? upcoming.slice(1) : upcoming;
     if(rest.length){
       document.getElementById('home-calendar-label').style.display = 'block';
       document.getElementById('home-calendar').innerHTML = rest.map(m => {
@@ -2008,23 +2143,43 @@ async function loadHomeMatch(){
             <span class="calendar-time">${timeLabel}</span>
           </div>`;
       }).join('');
+    } else {
+      document.getElementById('home-calendar-label').style.display = 'none';
+      document.getElementById('home-calendar').innerHTML = '';
     }
 
-    // Lien vers les résultats du match précédent, si un pronostic existait pour lui
-    if(prevRes.success && prevRes.data){
-      const prevMatch = prevRes.data;
+    // Lien vers les résultats du match précédent, si un pronostic existait pour lui.
+    // Un match non noté est déjà affiché en grand dans la carte du dessus : ce
+    // bandeau mènerait alors à un écran « pas encore joué ».
+    if(previous && !unscored){
+      const prevMatch = previous;
       const userId = getUserId();
       const predCheck = await fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${prevMatch.id}/${teamId}`).then(r=>r.json());
       if(predCheck.success && predCheck.data){
         const d = new Date(prevMatch.dateTime);
+
+        // Tant que l'annonce de fin de match n'a pas été ouverte, ce bandeau
+        // est la seule invitation visible : il le dit franchement. Une fois la
+        // note découverte, il redevient un simple raccourci.
+        let vue = false;
+        try{ vue = localStorage.getItem(LS_NOTIF + '_' + userId) === prevMatch.id; }catch(e){}
+
+        const titre = vue
+          ? `${prevMatch.homeTeam.name} / ${prevMatch.awayTeam.name}`
+          : 'Ta note est tombée';
+        const sousTitre = vue
+          ? d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' })
+          : `${prevMatch.homeTeam.name} / ${prevMatch.awayTeam.name}`;
+        const cta = vue ? 'Résultats →' : 'Voir ma note →';
+
         document.getElementById('home-prev-match').style.display = 'block';
         document.getElementById('home-prev-match').innerHTML = `
           <div class="prev-match-banner" onclick="goToResults('${prevMatch.id}')">
             <div class="prev-match-info">
-              ${prevMatch.homeTeam.name} / ${prevMatch.awayTeam.name}
-              <small>${d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' })}</small>
+              ${titre}
+              <small>${sousTitre}</small>
             </div>
-            <span class="prev-match-cta">Résultats →</span>
+            <span class="prev-match-cta">${cta}</span>
           </div>`;
       }
     }
@@ -2179,6 +2334,21 @@ function updatePlayButtonLabel(){
   const btn = document.getElementById('home-play-btn');
   if(!btn) return;
 
+  // Match en cours ou terminé non noté : plus rien à jouer, seulement sa
+  // feuille de match à relire.
+  if(homeMode === 'live' || homeMode === 'pending'){
+    if(hasPredictionForCurrentMatch){
+      btn.disabled = false;
+      btn.textContent = 'Voir mon pronostic';
+      btn.onclick = goToMyProno;
+    } else {
+      btn.disabled = true;
+      btn.textContent = "Tu n'as pas joué ce match";
+      btn.onclick = null;
+    }
+    return;
+  }
+
   const closed = predictionsDeadline ? (new Date() >= predictionsDeadline) : false;
 
   if(closed){
@@ -2234,10 +2404,6 @@ async function jumpToEditRecap(){
 //   1. le prochain match du calendrier, si ses pronostics sont déjà fermés
 //   2. le dernier match joué
 // et retient le premier des deux pour lequel ce joueur a un pronostic.
-
-function isMatchPlayed(m){
-  return String((m && m.status) || '').toLowerCase() === 'played';
-}
 
 async function findMyPronoMatch(){
   const teamId = await getPsgTeamId();
