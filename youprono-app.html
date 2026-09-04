@@ -2043,10 +2043,21 @@ async function loadHomeMatch(){
     const upcoming = (calRes.success && calRes.data.page.length) ? calRes.data.page : [];
     const previous = (prevRes.success && prevRes.data) ? prevRes.data : null;
 
-    // Le serveur classe les matchs par date : au coup d'envoi, celui du soir
-    // quitte les « prochains matchs » et devient le « match précédent ». C'est
-    // là qu'on va le rechercher pour le garder à l'écran.
-    const unscored = (previous && !isMatchPlayed(previous)) ? previous : null;
+    // Le serveur compare les dates en UTC alors que les coups d'envoi sont
+    // enregistrés en heure de Paris, sans fuseau. Un match reste donc rangé
+    // dans les « prochains matchs » pendant les deux heures qui suivent son
+    // début. On ne lui demande donc pas quel match est en cours : on compare
+    // nous-mêmes l'heure du coup d'envoi à celle du téléphone.
+    const maintenant = Date.now();
+    let unscored = null;
+
+    if(upcoming.length
+       && !isMatchPlayed(upcoming[0])
+       && new Date(upcoming[0].dateTime).getTime() <= maintenant){
+      unscored = upcoming[0];
+    } else if(previous && !isMatchPlayed(previous)){
+      unscored = previous;
+    }
 
     homeMode = 'normal';
     let match = upcoming.length ? upcoming[0] : null;
@@ -2126,7 +2137,9 @@ async function loadHomeMatch(){
     // Calendrier des prochains matchs, sous la carte principale. En mode normal,
     // la carte occupe déjà le premier match : on affiche les suivants. En LIVE,
     // le match du jour n'est plus dans cette liste, donc on l'affiche entière.
-    const rest = (homeMode === 'normal') ? upcoming.slice(1) : upcoming;
+    const rest = (homeMode === 'normal')
+      ? upcoming.slice(1)
+      : upcoming.filter(m => m.id !== match.id);
     if(rest.length){
       document.getElementById('home-calendar-label').style.display = 'block';
       document.getElementById('home-calendar').innerHTML = rest.map(m => {
