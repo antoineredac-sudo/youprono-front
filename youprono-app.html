@@ -2742,7 +2742,7 @@ function closeMenu(){
 }
 
 // ===== BADGES =====
-// Vingt badges, cinq lignes de quatre. Rien n'est stocké : le jour où on les
+// Vingt-quatre badges, six lignes de quatre. Rien n'est stocké : le jour où on les
 // branchera, l'état débloqué se recalculera à partir de l'historique du joueur.
 // cat désigne où lire la note, min le seuil à atteindre. Les badges marqués
 // 'serie' dépendent de l'historique et du calendrier : ils restent verrouillés
@@ -2757,13 +2757,17 @@ const BADGES = [
   { v:'90',     l:['au match'],    cat:'total',       min:90 },
   { v:'95',     l:['au match'],    cat:'total',       min:95 },
   { v:'90',     l:['possession'],  cat:'possession',  min:90 },
-  { v:'95',     l:['possession'],  cat:'possession',  min:95 },
   { v:'90',     l:['tirs'],        cat:'shots',       min:90 },
-  { v:'95',     l:['tirs'],        cat:'shots',       min:95 },
   { v:'90',     l:['fautes'],      cat:'fouls',       min:90 },
-  { v:'95',     l:['fautes'],      cat:'fouls',       min:95 },
   { v:'90',     l:['centres'],     cat:'centres',     min:90 },
-  { v:'95',     l:['centres'],     cat:'centres',     min:95 },
+  { v:'94',     l:['possession'],  cat:'possession',  min:94 },
+  { v:'94',     l:['tirs'],        cat:'shots',       min:94 },
+  { v:'94',     l:['fautes'],      cat:'fouls',       min:94 },
+  { v:'94',     l:['centres'],     cat:'centres',     min:94 },
+  { v:'98',     l:['possession'],  cat:'possession',  min:98 },
+  { v:'98',     l:['tirs'],        cat:'shots',       min:98 },
+  { v:'98',     l:['fautes'],      cat:'fouls',       min:98 },
+  { v:'98',     l:['centres'],     cat:'centres',     min:98 },
   { v:'1er',    l:['prono'],       cat:'serie' },
   { v:'5',      l:['pronos', "d'affilée"], cat:'serie' },
   { v:'10',     l:['pronos', "d'affilée"], cat:'serie' },
@@ -2797,7 +2801,7 @@ function renderResultsBadges(stats){
   const won = badgesForMatch(stats);
   const link = '<span class="small-link badge-link" onclick="goToBadges()">Voir tous les badges à débloquer</span>';
   if(won.length === 0){
-    el.innerHTML = '<div class="results-badges-title">Aucun badge sur ce match. Il y en a vingt à décrocher.</div>' + link;
+    el.innerHTML = '<div class="results-badges-title">Aucun badge sur ce match. Il y en a vingt-quatre à décrocher.</div>' + link;
     return;
   }
   el.innerHTML = '<div class="results-badges-title">Voilà les badges que tu as débloqués</div>'
@@ -2869,7 +2873,7 @@ async function goToBadges(){
       const n = unlocked.size;
       countEl.textContent = n === 0
         ? 'Aucun badge débloqué pour le moment'
-        : n + (n > 1 ? ' badges débloqués sur 20' : ' badge débloqué sur 20');
+        : n + (n > 1 ? ' badges débloqués sur 24' : ' badge débloqué sur 24');
     }
   }catch(e){
     // Historique indisponible : la page reste lisible, tout verrouillé.
