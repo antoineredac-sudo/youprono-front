@@ -142,12 +142,25 @@
   header.topbar{
     position:relative;
     display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:16px 20px;
+    flex-direction:column;
+    align-items:stretch;
+    padding:14px 20px 12px 20px;
     border-bottom:1px solid var(--border);
     background:var(--surface);
     z-index:60;
+  }
+  header.topbar .topbar-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  header.topbar .topbar-signature{
+    margin-top:9px;
+    text-align:center;
+    font-size:12.5px;
+    line-height:1.3;
+    font-style:italic;
+    color:var(--text-dim);
   }
   header.topbar .left{ display:flex; align-items:center; gap:10px; }
   header.topbar .display{ font-size:18px; color:var(--gold); }
@@ -1126,7 +1139,7 @@
   <div class="auth-box">
     <div class="brand">
       <h1><span class="you">You</span><span class="prono">Prono</span></h1>
-      <p>On va voir qui sont les vrais experts du PSG.</p>
+      <p>Nous allons enfin savoir qui sont les vrais experts du PSG</p>
     </div>
 
     <div class="auth-invite" id="auth-invite-banner"></div>
@@ -1153,11 +1166,15 @@
 <!-- ===== APPLICATION (après connexion) ===== -->
 <div id="app-shell">
   <header class="topbar">
-    <div class="left">
-      <button class="menu-toggle" onclick="toggleMenu()">☰</button>
-      <span class="display"><span class="you">You</span><span class="prono">Prono</span></span>
+    <div class="topbar-row">
+      <div class="left">
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        <span class="display"><span class="you">You</span><span class="prono">Prono</span></span>
+      </div>
+      <span class="who" id="who-am-i"></span>
     </div>
-    <span class="who" id="who-am-i"></span>
+
+    <div class="topbar-signature">Nous allons enfin savoir qui sont les vrais experts du PSG</div>
 
     <div class="dropdown-menu" id="dropdown-menu" style="display:none;">
       <button data-view="home" onclick="navFromMenu('home')">Prochain match</button>
