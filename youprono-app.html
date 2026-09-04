@@ -850,6 +850,8 @@
   }
   .badge-grid svg{ width:100%; height:auto; display:block; }
   .trophy-case{
+    position:relative;
+    overflow:hidden;
     background:var(--surface);
     border:1px solid var(--border);
     border-radius:12px;
@@ -913,12 +915,24 @@
     color:var(--text-dim);
     margin:0 0 8px 0;
   }
+  .trophy-case-inner{ opacity:0.35; }
   .trophy-soon{
-    font-size:17px;
-    line-height:1.4;
+    position:absolute;
+    left:0;
+    right:0;
+    top:50%;
+    transform:translateY(-50%);
+    margin:0;
+    padding:10px 8px;
+    text-align:center;
+    font-size:26px;
+    line-height:1.2;
     font-style:italic;
+    font-weight:600;
     color:var(--gold);
-    margin:0 0 16px 0;
+    background:rgba(6,12,38,0.55);
+    text-shadow:0 2px 8px rgba(0,0,0,0.8);
+    pointer-events:none;
   }
   .confirm-pitch{
     margin:0 0 4px 0;
@@ -1620,6 +1634,7 @@
       <p class="trophy-pitch">Finis haut dans les classements de groupe pour remplir ta vitrine de trophées</p>
 
       <div class="trophy-case">
+        <div class="trophy-case-inner">
         <div class="trophy-shelf">
           <div class="trophy-slot">
             <div class="trophy-medal ghost"></div>
@@ -1654,11 +1669,11 @@
           </div>
         </div>
         <div class="trophy-ledge"></div>
+        </div>
+        <p class="trophy-soon">Bient&ocirc;t disponible</p>
       </div>
 
       <p class="trophy-note">Chaque fin de mini-championnat, les mieux classés de chaque groupe reçoivent une médaille. Plus le groupe compte de joueurs, plus le métal est précieux. Les médailles remplissent ta coupe — une fois pleine, elle rejoint ta vitrine et une nouvelle commence.</p>
-
-      <p class="trophy-soon">Bientôt disponible</p>
 
       <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
