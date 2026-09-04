@@ -3183,6 +3183,21 @@ function closeMenu(){
   document.getElementById('dropdown-menu').style.display = 'none';
 }
 
+// Un menu ouvert se ferme dès qu'on clique ailleurs. Deux exceptions : le clic
+// à l'intérieur du menu, qui doit atteindre son bouton, et le clic sur les trois
+// traits — sans quoi ce clic ouvrirait puis refermerait le menu dans la foulée.
+document.addEventListener('click', function(e){
+  const menu = document.getElementById('dropdown-menu');
+  if(!menu || menu.style.display === 'none') return;
+  if(menu.contains(e.target)) return;
+  if(e.target.closest && e.target.closest('.menu-toggle')) return;
+  closeMenu();
+});
+
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape') closeMenu();
+});
+
 // ===== BADGES =====
 // Vingt-quatre badges, six lignes de quatre. Rien n'est stocké : le jour où on les
 // branchera, l'état débloqué se recalculera à partir de l'historique du joueur.
