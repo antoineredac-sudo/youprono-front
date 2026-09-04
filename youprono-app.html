@@ -189,6 +189,7 @@
     cursor:pointer;
   }
   .dropdown-menu button.active{ color:var(--red); }
+  .dropdown-menu button.menu-logout{ color:var(--text-dim); }
 
   .placeholder{
     color:var(--text-dim);
@@ -1161,13 +1162,14 @@
     <div class="dropdown-menu" id="dropdown-menu" style="display:none;">
       <button data-view="home" onclick="navFromMenu('home')">Prochain match</button>
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
+      <button data-view="profile" onclick="navFromMenu('profile')">Mon profil</button>
       <button data-view="groups" onclick="navFromMenu('groups')">Mes groupes</button>
       <button data-view="trophies" onclick="navFromMenu('trophies')">Mes trophées</button>
       <button data-view="badges" onclick="navFromMenu('badges')">Mes badges</button>
       <button data-view="invite" onclick="navFromMenu('invite')">Inviter un ami</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
-      <button data-view="profile" onclick="navFromMenu('profile')">Profil</button>
       <button data-view="faq" onclick="navFromMenu('faq')">FAQ</button>
+      <button class="menu-logout" onclick="navFromMenu('logout')">Se déconnecter</button>
     </div>
   </header>
 
@@ -3051,6 +3053,7 @@ function navFromMenu(name){
   else if(name === 'invite'){ switchView('invite'); }
   else if(name === 'profile'){ goToProfile(); }
   else if(name === 'faq'){ switchView('faq'); }
+  else if(name === 'logout'){ logout(); }
 }
 
 // ===== INVITATION PAR LIEN =====
