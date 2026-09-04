@@ -797,6 +797,51 @@
   .results-badge{ width:68px; }
   .results-badge svg{ width:100%; height:auto; display:block; }
   .badge-link{ display:inline-block; }
+  .notif-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(6,12,38,0.88);
+    z-index:9000;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .notif-card{
+    background:var(--surface);
+    border:1px solid var(--gold);
+    border-radius:16px;
+    padding:26px 20px 20px 20px;
+    width:100%;
+    max-width:400px;
+    text-align:center;
+    box-shadow:0 18px 50px rgba(0,0,0,0.55);
+  }
+  .notif-label{
+    font-size:13px;
+    color:var(--text-dim);
+    letter-spacing:1px;
+    text-transform:uppercase;
+  }
+  .notif-note{
+    font-family:'Oswald',sans-serif;
+    font-size:58px;
+    line-height:1;
+    color:var(--gold);
+    margin:6px 0 2px 0;
+  }
+  .notif-note-sub{ font-size:13px; color:var(--text-dim); margin-bottom:18px; }
+  .notif-line{ font-size:16px; line-height:1.4; font-weight:600; margin-bottom:14px; }
+  .notif-badges{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px;
+    margin-bottom:18px;
+  }
+  .notif-badge{ width:66px; }
+  .notif-badge svg{ width:100%; height:auto; display:block; }
+  .notif-actions{ display:flex; flex-direction:column; gap:8px; }
   .badge-grid{
     display:grid;
     grid-template-columns:repeat(4, 1fr);
@@ -1710,6 +1755,20 @@
       </div>
     </section>
   </main>
+
+  <div class="notif-overlay" id="notif-overlay">
+    <div class="notif-card">
+      <div class="notif-label">Ta note sur ce match</div>
+      <div class="notif-note" id="notif-note">0</div>
+      <div class="notif-note-sub">sur 100</div>
+      <div class="notif-line" id="notif-line"></div>
+      <div class="notif-badges" id="notif-badges"></div>
+      <div class="notif-actions">
+        <button class="cta-play" onclick="closeMatchNotification('results')">Voir mon r&eacute;sultat</button>
+        <button class="cta-play-outline" onclick="closeMatchNotification('badges')">Voir mes badges</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1788,6 +1847,7 @@ function enterApp(){
   switchView('home');
   loadHomeMatch();
   if(pendingInviteCode){ acceptPendingInvite(); }
+  checkMatchNotification();
 }
 
 let psgTeamIdCache = null;
@@ -2878,6 +2938,91 @@ async function goToBadges(){
   }catch(e){
     // Historique indisponible : la page reste lisible, tout verrouillé.
   }
+}
+
+// ===== NOTIFICATION DE FIN DE MATCH =====
+// Elle s'ouvre par-dessus n'importe quel ecran, une seule fois par match noté.
+// Le souvenir est gardé dans le navigateur, par joueur : rien à stocker côté
+// serveur, aucune route à créer. Un joueur qui change de téléphone reverra
+// l'annonce une fois, ce qui est le moindre des deux défauts possibles.
+const LS_NOTIF = 'youprono_last_notif';
+let notifSeenKey = null;
+let notifMatchId = null;
+
+async function checkMatchNotification(){
+  try{
+    const userId = getUserId();
+    if(!userId) return;
+    const teamId = await getPsgTeamId();
+
+    const histJson = await fetch(`${API_BASE}/UserStats/ByUserTeam/${userId}/${teamId}?page=1&limit=50`).then(r => r.json());
+    const rows = (histJson.success && histJson.data && histJson.data.page) ? histJson.data.page : [];
+    const noted = rows.filter(r => r.score);
+    if(noted.length === 0) return;
+
+    const last = noted[0];
+    const seenKey = LS_NOTIF + '_' + userId;
+    if(localStorage.getItem(seenKey) === last.matchId) return;
+
+    const lastStats = await fetch(`${API_BASE}/UserStats/ByUserMatchTeam/${userId}/${last.matchId}/${teamId}`)
+      .then(r => r.json()).then(j => (j.success && j.data) ? j.data : null).catch(() => null);
+    if(!lastStats) return;
+
+    // Ce qui était déjà acquis avant ce match : on ne réannonce pas un badge
+    // que le joueur possède depuis septembre.
+    const older = noted.slice(1);
+    const olderStats = await Promise.all(older.map(r =>
+      fetch(`${API_BASE}/UserStats/ByUserMatchTeam/${userId}/${r.matchId}/${teamId}`)
+        .then(x => x.json()).then(j => (j.success && j.data) ? j.data : null).catch(() => null)
+    ));
+    const before = new Set();
+    olderStats.forEach(st => { if(st) badgesForMatch(st).forEach(b => before.add(badgeKey(b))); });
+
+    const wonNow = new Set(badgesForMatch(lastStats).map(badgeKey));
+    let fresh = BADGES.filter(b => wonNow.has(badgeKey(b)) && !before.has(badgeKey(b)));
+
+    // Au tout premier résultat, « 1er prono » est annoncé en tête : il est
+    // acquis depuis le pronostic, mais c'est ici qu'il prend son sens.
+    if(older.length === 0){
+      fresh = BADGES.filter(b => badgeKey(b) === '1er|prono').concat(fresh);
+    }
+
+    showMatchNotification(lastStats, fresh, seenKey, last.matchId);
+  }catch(e){
+    // Rien ne doit empêcher le jeu de s'ouvrir : en cas d'échec, pas d'annonce.
+  }
+}
+
+function showMatchNotification(stats, fresh, seenKey, matchId){
+  const team = (stats && stats.result && stats.result.team) ? stats.result.team : null;
+  const note = (team && team.total !== undefined && team.total !== null) ? team.total : null;
+  document.getElementById('notif-note').textContent = (note !== null) ? fmtNote(note) : '–';
+
+  const line = document.getElementById('notif-line');
+  const row  = document.getElementById('notif-badges');
+
+  if(fresh.length === 0){
+    line.textContent = "Tu n'as débloqué aucun badge.";
+    row.innerHTML = '';
+  } else {
+    line.textContent = (fresh.length > 1)
+      ? 'Tu as débloqué les badges suivants'
+      : 'Tu as débloqué le badge suivant';
+    row.innerHTML = fresh.map(b => '<div class="notif-badge">' + badgeSvg(b, true) + '</div>').join('');
+  }
+
+  notifSeenKey = seenKey;
+  notifMatchId = matchId;
+  document.getElementById('notif-overlay').style.display = 'flex';
+}
+
+// Les deux boutons ferment l'annonce et l'archivent. Le joueur choisit
+// seulement où il atterrit : le détail de son match, ou sa collection.
+function closeMatchNotification(destination){
+  document.getElementById('notif-overlay').style.display = 'none';
+  try{ if(notifSeenKey) localStorage.setItem(notifSeenKey, notifMatchId); }catch(e){}
+  if(destination === 'badges'){ goToBadges(); }
+  else if(notifMatchId){ goToResults(notifMatchId); }
 }
 
 function navFromMenu(name){
