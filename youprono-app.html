@@ -2836,18 +2836,6 @@ function renderSalon(){
       });
       html += `</table>`;
 
-      // Pour le joueur lui-même, la comparaison Toi / Réel de l'ancienne page.
-      if(m.isMe && d.hasOfficialComposition){
-        const tien = m.picks.map(p =>
-          `<span class="compo-name ${p.found ? '' : 'compo-wrong'}">${salonNomJoueur(p)}</span>`).join('');
-        const reel = d.officialLineup.map(p =>
-          `<span class="compo-name">${salonNomJoueur(p)}</span>`).join('');
-        html += `<div class="compo-compare">
-          <div class="compo-col"><div class="compo-col-label">Toi</div>${tien}</div>
-          <div class="compo-col"><div class="compo-col-label">Réel</div>${reel}</div>
-        </div>`;
-      }
-
       html += `</div>`;
     }
     html += `</div>`;
