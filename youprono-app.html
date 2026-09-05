@@ -1674,9 +1674,17 @@
       <div id="groups-list"></div>
 
       <div class="group-actions">
-        <button class="cta-play" id="group-invite-btn" onclick="inviteOnWhatsApp('group-invite-btn','group-invite-btn')">Invite tes amis sur WhatsApp</button>
+        <button class="cta-play" id="group-invite-btn" onclick="inviteFromGroupsScreen()">Crée un groupe d'amis via WhatsApp</button>
         <button class="cta-play-outline" onclick="switchView('group-join')">Rejoindre un groupe</button>
       </div>
+    </section>
+    <section id="view-group-create" class="view" style="display:none;">
+      <h2 class="play-title">CRÉER UN GROUPE</h2>
+      <label>Nom du groupe</label>
+      <input type="text" id="group-create-name" placeholder="Les Copains du Parc">
+      <div class="field-error" id="group-create-error"></div>
+      <button class="cta-play" id="group-create-submit" style="margin-top:24px;" onclick="createNamedGroup()">Créer</button>
+      <span class="small-link" onclick="switchView('groups')">Annuler</span>
     </section>
     <section id="view-group-join" class="view" style="display:none;">
       <h2 class="play-title">REJOINDRE UN GROUPE</h2>
@@ -1753,7 +1761,7 @@
 
       <div class="group-invite-box" style="margin-top:20px;">
         <p class="confirm-pitch">Maintenant tu es prêt à défier tes amis fans du PSG comme toi.</p>
-        <button class="cta-play-outline wa-btn" id="confirm-invite-btn" onclick="inviteOnWhatsApp('confirm-invite-btn','confirm-invite-label')">
+        <button class="cta-play-outline wa-btn" id="confirm-invite-btn" onclick="inviteFromConfirm()">
           <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01c-1.52 0-3.01-.41-4.31-1.18l-.31-.18-3.2.84.85-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.23-8.23 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.75.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29"/></svg>
           <span id="confirm-invite-label">Invite-les sur WhatsApp</span>
         </button>
@@ -3273,9 +3281,11 @@ async function enterGroupsScreen(){
     const groups = (json.success && json.data) ? json.data : [];
 
     // Le bouton d'invitation doit avoir son code avant le premier clic.
-    const noms = nomsDeMonGroupe();
-    const sien = groups.find(g => noms.indexOf(g.name) !== -1);
-    if(sien){ monGroupe = { id: sien.id, name: sien.name, inviteCode: sien.inviteCode }; }
+    const userId2 = getUserId();
+    const crees = groups
+      .filter(g => (g.creatorId || '').toLowerCase() === (userId2 || '').toLowerCase())
+      .sort((a, b) => new Date(a.createdDate) - new Date(b.createdDate));
+    if(crees.length){ monGroupe = versGroupe(crees[0]); }
 
     if(groups.length === 0){
       list.innerHTML = '<div class="placeholder">Tu ne fais partie d\'aucun groupe pour l\'instant.</div>';
@@ -3292,10 +3302,14 @@ async function enterGroupsScreen(){
   }
 }
 
-// Le groupe personnel n'a pas de nom a saisir : il porte le pseudo de son
-// createur. Le joueur ne le cree jamais volontairement -- il apparait au moment
-// ou il invite quelqu'un, et l'invitation est la seule chose qu'il fait.
-let monGroupe = null; // { id, name, inviteCode }
+// Le groupe personnel est celui que le joueur a cree lui-meme, reconnu par le
+// creatorId renvoye par le serveur -- et non plus devine d'apres son nom. S'il en
+// a cree plusieurs, on retient le plus ancien : c'est le seul choix qui ne change
+// jamais dans son dos.
+let monGroupe = null; // { id, name, inviteCode, memberCount }
+
+// Doit rester aligne sur MaxMembers dans GroupService.cs cote serveur.
+const MAX_MEMBRES_GROUPE = 10;
 
 function pseudoCourant(){
   const auth = getAuth();
@@ -3312,51 +3326,53 @@ function nomDeMonGroupe(){
   return elide ? ("Les amis d'" + pseudo) : ('Les amis de ' + pseudo);
 }
 
-// Les groupes crees avant la correction portent l'ancienne orthographe. On
-// reconnait les deux, sinon le bouton ne retrouverait plus le groupe existant
-// et en fabriquerait un second en silence.
-function nomsDeMonGroupe(){
-  const pseudo = pseudoCourant();
-  return ['Les amis de ' + pseudo, "Les amis d'" + pseudo];
+function versGroupe(g){
+  return { id: g.id, name: g.name, inviteCode: g.inviteCode, memberCount: g.memberCount };
 }
 
-// On cherche uniquement le groupe qui porte son nom, jamais le premier venu :
-// un joueur membre du groupe d'un autre inviterait sinon chez ce dernier.
-// creerSiAbsent = false pour se contenter de regarder, true pour le fabriquer.
-async function assureMonGroupe(creerSiAbsent){
-  if(monGroupe) return monGroupe;
-
+// Les groupes qu'il a crees, du plus ancien au plus recent.
+async function mesGroupesCrees(){
   const userId = getUserId();
-  if(!userId) return null;
-  const nom = nomDeMonGroupe();
-
+  if(!userId) return [];
   try{
     const res = await fetch(`${API_BASE}/Group/ByUserId/${userId}`);
     const json = await res.json();
-    const groupes = (json.success && Array.isArray(json.data)) ? json.data : [];
+    const tous = (json.success && Array.isArray(json.data)) ? json.data : [];
+    return tous
+      .filter(g => (g.creatorId || '').toLowerCase() === userId.toLowerCase())
+      .sort((a, b) => new Date(a.createdDate) - new Date(b.createdDate));
+  }catch(e){
+    return [];
+  }
+}
 
-    const noms = nomsDeMonGroupe();
-    const sien = groupes.find(g => noms.indexOf(g.name) !== -1);
-    if(sien){
-      monGroupe = { id: sien.id, name: sien.name, inviteCode: sien.inviteCode };
-      return monGroupe;
-    }
-
-    if(!creerSiAbsent) return null;
-
-    const creation = await fetch(`${API_BASE}/Group/Create/${userId}`, {
+async function creerGroupe(nom){
+  const userId = getUserId();
+  try{
+    const res = await fetch(`${API_BASE}/Group/Create/${userId}`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ name: nom })
     });
-    const cree = await creation.json();
-    if(!cree.success || !cree.data) return null;
-
-    monGroupe = { id: cree.data.id, name: cree.data.name, inviteCode: cree.data.inviteCode };
-    return monGroupe;
+    const json = await res.json();
+    if(!json.success || !json.data) return null;
+    const g = versGroupe(json.data);
+    // Le tout premier cree devient le groupe personnel ; les suivants ne le
+    // remplacent pas.
+    if(!monGroupe){ monGroupe = g; }
+    return g;
   }catch(e){
     return null;
   }
+}
+
+// creerSiAbsent = false pour se contenter de regarder, true pour le fabriquer.
+async function assureMonGroupe(creerSiAbsent){
+  if(monGroupe) return monGroupe;
+  const crees = await mesGroupesCrees();
+  if(crees.length){ monGroupe = versGroupe(crees[0]); return monGroupe; }
+  if(!creerSiAbsent) return null;
+  return await creerGroupe(nomDeMonGroupe());
 }
 
 function messageInvitation(lien, code){
@@ -3365,39 +3381,97 @@ function messageInvitation(lien, code){
        + `Code si le lien ne fonctionne pas : ${code}`;
 }
 
-// Une seule mecanique d'invitation, appelee depuis plusieurs ecrans. On lui passe
-// l'id du bouton a verrouiller et celui de l'element qui porte son libelle : sur
-// certains boutons le texte vit dans un <span>, a cote d'une icone.
-async function inviteOnWhatsApp(btnId, labelId){
+// nouvelOnglet : vrai quand aucune attente serveur n'a eu lieu depuis le clic.
+// Apres un await, les navigateurs mobiles bloquent window.open, il faut naviguer.
+function ouvrirWhatsApp(groupe, nouvelOnglet){
+  const lien = siteBaseUrl() + '?groupe=' + encodeURIComponent(groupe.inviteCode);
+  const url = 'https://wa.me/?text=' + encodeURIComponent(messageInvitation(lien, groupe.inviteCode));
+  if(nouvelOnglet){ window.open(url, '_blank'); }
+  else { window.location.href = url; }
+}
+
+function verrouille(btnId, labelId, texte){
   const btn = btnId ? document.getElementById(btnId) : null;
   const label = labelId ? document.getElementById(labelId) : null;
+  const avant = label ? label.textContent : null;
+  if(btn){ btn.disabled = true; }
+  if(label && texte){ label.textContent = texte; }
+  return function(){
+    if(btn){ btn.disabled = false; }
+    if(label && avant !== null){ label.textContent = avant; }
+  };
+}
 
-  // Code deja en memoire : le geste est direct, WhatsApp s'ouvre a cote et le jeu
-  // reste derriere.
-  if(monGroupe && monGroupe.inviteCode){
-    const lien = siteBaseUrl() + '?groupe=' + encodeURIComponent(monGroupe.inviteCode);
-    window.open('https://wa.me/?text=' + encodeURIComponent(messageInvitation(lien, monGroupe.inviteCode)), '_blank');
+// --- Bouton de l'ecran « Mes groupes d'amis » ---
+// Premier groupe : cree sans rien demander. A partir du deuxieme : on demande un nom.
+async function inviteFromGroupsScreen(){
+  const relache = verrouille('group-invite-btn', 'group-invite-btn', 'Un instant…');
+  const crees = await mesGroupesCrees();
+  relache();
+
+  if(crees.length === 0){
+    const g = await creerGroupe(nomDeMonGroupe());
+    if(!g){ alert("Impossible de contacter le serveur. Réessaie dans un instant."); return; }
+    ouvrirWhatsApp(g, false);
     return;
   }
 
-  const avant = label ? label.textContent : null;
-  if(btn){ btn.disabled = true; }
-  if(label){ label.textContent = 'Un instant…'; }
+  document.getElementById('group-create-name').value = '';
+  document.getElementById('group-create-error').classList.remove('show');
+  switchView('group-create');
+}
 
+// --- Ecran de nommage, a partir du deuxieme groupe ---
+async function createNamedGroup(){
+  const champ = document.getElementById('group-create-name');
+  const errEl = document.getElementById('group-create-error');
+  const nom = champ.value.trim();
+  errEl.classList.remove('show');
+
+  if(!nom){
+    errEl.textContent = 'Merci de donner un nom à ton groupe.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  const relache = verrouille('group-create-submit', 'group-create-submit', 'Création…');
+  const g = await creerGroupe(nom);
+  relache();
+
+  if(!g){
+    errEl.textContent = "Impossible de créer le groupe. Réessaie dans un instant.";
+    errEl.classList.add('show');
+    return;
+  }
+  champ.value = '';
+  ouvrirWhatsApp(g, false);
+}
+
+// --- Bouton de fin de pronostic ---
+// Aucun nom demande ici : on prend le plus ancien groupe cree. S'il est plein, on
+// renvoie vers « Mes groupes d'amis », ou il pourra en ouvrir un second.
+async function inviteFromConfirm(){
+  if(monGroupe && monGroupe.inviteCode && monGroupe.memberCount < MAX_MEMBRES_GROUPE){
+    ouvrirWhatsApp(monGroupe, true);
+    return;
+  }
+
+  const relache = verrouille('confirm-invite-btn', 'confirm-invite-label', 'Un instant…');
   const groupe = await assureMonGroupe(true);
-
-  if(btn){ btn.disabled = false; }
-  if(label && avant !== null){ label.textContent = avant; }
+  relache();
 
   if(!groupe || !groupe.inviteCode){
     alert("Impossible de contacter le serveur. Réessaie dans un instant.");
     return;
   }
 
-  // Apres une attente serveur, les navigateurs mobiles bloquent l'ouverture d'un
-  // onglet. On navigue donc au lieu d'ouvrir : ca n'est jamais bloque.
-  const lien = siteBaseUrl() + '?groupe=' + encodeURIComponent(groupe.inviteCode);
-  window.location.href = 'https://wa.me/?text=' + encodeURIComponent(messageInvitation(lien, groupe.inviteCode));
+  if(groupe.memberCount >= MAX_MEMBRES_GROUPE){
+    alert("Désolé, un groupe de supporters ne peut pas dépasser 10 membres sur YouProno, mais tu peux en créer un 2ème.");
+    goToGroups();
+    return;
+  }
+
+  ouvrirWhatsApp(groupe, false);
 }
 
 async function joinGroup(){
