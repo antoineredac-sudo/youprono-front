@@ -777,7 +777,7 @@
     margin-bottom:16px;
   }
   .salon-choix.dore{ border-color:var(--gold); }
-  .salon-choix-titre{ font-size:13px; margin-bottom:8px; }
+  .salon-choix-titre{ font-size:13px; margin-bottom:8px; color:var(--gold); }
   .salon-choix-ligne{
     display:flex;
     justify-content:space-between;
@@ -1785,7 +1785,7 @@
             <div class="dash-cell-value" id="dash-rank"></div>
           </div>
           <div class="dash-cell">
-            <div class="dash-cell-label">assiduité</div>
+            <div class="dash-cell-label">matchs joués</div>
             <div class="dash-cell-value" id="dash-bonus"></div>
           </div>
           <div class="dash-cell">
@@ -3792,15 +3792,17 @@ async function loadDashboard(){
 
     const g = globalRes.data;
 
-    // Le back renvoie un bonus d'assiduité de 1 (soit 100 %) tant que le joueur
-    // n'a aucun match noté — un chiffre flatteur mais faux. On n'affiche donc
-    // l'assiduité qu'une fois le joueur réellement classé, comme la tuile voisine.
+    // Tant que le joueur n'a aucun match noté, le comptage n'a pas de sens : on
+    // affiche un tiret, comme la tuile voisine.
     const hasPlayed = g.rank > 0;
 
     document.getElementById('dash-rank').textContent = hasPlayed ? '#' + g.rank : '–';
     document.getElementById('dash-average').textContent = fmtNote(g.expertCoef || 0);
     document.getElementById('dash-record').textContent = fmtNote(g.record || 0);
-    document.getElementById('dash-bonus').textContent = hasPlayed ? fmtRecapNum((g.bonus || 0) * 100) + '%' : '–';
+    // Les matchs joués sur les matchs du PSG disputés depuis le premier pronostic
+    // du joueur : « 1/1 » pour un nouveau venu, « 6/7 » pour un habitué.
+    document.getElementById('dash-bonus').textContent =
+      hasPlayed ? ((g.matchesPlayed || 0) + '/' + (g.matchesTotal || 0)) : '–';
 
     const history = (historyRes.success && historyRes.data && historyRes.data.page) ? historyRes.data.page : [];
     const historyEl = document.getElementById('dash-history');
