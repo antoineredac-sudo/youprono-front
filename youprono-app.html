@@ -1341,7 +1341,7 @@
       <button data-view="home" onclick="navFromMenu('home')">Prochain match</button>
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Mon profil</button>
-      <button data-view="groups" onclick="navFromMenu('groups')">Mes groupes</button>
+      <button data-view="groups" onclick="navFromMenu('groups')">Mes groupes d'amis</button>
       <button data-view="trophies" onclick="navFromMenu('trophies')">Mes trophées</button>
       <button data-view="badges" onclick="navFromMenu('badges')">Mes badges</button>
       <button data-view="invite" onclick="navFromMenu('invite')">Inviter un ami</button>
@@ -1680,17 +1680,9 @@
       <div id="groups-list"></div>
 
       <div class="group-actions">
-        <button class="cta-play" onclick="switchView('group-create')">Créer un groupe</button>
+        <button class="cta-play" id="group-invite-btn" onclick="inviteFromGroups()">Invite tes amis sur WhatsApp</button>
         <button class="cta-play-outline" onclick="switchView('group-join')">Rejoindre un groupe</button>
       </div>
-    </section>
-    <section id="view-group-create" class="view" style="display:none;">
-      <h2 class="play-title">CRÉER UN GROUPE</h2>
-      <label>Nom du groupe</label>
-      <input type="text" id="group-create-name" placeholder="Les Copains du Parc">
-      <div class="field-error" id="group-create-error"></div>
-      <button class="cta-play" style="margin-top:24px;" onclick="createGroup()">Créer</button>
-      <span class="small-link" onclick="switchView('groups')">Annuler</span>
     </section>
     <section id="view-group-join" class="view" style="display:none;">
       <h2 class="play-title">REJOINDRE UN GROUPE</h2>
@@ -2110,7 +2102,7 @@ function restoreRoute(brut){
     else if(nom === 'myprono'){ goToMyProno(); }
     else if(nom === 'compo'){ goToCompoNote(); }
     else if(nom === 'trophies' || nom === 'invite' || nom === 'faq'
-         || nom === 'group-create' || nom === 'group-join'){ switchView(nom); }
+         || nom === 'group-join'){ switchView(nom); }
   }catch(e){ /* adresse inconnue : on reste sur l'accueil */ }
 }
 
@@ -3299,6 +3291,10 @@ async function enterGroupsScreen(){
     const json = await res.json();
     const groups = (json.success && json.data) ? json.data : [];
 
+    // Le bouton d'invitation doit avoir son code avant le premier clic.
+    const sien = groups.find(g => g.name === nomDeMonGroupe());
+    if(sien){ monGroupe = { id: sien.id, name: sien.name, inviteCode: sien.inviteCode }; }
+
     if(groups.length === 0){
       list.innerHTML = '<div class="placeholder">Tu ne fais partie d\'aucun groupe pour l\'instant.</div>';
       return;
@@ -3314,36 +3310,85 @@ async function enterGroupsScreen(){
   }
 }
 
-async function createGroup(){
-  const name = document.getElementById('group-create-name').value.trim();
-  const errEl = document.getElementById('group-create-error');
-  errEl.classList.remove('show');
+// Le groupe personnel n'a pas de nom a saisir : il porte le pseudo de son
+// createur. Le joueur ne le cree jamais volontairement -- il apparait au moment
+// ou il invite quelqu'un, et l'invitation est la seule chose qu'il fait.
+let monGroupe = null; // { id, name, inviteCode }
 
-  if(!name){
-    errEl.textContent = 'Merci de donner un nom à ton groupe.';
-    errEl.classList.add('show');
+function nomDeMonGroupe(){
+  const auth = getAuth();
+  const pseudo = (auth && auth.displayName) ? auth.displayName : 'un supporter';
+  return 'Les amis de ' + pseudo;
+}
+
+// On cherche uniquement le groupe qui porte son nom, jamais le premier venu :
+// un joueur membre du groupe d'un autre inviterait sinon chez ce dernier.
+// creerSiAbsent = false pour se contenter de regarder, true pour le fabriquer.
+async function assureMonGroupe(creerSiAbsent){
+  if(monGroupe) return monGroupe;
+
+  const userId = getUserId();
+  if(!userId) return null;
+  const nom = nomDeMonGroupe();
+
+  try{
+    const res = await fetch(`${API_BASE}/Group/ByUserId/${userId}`);
+    const json = await res.json();
+    const groupes = (json.success && Array.isArray(json.data)) ? json.data : [];
+
+    const sien = groupes.find(g => g.name === nom);
+    if(sien){
+      monGroupe = { id: sien.id, name: sien.name, inviteCode: sien.inviteCode };
+      return monGroupe;
+    }
+
+    if(!creerSiAbsent) return null;
+
+    const creation = await fetch(`${API_BASE}/Group/Create/${userId}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name: nom })
+    });
+    const cree = await creation.json();
+    if(!cree.success || !cree.data) return null;
+
+    monGroupe = { id: cree.data.id, name: cree.data.name, inviteCode: cree.data.inviteCode };
+    return monGroupe;
+  }catch(e){
+    return null;
+  }
+}
+
+function messageInvitation(lien, code){
+  return `On va enfin savoir qui est le vrai expert du PSG parmi nous. Viens jouer à YouProno\n`
+       + `${lien}\n\n`
+       + `Code si le lien ne fonctionne pas : ${code}`;
+}
+
+async function inviteFromGroups(){
+  const btn = document.getElementById('group-invite-btn');
+
+  // Code deja en memoire : le geste est direct, WhatsApp s'ouvre a cote et le
+  // jeu reste derriere.
+  if(monGroupe && monGroupe.inviteCode){
+    const lien = siteBaseUrl() + '?groupe=' + encodeURIComponent(monGroupe.inviteCode);
+    window.open('https://wa.me/?text=' + encodeURIComponent(messageInvitation(lien, monGroupe.inviteCode)), '_blank');
     return;
   }
 
-  try{
-    const userId = getUserId();
-    const res = await fetch(`${API_BASE}/Group/Create/${userId}`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name })
-    });
-    const json = await res.json();
-    if(!json.success){
-      errEl.textContent = "Impossible de créer le groupe : " + (json.message || 'erreur inconnue');
-      errEl.classList.add('show');
-      return;
-    }
-    document.getElementById('group-create-name').value = '';
-    openGroupDetail(json.data.id);
-  }catch(e){
-    errEl.textContent = "Impossible de contacter le serveur.";
-    errEl.classList.add('show');
+  if(btn){ btn.disabled = true; btn.textContent = 'Un instant…'; }
+  const groupe = await assureMonGroupe(true);
+  if(btn){ btn.disabled = false; btn.textContent = 'Invite tes amis sur WhatsApp'; }
+
+  if(!groupe || !groupe.inviteCode){
+    alert("Impossible de contacter le serveur. Réessaie dans un instant.");
+    return;
   }
+
+  // Apres une attente serveur, les navigateurs mobiles bloquent l'ouverture d'un
+  // onglet. On navigue donc au lieu d'ouvrir : ca n'est jamais bloque.
+  const lien = siteBaseUrl() + '?groupe=' + encodeURIComponent(groupe.inviteCode);
+  window.location.href = 'https://wa.me/?text=' + encodeURIComponent(messageInvitation(lien, groupe.inviteCode));
 }
 
 async function joinGroup(){
@@ -3408,9 +3453,9 @@ function shareGroupOnWhatsApp(){
   const lien = siteBaseUrl() + '?groupe=' + encodeURIComponent(code);
 
   const message =
-    `Si t'es cap d'affronter des experts du PSG, rejoins ${moi} dans le groupe « ${currentGroupName} » :\n`
+    `Si t'es cap d'affronter des experts du PSG, rejoins ${moi} sur YouProno :\n`
     + `${lien}\n\n`
-    + `Code du groupe si besoin : ${code}`;
+    + `Code si le lien ne fonctionne pas : ${code}`;
 
   window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank');
 }
