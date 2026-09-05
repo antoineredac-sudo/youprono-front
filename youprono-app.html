@@ -767,6 +767,12 @@
   .joueur-case-label{ color:var(--text-dim); font-size:11px; text-transform:uppercase; }
   .joueur-case-valeur{ font-family:'Oswald',sans-serif; font-size:20px; margin-top:4px; }
 
+  .joueur-etat{
+    text-align:center;
+    color:var(--gold);
+    font-size:14px;
+    margin-bottom:12px;
+  }
   .joueur-note{ color:var(--text-dim); font-size:12px; line-height:1.5; margin-top:12px; text-align:center; }
 
   /* --- Le salon du groupe --- */
@@ -2566,8 +2572,10 @@ async function goToFriends(){
       return;
     }
 
-    // Classés selon leur place au classement général, et affichée telle quelle.
-    const amis = liste.filter(u => ids.indexOf(u.id) !== -1);
+    // Un classement, pas un annuaire : toi au milieu des tiens, dans l'ordre du
+    // classement général, mais renumérotés entre vous.
+    const userId = getUserId();
+    const amis = liste.filter(u => u.id === userId || ids.indexOf(u.id) !== -1);
 
     if(amis.length === 0){
       const vide = document.getElementById('friends-empty');
@@ -2576,13 +2584,22 @@ async function goToFriends(){
       return;
     }
 
-    document.getElementById('friends-table').innerHTML = amis.map(u => `
-      <div class="ranking-table-row" onclick="goToPlayer('${u.id}')">
-        <span class="rt-rank">#${u.rank}</span>
-        <span class="rt-name pseudo-lien">${u.userName}</span>
+    document.getElementById('friends-table').innerHTML = amis.map((u, i) => `
+      <div class="ranking-table-row ${u.id === userId ? 'me' : ''}" onclick="goToPlayer('${u.id}')">
+        <span class="rt-rank">#${i + 1}</span>
+        <span class="rt-name ${u.id === userId ? '' : 'pseudo-lien'}">${u.userName}</span>
         <span class="rt-games">${u.games}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`).join('');
+
+    // Ta ligne est amenée au centre de l'écran : ceux qui font mieux au-dessus,
+    // ceux qui font moins bien en dessous.
+    const maLigne = document.querySelector('#friends-table .ranking-table-row.me');
+    if(maLigne && maLigne.scrollIntoView){
+      setTimeout(function(){
+        try{ maLigne.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(e){}
+      }, 60);
+    }
   }catch(e){
     document.getElementById('friends-loading').textContent = 'Impossible de charger tes amis.';
   }
@@ -2620,6 +2637,15 @@ async function goToPlayer(userId){
     const nom = (coef || record).userName;
     const estAmi = ids.indexOf(userId) !== -1;
 
+    renderPlayer(userId, nom, coef, record, estAmi);
+    document.getElementById('player-loading').style.display = 'none';
+    document.getElementById('player-content').style.display = 'block';
+  }catch(e){
+    document.getElementById('player-loading').textContent = 'Impossible de charger ce joueur.';
+  }
+}
+
+function renderPlayer(userId, nom, coef, record, estAmi){
     document.getElementById('player-content').innerHTML = `
       <div class="joueur-entete">
         <div class="joueur-pseudo">${nom}</div>
@@ -2641,20 +2667,14 @@ async function goToPlayer(userId){
         </div>
       </div>
 
-      <button class="cta-play" id="player-add-btn" ${estAmi ? 'disabled' : ''} onclick="addFriend('${userId}')">
-        ${estAmi ? 'Déjà dans tes amis' : 'Ajouter à mes amis'}
-      </button>
+      ${estAmi
+        ? `<div class="joueur-etat" id="player-state">${nom} fait partie de tes amis</div>`
+        : `<button class="cta-play" id="player-add-btn" onclick="addFriend('${userId}','${nom}')">Ajouter à mes amis</button>`}
 
       <p class="joueur-note">L'amitié va dans les deux sens : tu apparaîtras aussi dans sa liste.</p>`;
-
-    document.getElementById('player-loading').style.display = 'none';
-    document.getElementById('player-content').style.display = 'block';
-  }catch(e){
-    document.getElementById('player-loading').textContent = 'Impossible de charger ce joueur.';
-  }
 }
 
-async function addFriend(friendId){
+async function addFriend(friendId, nom){
   const btn = document.getElementById('player-add-btn');
   if(btn){ btn.disabled = true; btn.textContent = 'Ajout…'; }
 
@@ -2665,10 +2685,18 @@ async function addFriend(friendId){
     if(!json.success) throw new Error('ajout refusé');
 
     await loadFriendIds(true);
-    if(btn) btn.textContent = 'Déjà dans tes amis';
+    redrawPlayer(friendId, nom, true);
   }catch(e){
     if(btn){ btn.disabled = false; btn.textContent = 'Réessayer'; }
   }
+}
+
+// On redessine la page avec les chiffres déjà en mémoire : le lien vient de
+// changer, pas le classement.
+function redrawPlayer(userId, nom, estAmi){
+  const coef = (rankingCache['final'] || []).find(u => u.id === userId);
+  const record = (rankingCache['record'] || []).find(u => u.id === userId);
+  renderPlayer(userId, nom, coef, record, estAmi);
 }
 
 // ===== LE SALON DU GROUPE =====
