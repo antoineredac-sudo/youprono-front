@@ -741,6 +741,134 @@
   .compo-name{ display:block; font-size:13px; padding:2px 0; }
   .compo-wrong{ text-decoration:line-through; color:var(--text-dim); }
 
+  /* --- Le salon du groupe --- */
+  .salon-cta{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:16px;
+    cursor:pointer;
+  }
+  .salon-cta.dore{ border-color:var(--gold); }
+  .salon-cta-info{ font-size:13px; }
+  .salon-cta-info small{ display:block; color:var(--text-dim); font-size:11px; margin-top:2px; }
+  .salon-cta-fleche{ color:var(--red); font-size:13px; font-weight:600; }
+
+  .salon-choix{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 14px 6px;
+    margin-bottom:16px;
+  }
+  .salon-choix.dore{ border-color:var(--gold); }
+  .salon-choix-titre{ font-size:13px; margin-bottom:8px; }
+  .salon-choix-ligne{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:9px 0;
+    border-top:1px solid var(--border);
+    font-size:14px;
+    cursor:pointer;
+  }
+  .salon-choix-ligne span{ color:var(--red); font-weight:600; }
+
+  .salon-entete{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:12px;
+    text-align:center;
+  }
+  .salon-affiche{ font-family:'Oswald',sans-serif; font-size:18px; font-weight:600; }
+  .salon-sous-affiche{ color:var(--gold); font-size:12px; margin-top:5px; }
+  .salon-sous-affiche.gris{ color:var(--text-dim); }
+
+  .salon-annonce{
+    background:var(--surface-raised);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:14px;
+    color:var(--text-dim);
+    font-size:12px;
+    line-height:1.5;
+  }
+  .salon-annonce.dore{ border-color:var(--gold); }
+  .salon-annonce b{ color:var(--gold); display:block; margin-bottom:3px; font-weight:600; }
+
+  .salon-legende{ color:var(--text-dim); font-size:11px; margin-bottom:6px; }
+
+  .salon-liste{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:6px 12px;
+    margin-bottom:14px;
+  }
+  .salon-ligne{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:8px 0;
+    border-bottom:1px solid var(--border);
+    font-size:13px;
+  }
+  .salon-ligne:last-child{ border-bottom:none; }
+  .salon-ligne .note{ color:var(--gold); }
+  .salon-ligne .pts{ color:var(--text-dim); font-size:11px; margin-left:6px; }
+  .salon-moi{ font-weight:600; }
+
+  .salon-tableau{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:8px;
+    margin-bottom:14px;
+    overflow-x:auto;
+  }
+  .salon-tableau table{ width:100%; border-collapse:collapse; font-size:12px; table-layout:fixed; }
+  .salon-tableau th{ color:var(--text-dim); font-size:11px; font-weight:400; padding:4px 2px; text-align:center; }
+  .salon-tableau th.nom{ text-align:left; width:26%; }
+  .salon-tableau td{ padding:7px 2px; text-align:center; }
+  .salon-tableau td.nom{ text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .salon-tableau tr.corps{ border-top:1px solid var(--border); }
+  .salon-tableau tr.reel td{ color:var(--gold); font-weight:600; background:var(--surface-raised); }
+  .salon-tableau td.score{ color:var(--gold); }
+  .salon-tableau tr.absent td{ color:var(--text-dim); }
+
+  .salon-bloc{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:8px;
+  }
+  .salon-bloc-entete{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .salon-bloc-etat{ color:var(--text-dim); font-size:12px; }
+  .salon-bloc-etat.note{ color:var(--gold); font-family:'Oswald',sans-serif; font-size:15px; }
+  .salon-bloc-corps{ margin-top:10px; }
+  .salon-bloc-corps table{ width:100%; border-collapse:collapse; font-size:12px; }
+  .salon-bloc-corps th{ color:var(--text-dim); font-size:11px; font-weight:400; text-align:left; padding-bottom:4px; }
+  .salon-bloc-corps th.droite,
+  .salon-bloc-corps td.droite{ text-align:right; }
+  .salon-bloc-corps td{ padding:4px 0; }
+  .salon-rare{ color:var(--gold); }
+  .salon-rate{ color:var(--text-dim); text-decoration:line-through; }
+  .salon-cat{ color:var(--text-dim); }
+
   /* --- Écrans Groupes --- */
   .small-link{
     display:block;
@@ -1216,17 +1344,7 @@
     <section id="view-home" class="view">
       <div id="home-loading" class="placeholder">Chargement du prochain match…</div>
 
-      <div id="home-prev-match" style="display:none;"></div>
-
-      <div id="home-compo-banner" style="display:none;" onclick="goToCompoNote()">
-        <div class="prev-match-banner">
-          <div class="prev-match-info">
-            La compo officielle est tombée
-            <small>Découvre ta note de composition</small>
-          </div>
-          <span class="prev-match-cta">Voir →</span>
-        </div>
-      </div>
+      <div id="home-salon" style="display:none;"></div>
 
       <div id="home-match-card" class="match-card" style="display:none;">
         <div class="live-badge" id="home-live-badge" style="display:none;">
@@ -1603,27 +1721,13 @@
       <span class="small-link" onclick="switchView('groups')">← Retour à mes groupes</span>
       <span class="small-link" style="margin-top:8px;" onclick="leaveGroup()">Quitter le groupe</span>
     </section>
-    <section id="view-compo" class="view" style="display:none;">
-      <div id="compo-loading" class="placeholder">Chargement de la composition…</div>
+    <section id="view-salon" class="view" style="display:none;">
+      <h2 class="play-title" id="salon-titre">LES PRONOS DU GROUPE</h2>
+      <span class="back-link" onclick="switchView('home')">← Retour à l'accueil</span>
 
-      <div id="compo-content" style="display:none;">
-        <div class="results-banner">
-          <div class="results-score-line" id="compo-match-line"></div>
-          <div class="results-date" id="compo-match-date"></div>
-        </div>
-
-        <div class="results-total-card">
-          <div class="results-total-label">Ta note de composition</div>
-          <div class="results-total-value" id="compo-note-value">0</div>
-          <div class="results-rank" id="compo-found-line"></div>
-        </div>
-
-        <div id="compo-detail"></div>
-
-        <p class="deadline-note" id="compo-footnote"></p>
-      </div>
-
-      <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
+      <div id="salon-loading" class="placeholder">Chargement du salon…</div>
+      <div id="salon-empty" class="placeholder" style="display:none;"></div>
+      <div id="salon-content" style="display:none;"></div>
     </section>
     <section id="view-confirm" class="view" style="display:none;">
       <h2 class="play-title" id="confirm-title">Pronostic enregistré</h2>
@@ -2069,7 +2173,7 @@ async function loadHomeMatch(){
     }
 
     document.getElementById('home-loading').style.display = 'none';
-    document.getElementById('home-prev-match').style.display = 'none';
+    document.getElementById('home-salon').style.display = 'none';
 
     if(!match){
       document.getElementById('home-no-match').style.display = 'block';
@@ -2131,7 +2235,6 @@ async function loadHomeMatch(){
     }
 
     await checkExistingPrediction();
-    checkOfficialComposition();
     scheduleHomeRefresh();
 
     // Calendrier des prochains matchs, sous la carte principale. En mode normal,
@@ -2160,41 +2263,12 @@ async function loadHomeMatch(){
       document.getElementById('home-calendar').innerHTML = '';
     }
 
-    // Lien vers les résultats du match précédent, si un pronostic existait pour lui.
-    // Un match non noté est déjà affiché en grand dans la carte du dessus : ce
-    // bandeau mènerait alors à un écran « pas encore joué ».
-    if(previous && !unscored){
-      const prevMatch = previous;
-      const userId = getUserId();
-      const predCheck = await fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${prevMatch.id}/${teamId}`).then(r=>r.json());
-      if(predCheck.success && predCheck.data){
-        const d = new Date(prevMatch.dateTime);
+    // Le salon du groupe prend la place de l'ancien bandeau « Ta note est tombée ».
+    // Il s'accroche au dernier match dont les pronos sont fermés : celui qui est
+    // affiché au-dessus quand sa clôture est passée, sinon le précédent, qui reste
+    // consultable jusqu'à la clôture suivante.
+    refreshHomeSalon(match, previous);
 
-        // Tant que l'annonce de fin de match n'a pas été ouverte, ce bandeau
-        // est la seule invitation visible : il le dit franchement. Une fois la
-        // note découverte, il redevient un simple raccourci.
-        let vue = false;
-        try{ vue = localStorage.getItem(LS_NOTIF + '_' + userId) === prevMatch.id; }catch(e){}
-
-        const titre = vue
-          ? `${prevMatch.homeTeam.name} / ${prevMatch.awayTeam.name}`
-          : 'Ta note est tombée';
-        const sousTitre = vue
-          ? d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' })
-          : `${prevMatch.homeTeam.name} / ${prevMatch.awayTeam.name}`;
-        const cta = vue ? 'Résultats →' : 'Voir ma note →';
-
-        document.getElementById('home-prev-match').style.display = 'block';
-        document.getElementById('home-prev-match').innerHTML = `
-          <div class="prev-match-banner" onclick="goToResults('${prevMatch.id}')">
-            <div class="prev-match-info">
-              ${titre}
-              <small>${sousTitre}</small>
-            </div>
-            <span class="prev-match-cta">${cta}</span>
-          </div>`;
-      }
-    }
   }catch(e){
     document.getElementById('home-loading').textContent = 'Impossible de charger le prochain match.';
   }
@@ -2217,14 +2291,7 @@ async function checkExistingPrediction(){
   updatePlayButtonLabel();
 }
 
-// ===== NOTE DE COMPOSITION =====
-// Résultat partiel, disponible dès que la compo officielle est saisie, donc
-// bien avant le coup d'envoi. Elle est calculée ici, côté joueur, et n'est
-// jamais enregistrée : le moteur du serveur reste seul maître des vraies notes,
-// qu'il ne calcule qu'une fois le match passé en "Played".
-
-let officialCompoPlayers = null;
-
+// L'effectif du PSG, chargé une seule fois et gardé en mémoire.
 async function ensureSquadLoaded(){
   if(squadData.length === 0){
     const teamId = await getPsgTeamId();
@@ -2234,108 +2301,332 @@ async function ensureSquadLoaded(){
   }
 }
 
-// Récupère les onze titulaires du PSG pour le match en cours, s'ils ont été
-// saisis. Tant qu'ils ne le sont pas, la liste est vide et le bandeau reste
-// caché : rien à annoncer.
-async function checkOfficialComposition(){
-  const banner = document.getElementById('home-compo-banner');
-  officialCompoPlayers = null;
-  if(banner) banner.style.display = 'none';
+
+// ===== LE SALON DU GROUPE =====
+// Une seule page, trois états, décidés par le serveur : les pronostics bruts à la
+// clôture, les notes de composition dès que le onze officiel tombe, tout le reste
+// après la saisie des statistiques.
+//
+// Le bloc d'accueil s'accroche au dernier match dont les pronos sont fermés. Tant
+// que la clôture du match affiché n'est pas passée, il montre le match précédent :
+// c'est ce qui permet aux résultats de rester consultables entre deux matchs, puis
+// de céder la place au match suivant à sa propre clôture, et pas avant.
+
+const SALON_ETATS = {
+  closed:      { titre:'LES PRONOS DU GROUPE',            cta:'Les pronos du groupe' },
+  composition: { titre:'LES COMPOS DU GROUPE',            cta:'Les compos du groupe sont notées' },
+  results:     { titre:'LES RÉSULTATS DU GROUPE',         cta:'Tous les résultats du groupe' }
+};
+
+let salonMesGroupes = [];
+let salonDeplie = { compo:null, detail:null };
+let salonDernier = null;
+
+// Le match visé par le bloc d'accueil, et l'état à annoncer sur le bouton.
+// Le serveur compare les dates en UTC : on ne lui demande rien, on compare
+// nous-mêmes la clôture à l'heure du téléphone, comme le reste de l'accueil.
+function salonMatchVise(courant, precedent){
+  const maintenant = Date.now();
+
+  if(courant){
+    const cloture = new Date(courant.dateTime).getTime() - 86400000;
+    if(maintenant >= cloture) return courant;
+  }
+  if(precedent){
+    const cloture = new Date(precedent.dateTime).getTime() - 86400000;
+    if(maintenant >= cloture) return precedent;
+  }
+  return null;
+}
+
+// L'état se lit sans appeler le salon : le statut du match dit s'il est noté,
+// et la fiche du match dit si le onze officiel est saisi.
+async function salonEtatDuMatch(match){
+  if(String(match.status || '').toLowerCase() === 'played') return 'results';
 
   try{
-    if(!currentMatch || !hasPredictionForCurrentMatch) return;
     const teamId = await getPsgTeamId();
-    const res = await fetch(`${API_BASE}/Match/ById/${currentMatch.id}`);
+    const res = await fetch(`${API_BASE}/Match/ById/${match.id}`);
     const json = await res.json();
-    if(!json.success || !json.data) return;
+    if(!json.success || !json.data) return 'closed';
 
-    const side = (json.data.homeTeam && json.data.homeTeam.id === teamId) ? json.data.homeTeam : json.data.awayTeam;
+    const side = (json.data.homeTeam && json.data.homeTeam.id === teamId)
+      ? json.data.homeTeam : json.data.awayTeam;
     const titulaires = ((side && side.players) ? side.players : [])
       .filter(p => !(p.position && p.position.toUpperCase() === 'SUBSTITUTE'));
 
-    if(!titulaires.length) return;
-
-    officialCompoPlayers = titulaires;
-    if(banner) banner.style.display = 'block';
-  }catch(e){ /* pas de compo, pas de bandeau */ }
+    return titulaires.length ? 'composition' : 'closed';
+  }catch(e){ return 'closed'; }
 }
 
-async function goToCompoNote(){
-  switchView('compo');
-  document.getElementById('compo-loading').style.display = 'block';
-  document.getElementById('compo-content').style.display = 'none';
+async function refreshHomeSalon(courant, precedent){
+  const bloc = document.getElementById('home-salon');
+  if(!bloc) return;
+  bloc.style.display = 'none';
+  bloc.innerHTML = '';
+
+  const cible = salonMatchVise(courant, precedent);
+  if(!cible) return;
 
   try{
-    if(!officialCompoPlayers) await checkOfficialComposition();
-    if(!officialCompoPlayers) throw new Error('compo absente');
-
-    await ensureSquadLoaded();
-
     const userId = getUserId();
-    const teamId = await getPsgTeamId();
-    const predRes = await fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${currentMatch.id}/${teamId}`);
-    const predJson = await predRes.json();
-    if(!predJson.success || !predJson.data) throw new Error('pronostic absent');
+    const res = await fetch(`${API_BASE}/Group/ByUserId/${userId}`);
+    const json = await res.json();
+    salonMesGroupes = (json.success && json.data) ? json.data : [];
+  }catch(e){ salonMesGroupes = []; }
 
-    renderCompoNote(predJson.data.players || []);
-    document.getElementById('compo-loading').style.display = 'none';
-    document.getElementById('compo-content').style.display = 'block';
+  // Sans groupe, l'accueil reste exactement ce qu'il était.
+  if(salonMesGroupes.length === 0) return;
+
+  const etat = await salonEtatDuMatch(cible);
+  const libelle = SALON_ETATS[etat].cta;
+  const dore = (etat !== 'closed') ? ' dore' : '';
+  const affiche = teamLabel(cible.homeTeam, 'PSG') + ' / ' + teamLabel(cible.awayTeam, 'Adversaire');
+
+  if(salonMesGroupes.length === 1){
+    const g = salonMesGroupes[0];
+    bloc.innerHTML = `
+      <div class="salon-cta${dore}" onclick="goToSalon('${g.id}','${cible.id}')">
+        <div class="salon-cta-info">
+          ${libelle}
+          <small>${affiche}</small>
+        </div>
+        <span class="salon-cta-fleche">Voir →</span>
+      </div>`;
+  } else {
+    const lignes = salonMesGroupes.map(g => `
+      <div class="salon-choix-ligne" onclick="goToSalon('${g.id}','${cible.id}')">
+        <em style="font-style:normal;">${g.name}</em>
+        <span>Voir →</span>
+      </div>`).join('');
+
+    bloc.innerHTML = `
+      <div class="salon-choix${dore}">
+        <div class="salon-choix-titre">${libelle}</div>
+        ${lignes}
+      </div>`;
+  }
+
+  bloc.style.display = 'block';
+}
+
+async function goToSalon(groupId, matchId){
+  switchView('salon');
+  document.getElementById('salon-loading').style.display = 'block';
+  document.getElementById('salon-empty').style.display = 'none';
+  document.getElementById('salon-content').style.display = 'none';
+  salonDeplie = { compo:null, detail:null };
+
+  try{
+    const teamId = await getPsgTeamId();
+    const userId = getUserId();
+    const res = await fetch(`${API_BASE}/Group/Salon/${teamId}/${matchId}/${userId}/${groupId}`);
+    const json = await res.json();
+
+    if(!json.success || !json.data){
+      throw new Error(json.message || 'salon indisponible');
+    }
+
+    salonDernier = json.data;
+    renderSalon();
+
+    document.getElementById('salon-loading').style.display = 'none';
+    document.getElementById('salon-content').style.display = 'block';
   }catch(e){
-    document.getElementById('compo-loading').textContent =
-      "La composition officielle n'est pas encore disponible pour ce match.";
+    document.getElementById('salon-loading').style.display = 'none';
+    document.getElementById('salon-empty').style.display = 'block';
+    document.getElementById('salon-empty').textContent =
+      "Le salon ouvre à la clôture des pronostics, 24 h avant le coup d'envoi.";
   }
 }
 
-function renderCompoNote(predictedIds){
-  const realIds = new Set(officialCompoPlayers.map(p => p.id));
-  let trouves = 0;
-  officialCompoPlayers.forEach(p => { if(predictedIds.indexOf(p.id) !== -1) trouves++; });
+// Un titulaire trouvé par la moitié du groupe ou moins est une trouvaille rare.
+function salonEstRare(pick, nbJoueurs){
+  if(!pick.found || nbJoueurs <= 0) return false;
+  return (pick.choiceCount / nbJoueurs) <= 0.5;
+}
 
-  // Exactement la formule du serveur : titulaires trouvés sur onze, ramenés sur cent.
-  const note = Math.round((trouves / 11) * 100 * 10000) / 10000;
+function salonNomJoueur(p){
+  const prenom = p.firstName || '';
+  const nom = p.lastName || '';
+  if(prenom && nom && prenom === nom) return nom;
+  return (prenom + ' ' + nom).trim() || '—';
+}
 
-  document.getElementById('compo-match-line').textContent =
-    currentMatch.homeTeam.name + ' – ' + currentMatch.awayTeam.name;
-  document.getElementById('compo-match-date').textContent =
-    "Coup d'envoi : " + formatMatchDate(new Date(currentMatch.dateTime));
+function renderSalon(){
+  const d = salonDernier;
+  if(!d) return;
 
-  document.getElementById('compo-note-value').textContent = fmtNote(note);
-  document.getElementById('compo-found-line').textContent =
-    trouves + (trouves > 1 ? ' titulaires trouvés sur 11' : ' titulaire trouvé sur 11');
+  const etat = SALON_ETATS[d.state] || SALON_ETATS.closed;
+  document.getElementById('salon-titre').textContent = etat.titre;
 
-  const nomDe = (id) => {
-    const officiel = officialCompoPlayers.find(p => p.id === id);
-    if(officiel) return officiel.firstName + ' ' + officiel.lastName;
-    const p = squadData.find(sp => sp.id === id);
-    return p ? p.firstName + ' ' + p.lastName : '—';
-  };
+  // Le joueur d'abord, les autres dans l'ordre renvoyé par le serveur.
+  const membres = d.members.slice().sort((a,b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0));
+  const nbJoueurs = d.predictionCount;
 
-  const tonHtml = predictedIds.map(id =>
-    `<span class="compo-name ${realIds.has(id) ? '' : 'compo-wrong'}">${nomDe(id)}</span>`).join('');
+  let html = '';
 
-  const reelHtml = officialCompoPlayers.map(p =>
-    `<span class="compo-name">${p.firstName} ${p.lastName}</span>`).join('');
+  // --- L'affiche ---
+  const affiche = (d.state === 'results' && d.real)
+    ? `${d.teamName} ${d.real.teamScore} – ${d.real.opponentScore} ${d.opponentName}`
+    : `${d.teamName} — ${d.opponentName}`;
 
-  document.getElementById('compo-detail').innerHTML = `
-    <div class="result-category">
-      <div class="result-cat-head">
-        <span class="result-cat-name">Composition</span>
-        <span class="result-cat-points">${fmtNote(note)}/100</span>
-      </div>
-      <div class="compo-compare">
-        <div class="compo-col">
-          <div class="compo-col-label">Toi</div>
-          ${tonHtml}
-        </div>
-        <div class="compo-col">
-          <div class="compo-col-label">Réel</div>
-          ${reelHtml}
-        </div>
-      </div>
+  const sousTitre = (d.state === 'results')
+    ? `<div class="salon-sous-affiche gris">${d.groupName} · match terminé</div>`
+    : `<div class="salon-sous-affiche">${d.groupName} · ${d.predictionCount} joueur${d.predictionCount > 1 ? 's' : ''} sur ${d.memberCount}</div>`;
+
+  html += `
+    <div class="salon-entete">
+      <div class="salon-affiche">${affiche}</div>
+      ${sousTitre}
     </div>`;
 
-  document.getElementById('compo-footnote').textContent =
-    "Ce n'est qu'une partie de ton score. Tu découvriras ta note globale quelques minutes après la fin du match.";
+  // --- L'annonce du moment ---
+  if(d.state === 'closed'){
+    html += `<div class="salon-annonce">Les pronos sont fermés. La compo officielle tombe une heure avant le coup d'envoi.</div>`;
+  } else if(d.state === 'composition'){
+    html += `<div class="salon-annonce dore"><b>La compo officielle est tombée</b>Premier verdict de la soirée.</div>`;
+  }
+
+  // --- Le classement du soir ---
+  if(d.state === 'composition'){
+    const classees = membres.filter(m => m.compositionNote !== null && m.compositionNote !== undefined)
+      .sort((a,b) => b.compositionNote - a.compositionNote);
+    if(classees.length){
+      html += `<div class="salon-legende">note de composition</div><div class="salon-liste">`;
+      classees.forEach((m,i) => {
+        const moi = m.isMe ? ' salon-moi' : '';
+        html += `<div class="salon-ligne"><span class="${moi.trim()}">${i+1} · ${m.isMe ? 'toi' : m.displayName}</span>
+                 <span class="note${moi}">${fmtNote(m.compositionNote)}</span></div>`;
+      });
+      html += `</div>`;
+    }
+  }
+
+  if(d.state === 'results'){
+    const classees = membres.filter(m => m.matchRank).sort((a,b) => a.matchRank - b.matchRank);
+    if(classees.length){
+      html += `<div class="salon-legende">le classement du match</div><div class="salon-liste">`;
+      classees.forEach(m => {
+        const moi = m.isMe ? ' salon-moi' : '';
+        html += `<div class="salon-ligne"><span class="${moi.trim()}">${m.matchRank} · ${m.isMe ? 'toi' : m.displayName}</span>
+                 <span class="note${moi}">${fmtNote(m.noteTotal)}<span class="pts">+${m.groupPoints} pts</span></span></div>`;
+      });
+      html += `</div>`;
+    }
+  }
+
+  // --- Le tableau des pronostics ---
+  const legendeTableau = (d.state === 'results') ? 'les pronos face au réel' : 'les pronos du groupe';
+  html += `<div class="salon-legende">${legendeTableau}</div>
+    <div class="salon-tableau"><table>
+      <tr><th class="nom"></th><th>Poss.</th><th>Tirs</th><th>Fautes</th><th>Centres</th><th>Score</th></tr>`;
+
+  if(d.state === 'results' && d.real){
+    html += `<tr class="reel"><td class="nom">Réel</td>
+      <td>${fmtRecapNum(d.real.teamPossession)}</td><td>${d.real.teamShots}</td>
+      <td>${d.real.teamFouls}</td><td>${d.real.teamCrosses}</td>
+      <td>${d.real.teamScore}-${d.real.opponentScore}</td></tr>`;
+  }
+
+  membres.forEach(m => {
+    const nom = m.isMe ? 'toi' : m.displayName;
+    if(!m.hasPrediction){
+      html += `<tr class="corps absent"><td class="nom">${nom}</td><td colspan="5">n'a pas joué ce match</td></tr>`;
+      return;
+    }
+    html += `<tr class="corps">
+      <td class="nom${m.isMe ? ' salon-moi' : ''}">${nom}</td>
+      <td>${fmtRecapNum(m.teamPossession)}</td><td>${m.teamShots}</td>
+      <td>${m.teamFouls}</td><td>${m.teamCrosses}</td>
+      <td class="score">${m.teamScore}-${m.opponentScore}</td></tr>`;
+  });
+  html += `</table></div>`;
+
+  // --- Les compositions, repliées, une seule ouverte à la fois ---
+  html += `<div class="salon-legende">les compositions</div>`;
+  membres.filter(m => m.hasPrediction).forEach(m => {
+    const nom = m.isMe ? 'toi' : m.displayName;
+    const ouvert = (salonDeplie.compo === m.userId);
+    const fleche = ouvert ? '⌄' : '›';
+
+    const etatCompo = (m.compositionFound === null || m.compositionFound === undefined)
+      ? `voir les 11 ${fleche}`
+      : `${m.compositionFound}/11 trouvés ${fleche}`;
+
+    html += `<div class="salon-bloc">
+      <div class="salon-bloc-entete" onclick="salonToggle('compo','${m.userId}')">
+        <span class="${m.isMe ? 'salon-moi' : ''}">${nom}</span>
+        <span class="salon-bloc-etat">${etatCompo}</span>
+      </div>`;
+
+    if(ouvert){
+      html += `<div class="salon-bloc-corps"><table>
+        <tr><th>Joueur</th><th class="droite">Nb de fois choisis</th></tr>`;
+      m.picks.forEach(p => {
+        let cls = '';
+        if(d.state !== 'closed'){
+          if(!p.found) cls = 'salon-rate';
+          else if(salonEstRare(p, nbJoueurs)) cls = 'salon-rare';
+        }
+        html += `<tr><td class="${cls}">${salonNomJoueur(p)}</td>
+                 <td class="droite ${cls}">${p.choiceCount}/${nbJoueurs}</td></tr>`;
+      });
+      html += `</table>`;
+
+      // Pour le joueur lui-même, la comparaison Toi / Réel de l'ancienne page.
+      if(m.isMe && d.hasOfficialComposition){
+        const tien = m.picks.map(p =>
+          `<span class="compo-name ${p.found ? '' : 'compo-wrong'}">${salonNomJoueur(p)}</span>`).join('');
+        const reel = d.officialLineup.map(p =>
+          `<span class="compo-name">${salonNomJoueur(p)}</span>`).join('');
+        html += `<div class="compo-compare">
+          <div class="compo-col"><div class="compo-col-label">Toi</div>${tien}</div>
+          <div class="compo-col"><div class="compo-col-label">Réel</div>${reel}</div>
+        </div>`;
+      }
+
+      html += `</div>`;
+    }
+    html += `</div>`;
+  });
+
+  // --- Le détail par catégorie, membre par membre ---
+  if(d.state === 'results'){
+    html += `<div class="salon-legende" style="margin-top:14px;">le détail, membre par membre</div>`;
+    membres.filter(m => m.noteTotal !== null && m.noteTotal !== undefined).forEach(m => {
+      const nom = m.isMe ? 'toi' : m.displayName;
+      const ouvert = (salonDeplie.detail === m.userId);
+      const fleche = ouvert ? '⌄' : '›';
+
+      html += `<div class="salon-bloc">
+        <div class="salon-bloc-entete" onclick="salonToggle('detail','${m.userId}')">
+          <span class="${m.isMe ? 'salon-moi' : ''}">${nom}</span>
+          <span class="salon-bloc-etat note">${fmtNote(m.noteTotal)} ${fleche}</span>
+        </div>`;
+
+      if(ouvert){
+        const lignes = [
+          ['Composition', m.noteComposition],
+          ['Score', m.noteScore],
+          ['Possession', m.notePossession],
+          ['Fautes', m.noteFouls],
+          ['Centres', m.noteCrosses],
+          ['Tirs', m.noteShots]
+        ].map(l => `<tr><td class="salon-cat">${l[0]}</td><td class="droite">${fmtNote(l[1])}</td></tr>`).join('');
+        html += `<div class="salon-bloc-corps"><table>${lignes}</table></div>`;
+      }
+      html += `</div>`;
+    });
+  }
+
+  document.getElementById('salon-content').innerHTML = html;
+}
+
+// Une seule composition ouverte à la fois, et un seul détail.
+function salonToggle(quoi, userId){
+  salonDeplie[quoi] = (salonDeplie[quoi] === userId) ? null : userId;
+  renderSalon();
 }
 
 // Un seul endroit décide de ce que fait ce bouton. Avant, le compte à rebours
