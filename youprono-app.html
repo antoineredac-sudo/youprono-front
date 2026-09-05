@@ -1716,7 +1716,7 @@
       </div>
 
       <div class="group-invite-box" style="margin-top:28px;">
-        <div class="group-invite-title">Inviter un supporter du PSG</div>
+        <div class="group-invite-title">Inviter un nouveau membre dans le groupe</div>
         <div class="group-invite-label">Code d'invitation à partager</div>
         <div class="group-invite-code" id="group-detail-code"></div>
         <button class="cta-play-outline" style="margin-top:16px;" onclick="shareGroupOnWhatsApp()">Partager sur WhatsApp</button>
@@ -3292,7 +3292,8 @@ async function enterGroupsScreen(){
     const groups = (json.success && json.data) ? json.data : [];
 
     // Le bouton d'invitation doit avoir son code avant le premier clic.
-    const sien = groups.find(g => g.name === nomDeMonGroupe());
+    const noms = nomsDeMonGroupe();
+    const sien = groups.find(g => noms.indexOf(g.name) !== -1);
     if(sien){ monGroupe = { id: sien.id, name: sien.name, inviteCode: sien.inviteCode }; }
 
     if(groups.length === 0){
@@ -3315,10 +3316,27 @@ async function enterGroupsScreen(){
 // ou il invite quelqu'un, et l'invitation est la seule chose qu'il fait.
 let monGroupe = null; // { id, name, inviteCode }
 
-function nomDeMonGroupe(){
+function pseudoCourant(){
   const auth = getAuth();
-  const pseudo = (auth && auth.displayName) ? auth.displayName : 'un supporter';
-  return 'Les amis de ' + pseudo;
+  return (auth && auth.displayName) ? auth.displayName : 'un supporter';
+}
+
+// « Les amis d'Arthur », mais « Les amis de Thomas » : l'elision se fait devant
+// une voyelle ou un h. Les pseudos commencant par un chiffre ou un emoji gardent
+// « de », ce qui est correct a l'oreille.
+function nomDeMonGroupe(){
+  const pseudo = pseudoCourant();
+  const premiere = pseudo.trim().charAt(0).toLowerCase();
+  const elide = 'aàâäeéèêëiîïoôöuùûüyh'.indexOf(premiere) !== -1;
+  return elide ? ("Les amis d'" + pseudo) : ('Les amis de ' + pseudo);
+}
+
+// Les groupes crees avant la correction portent l'ancienne orthographe. On
+// reconnait les deux, sinon le bouton ne retrouverait plus le groupe existant
+// et en fabriquerait un second en silence.
+function nomsDeMonGroupe(){
+  const pseudo = pseudoCourant();
+  return ['Les amis de ' + pseudo, "Les amis d'" + pseudo];
 }
 
 // On cherche uniquement le groupe qui porte son nom, jamais le premier venu :
@@ -3336,7 +3354,8 @@ async function assureMonGroupe(creerSiAbsent){
     const json = await res.json();
     const groupes = (json.success && Array.isArray(json.data)) ? json.data : [];
 
-    const sien = groupes.find(g => g.name === nom);
+    const noms = nomsDeMonGroupe();
+    const sien = groupes.find(g => noms.indexOf(g.name) !== -1);
     if(sien){
       monGroupe = { id: sien.id, name: sien.name, inviteCode: sien.inviteCode };
       return monGroupe;
