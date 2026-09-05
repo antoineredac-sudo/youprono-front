@@ -752,40 +752,6 @@
     margin-right:6px;
   }
 
-  /* --- Pseudos cliquables et page d'un joueur --- */
-  .pseudo-lien{ cursor:pointer; text-decoration:underline; text-decoration-color:var(--border); text-underline-offset:3px; }
-
-  .joueur-entete{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:24px;
-    text-align:center;
-    margin-bottom:16px;
-  }
-  .joueur-pseudo{ font-family:'Oswald',sans-serif; font-size:28px; font-weight:600; }
-  .joueur-rang{ color:var(--gold); font-size:13px; margin-top:6px; }
-
-  .joueur-grille{ display:flex; gap:10px; margin-bottom:16px; }
-  .joueur-case{
-    flex:1;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:14px 8px;
-    text-align:center;
-  }
-  .joueur-case-label{ color:var(--text-dim); font-size:11px; text-transform:uppercase; }
-  .joueur-case-valeur{ font-family:'Oswald',sans-serif; font-size:20px; margin-top:4px; }
-
-  .joueur-etat{
-    text-align:center;
-    color:var(--gold);
-    font-size:14px;
-    margin-bottom:12px;
-  }
-  .joueur-note{ color:var(--text-dim); font-size:12px; line-height:1.5; margin-top:12px; text-align:center; }
-
   /* --- Le salon du groupe --- */
   .salon-cta{
     display:flex;
@@ -1376,7 +1342,6 @@
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Mon profil</button>
       <button data-view="groups" onclick="navFromMenu('groups')">Mes groupes</button>
-      <button data-view="friends" onclick="navFromMenu('friends')">Mes amis</button>
       <button data-view="trophies" onclick="navFromMenu('trophies')">Mes trophées</button>
       <button data-view="badges" onclick="navFromMenu('badges')">Mes badges</button>
       <button data-view="invite" onclick="navFromMenu('invite')">Inviter un ami</button>
@@ -1871,28 +1836,8 @@
         <div class="ranking-me-rank" id="ranking-me-rank"></div>
       </div>
 
-      <div class="ranking-tabs" style="margin-top:14px;">
-        <button class="ranking-tab active" id="ranking-scope-all" onclick="switchRankingScope('all')">tout le monde</button>
-        <button class="ranking-tab" id="ranking-scope-friends" onclick="switchRankingScope('friends')">entre amis</button>
-      </div>
-
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div id="ranking-table"></div>
-    </section>
-    <section id="view-friends" class="view" style="display:none;">
-      <h2 class="play-title">CLASSEMENT ENTRE AMIS</h2>
-
-      <div id="friends-loading" class="placeholder">Chargement…</div>
-      <div id="friends-empty" class="placeholder" style="display:none;"></div>
-      <div id="friends-table"></div>
-
-      <span class="small-link" style="margin-top:20px;" onclick="goToRanking()">Trouver des joueurs dans le classement</span>
-    </section>
-    <section id="view-player" class="view" style="display:none;">
-      <span class="back-link" onclick="switchView('ranking')">← Retour</span>
-
-      <div id="player-loading" class="placeholder">Chargement…</div>
-      <div id="player-content" style="display:none;"></div>
     </section>
     <section id="view-trophies" class="view" style="display:none;">
       <h2 class="play-title">MES TROPHÉES</h2>
@@ -2156,11 +2101,9 @@ function restoreRoute(brut){
 
   try{
     if(nom === 'salon' && parts[2]){ goToSalon(parts[1], parts[2]); }
-    else if(nom === 'joueur' && parts[1]){ goToPlayer(parts[1]); }
     else if(nom === 'group-detail' && parts[1]){ openGroupDetail(parts[1]); }
     else if(nom === 'results'){ goToResults(parts[1]); }
     else if(nom === 'groups'){ goToGroups(); }
-    else if(nom === 'friends'){ goToFriends(); }
     else if(nom === 'ranking'){ goToRanking(); }
     else if(nom === 'profile'){ goToProfile(); }
     else if(nom === 'badges'){ goToBadges(); }
@@ -2571,193 +2514,6 @@ function renderCompoNote(prediction){
 }
 
 
-// ===== LES AMIS =====
-// L'amitié est un lien unique en base, lu dans les deux sens : ajouter quelqu'un,
-// c'est entrer dans sa liste autant qu'il entre dans la tienne. Le bouton dit donc
-// « Ajouter à mes amis », pas « inviter » — il n'y a rien à accepter.
-
-let friendsCache = null;
-let friendIdsCache = null;
-
-async function loadFriends(force){
-  if(friendsCache && !force) return friendsCache;
-  try{
-    const userId = getUserId();
-    const teamId = await getPsgTeamId();
-    const res = await fetch(`${API_BASE}/User/Friends/${userId}/${teamId}?page=1&limit=200`);
-    const json = await res.json();
-    const data = (json.success && json.data) ? json.data : null;
-    friendsCache = data ? (Array.isArray(data) ? data : (data.page || [])) : [];
-  }catch(e){ friendsCache = []; }
-  friendIdsCache = friendsCache.map(f => f.id);
-  return friendsCache;
-}
-
-async function loadFriendIds(force){
-  await loadFriends(force);
-  return friendIdsCache;
-}
-
-// Le classement général sert de source unique : il porte le rang, le score et le
-// nombre de matchs de chacun. La liste d'amis ne fournit que des identifiants.
-async function ensureRanking(tab){
-  if(rankingCache[tab]) return rankingCache[tab];
-  const teamId = await getPsgTeamId();
-  const endpoint = (tab === 'final') ? 'RankingByResultFinalTotal' : 'RankingByResultTotal';
-  const res = await fetch(`${API_BASE}/UserStats/${endpoint}/${teamId}`);
-  const json = await res.json();
-  rankingCache[tab] = (json.success && json.data) ? json.data : [];
-  return rankingCache[tab];
-}
-
-async function goToFriends(){
-  switchView('friends');
-  document.getElementById('friends-loading').style.display = 'block';
-  document.getElementById('friends-empty').style.display = 'none';
-  document.getElementById('friends-table').innerHTML = '';
-
-  try{
-    const amisBruts = await loadFriends(true);
-    const liste = await ensureRanking('final');
-
-    document.getElementById('friends-loading').style.display = 'none';
-
-    if(amisBruts.length === 0){
-      const vide = document.getElementById('friends-empty');
-      vide.textContent = "Tu n'as encore ajouté personne. Ouvre le classement, touche un pseudo, et ajoute-le à tes amis.";
-      vide.style.display = 'block';
-      return;
-    }
-
-    const userId = getUserId();
-    const ids = amisBruts.map(f => f.id);
-
-    // Ceux qui ont une note, toi compris : classés dans l'ordre du classement
-    // général, mais renumérotés entre vous.
-    const classes = liste.filter(u => u.id === userId || ids.indexOf(u.id) !== -1);
-
-    const ligne = (rangAmis, rangGeneral, id, nom, note) => {
-      const moi = (id === userId);
-      return `
-      <div class="ranking-table-row ami-row ${moi ? 'me' : ''}" onclick="goToPlayer('${id}')">
-        <span class="rt-rank">#${rangAmis}</span>
-        <span class="rt-name ${moi ? '' : 'pseudo-lien'}">${nom}</span>
-        <span class="ami-pastille">${rangGeneral}</span>
-        <span class="rt-score">${note}</span>
-      </div>`;
-    };
-
-    document.getElementById('friends-table').innerHTML =
-      classes.map((u, i) => ligne(i + 1, u.rank + 'ᵉ', u.id, u.userName, fmtNote(u.score))).join('');
-
-    // Ta ligne est amenée au centre de l'écran : ceux qui font mieux au-dessus,
-    // ceux qui font moins bien en dessous.
-    const maLigne = document.querySelector('#friends-table .ranking-table-row.me');
-    if(maLigne && maLigne.scrollIntoView){
-      setTimeout(function(){
-        try{ maLigne.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(e){}
-      }, 60);
-    }
-  }catch(e){
-    document.getElementById('friends-loading').textContent = 'Impossible de charger tes amis.';
-  }
-}
-
-// ===== LA PAGE D'UN JOUEUR =====
-
-let playerShown = null;
-
-async function goToPlayer(userId){
-  // Son propre pseudo ramène à son tableau de bord : il n'a rien à s'ajouter.
-  if(userId === getUserId()){ goToProfile(); return; }
-
-  switchView('player');
-  setRoute('joueur', userId);
-  document.getElementById('player-loading').style.display = 'block';
-  document.getElementById('player-content').style.display = 'none';
-  playerShown = userId;
-
-  try{
-    const [coefs, records, ids] = await Promise.all([
-      ensureRanking('final'),
-      ensureRanking('record'),
-      loadFriendIds()
-    ]);
-
-    const coef = coefs.find(u => u.id === userId);
-    const record = records.find(u => u.id === userId);
-
-    if(!coef && !record){
-      document.getElementById('player-loading').textContent =
-        "Ce joueur n'a pas encore de match noté.";
-      return;
-    }
-
-    const nom = (coef || record).userName;
-    const estAmi = ids.indexOf(userId) !== -1;
-
-    renderPlayer(userId, nom, coef, record, estAmi);
-    document.getElementById('player-loading').style.display = 'none';
-    document.getElementById('player-content').style.display = 'block';
-  }catch(e){
-    document.getElementById('player-loading').textContent = 'Impossible de charger ce joueur.';
-  }
-}
-
-function renderPlayer(userId, nom, coef, record, estAmi){
-    document.getElementById('player-content').innerHTML = `
-      <div class="joueur-entete">
-        <div class="joueur-pseudo">${nom}</div>
-        <div class="joueur-rang">${coef ? ('#' + coef.rank + ' au coefficient expert') : 'pas encore classé'}</div>
-      </div>
-
-      <div class="joueur-grille">
-        <div class="joueur-case">
-          <div class="joueur-case-label">coef expert</div>
-          <div class="joueur-case-valeur">${coef ? fmtNote(coef.score) : '–'}</div>
-        </div>
-        <div class="joueur-case">
-          <div class="joueur-case-label">record</div>
-          <div class="joueur-case-valeur">${record ? fmtNote(record.score) : '–'}</div>
-        </div>
-        <div class="joueur-case">
-          <div class="joueur-case-label">matchs</div>
-          <div class="joueur-case-valeur">${coef ? coef.games : (record ? record.games : '–')}</div>
-        </div>
-      </div>
-
-      ${estAmi
-        ? `<div class="joueur-etat" id="player-state">${nom} fait partie de tes amis</div>`
-        : `<button class="cta-play" id="player-add-btn" onclick="addFriend('${userId}','${nom}')">Ajouter à mes amis</button>`}
-
-      <p class="joueur-note">L'amitié va dans les deux sens : tu apparaîtras aussi dans sa liste.</p>`;
-}
-
-async function addFriend(friendId, nom){
-  const btn = document.getElementById('player-add-btn');
-  if(btn){ btn.disabled = true; btn.textContent = 'Ajout…'; }
-
-  try{
-    const userId = getUserId();
-    const res = await fetch(`${API_BASE}/User/Friends/Add/${userId}/${friendId}`, { method:'POST' });
-    const json = await res.json();
-    if(!json.success) throw new Error('ajout refusé');
-
-    await loadFriendIds(true);
-    redrawPlayer(friendId, nom, true);
-  }catch(e){
-    if(btn){ btn.disabled = false; btn.textContent = 'Réessayer'; }
-  }
-}
-
-// On redessine la page avec les chiffres déjà en mémoire : le lien vient de
-// changer, pas le classement.
-function redrawPlayer(userId, nom, estAmi){
-  const coef = (rankingCache['final'] || []).find(u => u.id === userId);
-  const record = (rankingCache['record'] || []).find(u => u.id === userId);
-  renderPlayer(userId, nom, coef, record, estAmi);
-}
-
 // ===== LE SALON DU GROUPE =====
 // Une seule page, trois états, décidés par le serveur : les pronostics bruts à la
 // clôture, les notes de composition dès que le onze officiel tombe, tout le reste
@@ -3002,7 +2758,7 @@ function renderSalon(){
       html += `<div class="salon-legende">note de composition</div><div class="salon-liste">`;
       classees.forEach((m,i) => {
         const moi = m.isMe ? ' salon-moi' : '';
-        html += `<div class="salon-ligne"><span class="${moi.trim()}${m.isMe ? '' : ' pseudo-lien'}" onclick="goToPlayer('${m.userId}')">${i+1} · ${m.isMe ? 'toi' : m.displayName}</span>
+        html += `<div class="salon-ligne"><span class="${moi.trim()}">${i+1} · ${m.isMe ? 'toi' : m.displayName}</span>
                  <span class="note${moi}">${fmtNote(m.compositionNote)}</span></div>`;
       });
       html += `</div>`;
@@ -3015,7 +2771,7 @@ function renderSalon(){
       html += `<div class="salon-legende">le classement du match</div><div class="salon-liste">`;
       classees.forEach(m => {
         const moi = m.isMe ? ' salon-moi' : '';
-        html += `<div class="salon-ligne"><span class="${moi.trim()}${m.isMe ? '' : ' pseudo-lien'}" onclick="goToPlayer('${m.userId}')">${m.matchRank} · ${m.isMe ? 'toi' : m.displayName}</span>
+        html += `<div class="salon-ligne"><span class="${moi.trim()}">${m.matchRank} · ${m.isMe ? 'toi' : m.displayName}</span>
                  <span class="note${moi}">${fmtNote(m.noteTotal)}<span class="pts">+${m.groupPoints} pts</span></span></div>`;
       });
       html += `</div>`;
@@ -3038,11 +2794,11 @@ function renderSalon(){
   membres.forEach(m => {
     const nom = m.isMe ? 'toi' : m.displayName;
     if(!m.hasPrediction){
-      html += `<tr class="corps absent"><td class="nom ${m.isMe ? '' : 'pseudo-lien'}" onclick="goToPlayer('${m.userId}')">${nom}</td><td colspan="5">n'a pas joué ce match</td></tr>`;
+      html += `<tr class="corps absent"><td class="nom">${nom}</td><td colspan="5">n'a pas joué ce match</td></tr>`;
       return;
     }
     html += `<tr class="corps">
-      <td class="nom${m.isMe ? ' salon-moi' : ' pseudo-lien'}" onclick="goToPlayer('${m.userId}')">${nom}</td>
+      <td class="nom${m.isMe ? ' salon-moi' : ''}">${nom}</td>
       <td>${fmtRecapNum(m.teamPossession)}</td><td>${m.teamShots}</td>
       <td>${m.teamFouls}</td><td>${m.teamCrosses}</td>
       <td class="score">${m.teamScore}-${m.opponentScore}</td></tr>`;
@@ -3062,7 +2818,7 @@ function renderSalon(){
 
     html += `<div class="salon-bloc">
       <div class="salon-bloc-entete" onclick="salonToggle('compo','${m.userId}')">
-        <span class="${m.isMe ? 'salon-moi' : 'pseudo-lien'}" onclick="event.stopPropagation(); goToPlayer('${m.userId}');">${nom}</span>
+        <span class="${m.isMe ? 'salon-moi' : ''}">${nom}</span>
         <span class="salon-bloc-etat">${etatCompo}</span>
       </div>`;
 
@@ -3107,7 +2863,7 @@ function renderSalon(){
 
       html += `<div class="salon-bloc">
         <div class="salon-bloc-entete" onclick="salonToggle('detail','${m.userId}')">
-          <span class="${m.isMe ? 'salon-moi' : 'pseudo-lien'}" onclick="event.stopPropagation(); goToPlayer('${m.userId}');">${nom}</span>
+          <span class="${m.isMe ? 'salon-moi' : ''}">${nom}</span>
           <span class="salon-bloc-etat note">${fmtNote(m.noteTotal)} ${fleche}</span>
         </div>`;
 
@@ -3689,16 +3445,12 @@ function shareGameOnWhatsApp(){
 let rankingCache = { final: null, record: null };
 
 let rankingTab = 'final';
-let rankingScope = 'all';
 
 async function goToRanking(){
   switchView('ranking');
   rankingTab = 'final';
-  rankingScope = 'all';
   document.getElementById('ranking-tab-final').classList.add('active');
   document.getElementById('ranking-tab-record').classList.remove('active');
-  document.getElementById('ranking-scope-all').classList.add('active');
-  document.getElementById('ranking-scope-friends').classList.remove('active');
   await loadRanking('final');
 }
 
@@ -3709,11 +3461,15 @@ function switchRankingTab(tab){
   loadRanking(tab);
 }
 
-function switchRankingScope(scope){
-  rankingScope = scope;
-  document.getElementById('ranking-scope-all').classList.toggle('active', scope === 'all');
-  document.getElementById('ranking-scope-friends').classList.toggle('active', scope === 'friends');
-  loadRanking(rankingTab);
+// Le classement complet, chargé une fois par onglet puis gardé en mémoire.
+async function ensureRanking(tab){
+  if(rankingCache[tab]) return rankingCache[tab];
+  const teamId = await getPsgTeamId();
+  const endpoint = (tab === 'final') ? 'RankingByResultFinalTotal' : 'RankingByResultTotal';
+  const res = await fetch(`${API_BASE}/UserStats/${endpoint}/${teamId}`);
+  const json = await res.json();
+  rankingCache[tab] = (json.success && json.data) ? json.data : [];
+  return rankingCache[tab];
 }
 
 async function loadRanking(tab){
@@ -3726,48 +3482,30 @@ async function loadRanking(tab){
     const complet = await ensureRanking(tab);
     const userId = getUserId();
 
-    // La carte dorée ne change pas de périmètre : elle dit toujours où tu en es
-    // dans le classement général. Une place « 2e sur 3 amis » ne vaut rien.
     const me = complet.find(u => u.id === userId);
     document.getElementById('ranking-me-label').textContent = tab === 'final' ? 'coef expert' : 'note record';
     document.getElementById('ranking-me-score').textContent = me ? fmtNote(me.score) : '–';
     document.getElementById('ranking-me-rank').textContent = me ? ('#' + me.rank + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '')) : '';
 
-    let liste = complet;
-    let renumerote = false;
-
-    if(rankingScope === 'friends'){
-      const ids = await loadFriendIds();
-      // Toi et tes amis, et le rang recalculé entre vous : c'est la question
-      // posée par cet onglet, pas la place de chacun dans le classement général.
-      liste = complet.filter(u => u.id === userId || ids.indexOf(u.id) !== -1);
-      renumerote = true;
-
-      if(ids.length === 0){
-        loadingEl.textContent = "Tu n'as encore ajouté personne. Touche un pseudo dans « tout le monde » pour ajouter un joueur à tes amis.";
-        return;
-      }
-    }
+    const liste = complet;
 
     loadingEl.style.display = 'none';
 
     document.getElementById('ranking-table').innerHTML = liste.map((u, i) => `
-      <div class="ranking-table-row ${u.id === userId ? 'me' : ''}" onclick="goToPlayer('${u.id}')">
-        <span class="rt-rank">#${renumerote ? (i + 1) : u.rank}</span>
-        <span class="rt-name pseudo-lien">${u.userName}</span>
+      <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
+        <span class="rt-rank">#${u.rank}</span>
+        <span class="rt-name">${u.userName}</span>
         <span class="rt-games">${u.games}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`).join('');
 
-    // Sur le classement complet, on se place au milieu de l'écran : ceux qui font
-    // mieux au-dessus, ceux qui font moins bien en dessous, et le pouce décide.
-    if(rankingScope === 'all'){
-      const maLigne = document.querySelector('#ranking-table .ranking-table-row.me');
-      if(maLigne && maLigne.scrollIntoView){
-        setTimeout(function(){
-          try{ maLigne.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(e){}
-        }, 60);
-      }
+    // On se place au milieu de l'écran : ceux qui font mieux au-dessus, ceux qui
+    // font moins bien en dessous, et le pouce décide de la suite.
+    const maLigne = document.querySelector('#ranking-table .ranking-table-row.me');
+    if(maLigne && maLigne.scrollIntoView){
+      setTimeout(function(){
+        try{ maLigne.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(e){}
+      }, 60);
     }
   }catch(e){
     loadingEl.textContent = 'Impossible de charger le classement.';
@@ -3911,9 +3649,9 @@ async function openGroupDetail(groupId){
     }
 
     rankingEl.innerHTML = g.ranking.map(r => `
-      <div class="ranking-row" onclick="goToPlayer('${r.userId}')">
+      <div class="ranking-row">
         <span class="ranking-rank ${r.rank === 1 ? 'top' : ''}">${r.rank}</span>
-        <span class="ranking-name pseudo-lien">${r.displayName}</span>
+        <span class="ranking-name">${r.displayName}</span>
         <span class="ranking-score">${fmtNum(r.totalScore)}</span>
       </div>`).join('');
   }catch(e){
@@ -4304,7 +4042,6 @@ function navFromMenu(name){
   else if(name === 'myprono'){ goToMyProno(); }
   else if(name === 'results'){ goToResults(); }
   else if(name === 'groups'){ goToGroups(); }
-  else if(name === 'friends'){ goToFriends(); }
   else if(name === 'ranking'){ goToRanking(); }
   else if(name === 'trophies'){ switchView('trophies'); }
   else if(name === 'badges'){ goToBadges(); }
