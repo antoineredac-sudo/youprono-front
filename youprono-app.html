@@ -741,6 +741,17 @@
   .compo-name{ display:block; font-size:13px; padding:2px 0; }
   .compo-wrong{ text-decoration:line-through; color:var(--text-dim); }
 
+  /* --- Classement entre amis : deux rangs empilés --- */
+  .ami-rangs{ width:30px; text-align:center; flex-shrink:0; }
+  .ami-rang-amis{
+    display:block;
+    font-family:'Oswald',sans-serif;
+    font-size:16px;
+    color:var(--gold);
+    line-height:1.1;
+  }
+  .ami-rang-general{ display:block; color:var(--text-dim); font-size:11px; }
+
   /* --- Pseudos cliquables et page d'un joueur --- */
   .pseudo-lien{ cursor:pointer; text-decoration:underline; text-decoration-color:var(--border); text-underline-offset:3px; }
 
@@ -1869,7 +1880,7 @@
       <div id="ranking-table"></div>
     </section>
     <section id="view-friends" class="view" style="display:none;">
-      <h2 class="play-title">MES AMIS</h2>
+      <h2 class="play-title">CLASSEMENT ENTRE AMIS</h2>
 
       <div id="friends-loading" class="placeholder">Chargement…</div>
       <div id="friends-empty" class="placeholder" style="display:none;"></div>
@@ -2565,19 +2576,25 @@ function renderCompoNote(prediction){
 // c'est entrer dans sa liste autant qu'il entre dans la tienne. Le bouton dit donc
 // « Ajouter à mes amis », pas « inviter » — il n'y a rien à accepter.
 
+let friendsCache = null;
 let friendIdsCache = null;
 
-async function loadFriendIds(force){
-  if(friendIdsCache && !force) return friendIdsCache;
+async function loadFriends(force){
+  if(friendsCache && !force) return friendsCache;
   try{
     const userId = getUserId();
     const teamId = await getPsgTeamId();
     const res = await fetch(`${API_BASE}/User/Friends/${userId}/${teamId}?page=1&limit=200`);
     const json = await res.json();
     const data = (json.success && json.data) ? json.data : null;
-    const liste = data ? (Array.isArray(data) ? data : (data.page || [])) : [];
-    friendIdsCache = liste.map(f => f.id);
-  }catch(e){ friendIdsCache = []; }
+    friendsCache = data ? (Array.isArray(data) ? data : (data.page || [])) : [];
+  }catch(e){ friendsCache = []; }
+  friendIdsCache = friendsCache.map(f => f.id);
+  return friendsCache;
+}
+
+async function loadFriendIds(force){
+  await loadFriends(force);
   return friendIdsCache;
 }
 
@@ -2600,37 +2617,40 @@ async function goToFriends(){
   document.getElementById('friends-table').innerHTML = '';
 
   try{
-    const ids = await loadFriendIds(true);
+    const amisBruts = await loadFriends(true);
     const liste = await ensureRanking('final');
 
     document.getElementById('friends-loading').style.display = 'none';
 
-    if(ids.length === 0){
+    if(amisBruts.length === 0){
       const vide = document.getElementById('friends-empty');
       vide.textContent = "Tu n'as encore ajouté personne. Ouvre le classement, touche un pseudo, et ajoute-le à tes amis.";
       vide.style.display = 'block';
       return;
     }
 
-    // Un classement, pas un annuaire : toi au milieu des tiens, dans l'ordre du
-    // classement général, mais renumérotés entre vous.
     const userId = getUserId();
-    const amis = liste.filter(u => u.id === userId || ids.indexOf(u.id) !== -1);
+    const ids = amisBruts.map(f => f.id);
 
-    if(amis.length === 0){
-      const vide = document.getElementById('friends-empty');
-      vide.textContent = "Tes amis n'ont pas encore de note : ils apparaîtront ici dès leur premier match noté.";
-      vide.style.display = 'block';
-      return;
-    }
+    // Ceux qui ont une note, toi compris : classés dans l'ordre du classement
+    // général, mais renumérotés entre vous.
+    const classes = liste.filter(u => u.id === userId || ids.indexOf(u.id) !== -1);
 
-    document.getElementById('friends-table').innerHTML = amis.map((u, i) => `
-      <div class="ranking-table-row ${u.id === userId ? 'me' : ''}" onclick="goToPlayer('${u.id}')">
-        <span class="rt-rank">#${i + 1}</span>
-        <span class="rt-name ${u.id === userId ? '' : 'pseudo-lien'}">${u.userName}</span>
-        <span class="rt-games">${u.games}</span>
-        <span class="rt-score">${fmtNote(u.score)}</span>
-      </div>`).join('');
+    const ligne = (rangAmis, rangGeneral, id, nom, note) => {
+      const moi = (id === userId);
+      return `
+      <div class="ranking-table-row ami-row ${moi ? 'me' : ''}" onclick="goToPlayer('${id}')">
+        <span class="ami-rangs">
+          <span class="ami-rang-amis">${rangAmis}</span>
+          <span class="ami-rang-general">${rangGeneral}</span>
+        </span>
+        <span class="rt-name ${moi ? '' : 'pseudo-lien'}">${nom}</span>
+        <span class="rt-score">${note}</span>
+      </div>`;
+    };
+
+    document.getElementById('friends-table').innerHTML =
+      classes.map((u, i) => ligne(i + 1, u.rank + 'ᵉ', u.id, u.userName, fmtNote(u.score))).join('');
 
     // Ta ligne est amenée au centre de l'écran : ceux qui font mieux au-dessus,
     // ceux qui font moins bien en dessous.
