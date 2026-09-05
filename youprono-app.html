@@ -741,16 +741,16 @@
   .compo-name{ display:block; font-size:13px; padding:2px 0; }
   .compo-wrong{ text-decoration:line-through; color:var(--text-dim); }
 
-  /* --- Classement entre amis : deux rangs empilés --- */
-  .ami-rangs{ width:30px; text-align:center; flex-shrink:0; }
-  .ami-rang-amis{
-    display:block;
-    font-family:'Oswald',sans-serif;
-    font-size:16px;
-    color:var(--gold);
-    line-height:1.1;
+  /* --- Classement entre amis : la place au général, en pastille --- */
+  .ami-pastille{
+    background:var(--surface-raised);
+    color:var(--text-dim);
+    font-size:11px;
+    padding:2px 8px;
+    border-radius:20px;
+    flex-shrink:0;
+    margin-right:6px;
   }
-  .ami-rang-general{ display:block; color:var(--text-dim); font-size:11px; }
 
   /* --- Pseudos cliquables et page d'un joueur --- */
   .pseudo-lien{ cursor:pointer; text-decoration:underline; text-decoration-color:var(--border); text-underline-offset:3px; }
@@ -2640,11 +2640,9 @@ async function goToFriends(){
       const moi = (id === userId);
       return `
       <div class="ranking-table-row ami-row ${moi ? 'me' : ''}" onclick="goToPlayer('${id}')">
-        <span class="ami-rangs">
-          <span class="ami-rang-amis">${rangAmis}</span>
-          <span class="ami-rang-general">${rangGeneral}</span>
-        </span>
+        <span class="rt-rank">#${rangAmis}</span>
         <span class="rt-name ${moi ? '' : 'pseudo-lien'}">${nom}</span>
+        <span class="ami-pastille">${rangGeneral}</span>
         <span class="rt-score">${note}</span>
       </div>`;
     };
