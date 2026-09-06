@@ -914,6 +914,28 @@
   }
 
   .group-actions{ display:flex; flex-direction:column; gap:12px; margin-top:24px; }
+  button.cta-whatsapp{
+    width:100%;
+    background:#25D366;
+    color:#04341a;
+    border:none;
+    border-radius:10px;
+    padding:16px;
+    font-family:'Oswald',sans-serif;
+    font-size:18px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    cursor:pointer;
+  }
+  button.cta-whatsapp:disabled{ opacity:.7; cursor:default; }
+  .groups-pitch{
+    color:var(--text);
+    text-align:center;
+    padding:28px 6px 4px;
+    font-size:16px;
+    line-height:1.6;
+  }
   button.cta-play-outline{
     width:100%;
     background:none;
@@ -1689,8 +1711,11 @@
       <div id="groups-list"></div>
 
       <div class="group-actions">
-        <button class="cta-play" id="group-invite-btn" onclick="inviteFromGroupsScreen()">Crée un groupe de supporters via WhatsApp</button>
-        <button class="cta-play-outline" onclick="switchView('group-join')">Rejoindre un groupe</button>
+        <button class="cta-whatsapp wa-btn" id="group-invite-btn" onclick="inviteFromGroupsScreen()">
+          <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01c-1.52 0-3.01-.41-4.31-1.18l-.31-.18-3.2.84.85-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.23-8.23 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.75.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29"/></svg>
+          <span id="group-invite-label">Défie tes amis</span>
+        </button>
+        <span class="small-link" onclick="switchView('group-join')">J'ai un code d'invitation</span>
       </div>
     </section>
     <section id="view-group-create" class="view" style="display:none;">
@@ -1775,10 +1800,10 @@
       <h2 class="play-title" id="confirm-title">Pronostic enregistré</h2>
 
       <div class="group-invite-box" style="margin-top:20px;">
-        <p class="confirm-pitch">Maintenant tu es prêt à défier tes amis fans du PSG comme toi.</p>
-        <button class="cta-play-outline wa-btn" id="confirm-invite-btn" onclick="inviteFromConfirm()">
+        <p class="confirm-pitch">Qui est le vrai expert du PSG parmi tes amis ? Invite-les sur WhatsApp et à chaque match vous serez classés du premier au dernier et tous les 5 matchs, un champion.</p>
+        <button class="cta-whatsapp wa-btn" id="confirm-invite-btn" onclick="inviteFromConfirm()">
           <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01c-1.52 0-3.01-.41-4.31-1.18l-.31-.18-3.2.84.85-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.23-8.23 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.75.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29"/></svg>
-          <span id="confirm-invite-label">Invite-les sur WhatsApp</span>
+          <span id="confirm-invite-label">Défie tes amis</span>
         </button>
       </div>
 
@@ -3298,7 +3323,7 @@ async function enterGroupsScreen(){
     if(crees.length){ monGroupe = versGroupe(crees[0]); }
 
     if(groups.length === 0){
-      list.innerHTML = '<div class="placeholder">Tu ne fais partie d\'aucun groupe pour l\'instant.</div>';
+      list.innerHTML = '<div class="groups-pitch">Qui est le vrai expert du PSG parmi tes amis ? Invite-les sur WhatsApp et à chaque match vous serez classés du premier au dernier et tous les 5 matchs, un champion.</div>';
       return;
     }
 
@@ -3415,7 +3440,7 @@ function verrouille(btnId, labelId, texte){
 // --- Bouton de l'ecran « Mes groupes d'amis » ---
 // Premier groupe : cree sans rien demander. A partir du deuxieme : on demande un nom.
 async function inviteFromGroupsScreen(){
-  const relache = verrouille('group-invite-btn', 'group-invite-btn', 'Un instant…');
+  const relache = verrouille('group-invite-btn', 'group-invite-label', 'Un instant…');
   const crees = await mesGroupesCrees();
   relache();
 
