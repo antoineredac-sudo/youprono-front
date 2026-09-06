@@ -956,6 +956,7 @@
   .group-card-name{ font-family:'Oswald',sans-serif; font-size:17px; font-weight:600; }
   .group-card-meta{ color:var(--text-dim); font-size:13px; margin-top:2px; }
 
+  .group-invite-box .cta-play{ margin-top:18px; }
   .group-invite-box{
     background:var(--surface);
     border:1px solid var(--border);
@@ -1713,7 +1714,10 @@
         </button>
       </div>
 
-      <span class="small-link" onclick="switchView('group-join')">J'ai un code d'invitation pour rejoindre un groupe</span>
+      <div class="group-invite-box">
+        <p class="groups-pitch">J'ai un code d'invitation</p>
+        <button class="cta-play" onclick="switchView('group-join')">Rejoindre un groupe</button>
+      </div>
     </section>
     <section id="view-group-create" class="view" style="display:none;">
       <h2 class="play-title">CRÉER UN GROUPE</h2>
