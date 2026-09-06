@@ -3955,32 +3955,41 @@ document.addEventListener('keydown', function(e){
 // cat désigne où lire la note, min le seuil à atteindre. Les badges marqués
 // 'serie' dépendent de l'historique et du calendrier : ils restent verrouillés
 // tant qu'on ne les aura pas branchés.
+// n : le niveau de difficulté, qui décide de la couleur une fois le badge décroché.
+// 1 facile, 2 moyen, 3 difficile. Un badge verrouillé reste en pointillés, sans couleur.
 const BADGES = [
-  { v:'9/11',   l:['compo'],       cat:'composition', min:81.8 },
-  { v:'10/11',  l:['compo'],       cat:'composition', min:90.9 },
-  { v:'11/11',  l:['compo'],       cat:'composition', min:99.9 },
-  { v:'100',    l:['score'],       cat:'score',       min:99.9 },
-  { v:'80',     l:['au match'],    cat:'total',       min:80 },
-  { v:'85',     l:['au match'],    cat:'total',       min:85 },
-  { v:'90',     l:['au match'],    cat:'total',       min:90 },
-  { v:'95',     l:['au match'],    cat:'total',       min:95 },
-  { v:'90',     l:['possession'],  cat:'possession',  min:90 },
-  { v:'90',     l:['tirs'],        cat:'shots',       min:90 },
-  { v:'90',     l:['fautes'],      cat:'fouls',       min:90 },
-  { v:'90',     l:['centres'],     cat:'centres',     min:90 },
-  { v:'94',     l:['possession'],  cat:'possession',  min:94 },
-  { v:'94',     l:['tirs'],        cat:'shots',       min:94 },
-  { v:'94',     l:['fautes'],      cat:'fouls',       min:94 },
-  { v:'94',     l:['centres'],     cat:'centres',     min:94 },
-  { v:'98',     l:['possession'],  cat:'possession',  min:98 },
-  { v:'98',     l:['tirs'],        cat:'shots',       min:98 },
-  { v:'98',     l:['fautes'],      cat:'fouls',       min:98 },
-  { v:'98',     l:['centres'],     cat:'centres',     min:98 },
-  { v:'1er',    l:['prono'],       cat:'serie' },
-  { v:'5',      l:['pronos', "d'affilée"], cat:'serie' },
-  { v:'10',     l:['pronos', "d'affilée"], cat:'serie' },
-  { v:'3 × 80', l:['au match', "d'affilée"], cat:'serie', small:true }
+  { v:'9/11',   l:['compo'],       cat:'composition', min:81.8, n:1 },
+  { v:'10/11',  l:['compo'],       cat:'composition', min:90.9, n:2 },
+  { v:'11/11',  l:['compo'],       cat:'composition', min:99.9, n:3 },
+  { v:'100',    l:['score'],       cat:'score',       min:99.9, n:3 },
+  { v:'80',     l:['au match'],    cat:'total',       min:80,   n:1 },
+  { v:'85',     l:['au match'],    cat:'total',       min:85,   n:2 },
+  { v:'90',     l:['au match'],    cat:'total',       min:90,   n:3 },
+  { v:'95',     l:['au match'],    cat:'total',       min:95,   n:3 },
+  { v:'90',     l:['possession'],  cat:'possession',  min:90,   n:1 },
+  { v:'90',     l:['tirs'],        cat:'shots',       min:90,   n:1 },
+  { v:'90',     l:['fautes'],      cat:'fouls',       min:90,   n:1 },
+  { v:'90',     l:['centres'],     cat:'centres',     min:90,   n:1 },
+  { v:'94',     l:['possession'],  cat:'possession',  min:94,   n:2 },
+  { v:'94',     l:['tirs'],        cat:'shots',       min:94,   n:2 },
+  { v:'94',     l:['fautes'],      cat:'fouls',       min:94,   n:2 },
+  { v:'94',     l:['centres'],     cat:'centres',     min:94,   n:2 },
+  { v:'98',     l:['possession'],  cat:'possession',  min:98,   n:3 },
+  { v:'98',     l:['tirs'],        cat:'shots',       min:98,   n:3 },
+  { v:'98',     l:['fautes'],      cat:'fouls',       min:98,   n:3 },
+  { v:'98',     l:['centres'],     cat:'centres',     min:98,   n:3 },
+  { v:'1er',    l:['prono'],       cat:'serie', n:1 },
+  { v:'5',      l:['pronos', "d'affilée"], cat:'serie', n:2 },
+  { v:'10',     l:['pronos', "d'affilée"], cat:'serie', n:3 },
+  { v:'3 × 80', l:['au match', "d'affilée"], cat:'serie', small:true, n:3 }
 ];
+
+// Une teinte par niveau : le fond de l'hexagone, son contour, et l'encre du texte.
+const NIVEAUX_BADGE = {
+  1: { fill:'#6EC1B4', stroke:'#4EA396', ink:'#0E3F39' },
+  2: { fill:'#E8622D', stroke:'#C24E20', ink:'#4A1A08' },
+  3: { fill:'#E8B923', stroke:'#C79A2E', ink:'#6E5210' }
+};
 
 // Renvoie les badges décrochés sur CE match. Les notes viennent telles quelles
 // du serveur : aucune règle n'est recalculée ici, on ne fait que comparer.
@@ -4019,10 +4028,11 @@ function renderResultsBadges(stats){
 
 
 function badgeSvg(b, unlocked){
-  const fill   = unlocked ? '#e8b923' : 'var(--bg)';
-  const stroke = unlocked ? '#c79a2e' : '#6b7dc4';
+  const ton    = NIVEAUX_BADGE[b.n] || NIVEAUX_BADGE[3];
+  const fill   = unlocked ? ton.fill   : 'var(--bg)';
+  const stroke = unlocked ? ton.stroke : '#6b7dc4';
   const dash   = unlocked ? '' : ' stroke-dasharray="5 5"';
-  const ink    = unlocked ? '#6e5210' : '#8b99d0';
+  const ink    = unlocked ? ton.ink    : '#8b99d0';
   const vSize  = b.small ? 17 : 20;
   let lines;
   if(b.l.length === 1){
