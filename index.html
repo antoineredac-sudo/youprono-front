@@ -1083,6 +1083,33 @@
     background:var(--bg);
     border:2px dashed #6b7dc4;
   }
+  .trophy-medal.gagnee{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Oswald',sans-serif;
+    font-size:22px;
+    font-weight:600;
+  }
+  .trophy-medal.bronze{ background:#C87A3A; color:#4A2A10; }
+  .trophy-medal.argent{ background:#9AA6B2; color:#2C3640; }
+  .trophy-medal.or{     background:#E8B923; color:#4A3806; }
+  .trophy-hex{ width:66px; height:62px; display:block; margin:0 auto; overflow:visible; }
+  .trophy-hex-nb, .trophy-gem-nb{
+    font-family:'Oswald',sans-serif;
+    font-size:22px;
+    font-weight:600;
+  }
+  .trophy-cups{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    justify-content:center;
+    gap:14px;
+    padding:14px 0 4px 0;
+  }
+  .trophy-cup-slot{ text-align:center; }
+  .trophy-cup-slot .trophy-label{ margin-top:4px; }
   .trophy-label{
     margin-top:8px;
     font-size:12px;
@@ -1119,7 +1146,7 @@
     color:var(--text-dim);
     margin:0 0 8px 0;
   }
-  .trophy-case-inner{ opacity:0.35; }
+  .trophy-case-inner{ opacity:1; }
   .trophy-soon{
     position:absolute;
     left:0;
@@ -1867,43 +1894,13 @@
       <p class="trophy-pitch">Finis haut dans les classements de groupe pour remplir ta vitrine de trophées</p>
 
       <div class="trophy-case">
-        <div class="trophy-case-inner">
-        <div class="trophy-shelf">
-          <div class="trophy-slot">
-            <div class="trophy-medal ghost"></div>
-            <div class="trophy-label">Bronze</div>
-          </div>
-          <div class="trophy-slot">
-            <div class="trophy-medal ghost"></div>
-            <div class="trophy-label">Argent</div>
-          </div>
-          <div class="trophy-slot">
-            <div class="trophy-medal ghost"></div>
-            <div class="trophy-label">Or</div>
-          </div>
-          <div class="trophy-slot">
-            <svg class="trophy-gem" viewBox="0 0 70 62" aria-hidden="true"><polygon points="14,4 56,4 66,22 35,58 4,22" fill="#25408f" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/></svg>
-            <div class="trophy-label">Diamant</div>
-          </div>
-        </div>
+        <div class="trophy-case-inner" id="trophy-inner">
+        <div class="trophy-shelf" id="trophy-shelf"></div>
         <div class="trophy-ledge"></div>
 
-        <div class="trophy-cup-row">
-          <svg class="trophy-cup" viewBox="0 0 76 90" aria-hidden="true">
-            <path d="M8 8 C-4 13 -4 33 12 39" fill="none" stroke="#6b7dc4" stroke-width="3" stroke-dasharray="5 5"/>
-            <path d="M68 8 C80 13 80 33 64 39" fill="none" stroke="#6b7dc4" stroke-width="3" stroke-dasharray="5 5"/>
-            <polygon points="8,3 68,3 55,55 21,55" fill="#25408f" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/>
-            <rect x="30" y="55" width="16" height="20" fill="#25408f" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/>
-            <rect x="12" y="75" width="52" height="10" rx="2" fill="#25408f" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/>
-          </svg>
-          <div class="trophy-gauge">
-            <div class="trophy-percent">0 %</div>
-            <div class="trophy-percent-label">de ta première coupe</div>
-          </div>
-        </div>
+        <div class="trophy-cups" id="trophy-cups"></div>
         <div class="trophy-ledge"></div>
         </div>
-        <p class="trophy-soon">Bient&ocirc;t disponible</p>
       </div>
 
       <p class="trophy-note">Chaque fin de mini-championnat, les mieux classés de chaque groupe reçoivent une médaille. Plus le groupe compte de joueurs, plus le métal est précieux. Les médailles remplissent ta coupe — une fois pleine, elle rejoint ta vitrine et une nouvelle commence.</p>
@@ -4186,11 +4183,118 @@ function navFromMenu(name){
   else if(name === 'results'){ goToResults(); }
   else if(name === 'groups'){ goToGroups(); }
   else if(name === 'ranking'){ goToRanking(); }
-  else if(name === 'trophies'){ switchView('trophies'); }
+  else if(name === 'trophies'){ goToTrophies(); }
   else if(name === 'badges'){ goToBadges(); }
   else if(name === 'profile'){ goToProfile(); }
   else if(name === 'faq'){ switchView('faq'); }
   else if(name === 'logout'){ logout(); }
+}
+
+
+// ===== MES TROPHÉES =====
+// Le palmarès n'est stocké nulle part : le serveur rejoue les cycles clos de tous
+// les groupes du joueur et renvoie les médailles, le total et l'état de la coupe.
+// Les seuils vivent côté serveur — ne jamais les recopier ici, ils divergeraient.
+const METAUX = [
+  { cle:'bronze',  nom:'Bronze'  },
+  { cle:'argent',  nom:'Argent'  },
+  { cle:'or',      nom:'Or'      },
+  { cle:'platine', nom:'Platine' },
+  { cle:'diamant', nom:'Diamant' }
+];
+
+function hexagoneSVG(gagne, nb){
+  const trait = gagne ? 'none' : '#6b7dc4';
+  const fond  = gagne ? '#E6EEF2' : '#25408f';
+  const tirets = gagne ? '' : ' stroke-dasharray="5 5"';
+  const chiffre = gagne
+    ? '<text x="33" y="39" text-anchor="middle" fill="#3A4A54" class="trophy-hex-nb">' + nb + '</text>'
+    : '';
+  return '<svg class="trophy-hex" viewBox="0 0 66 62" aria-hidden="true">'
+       + '<polygon points="33,2 62,17 62,45 33,60 4,45 4,17" fill="' + fond + '" stroke="'
+       + trait + '" stroke-width="2"' + tirets + '/>' + chiffre + '</svg>';
+}
+
+function gemmeSVG(gagne, nb){
+  const trait = gagne ? 'none' : '#6b7dc4';
+  const fond  = gagne ? '#6FD3E8' : '#25408f';
+  const tirets = gagne ? '' : ' stroke-dasharray="5 5"';
+  const chiffre = gagne
+    ? '<text x="35" y="34" text-anchor="middle" fill="#0B3A45" class="trophy-gem-nb">' + nb + '</text>'
+    : '';
+  return '<svg class="trophy-gem" viewBox="0 0 70 62" aria-hidden="true">'
+       + '<polygon points="14,4 56,4 66,22 35,58 4,22" fill="' + fond + '" stroke="'
+       + trait + '" stroke-width="2"' + tirets + '/>' + chiffre + '</svg>';
+}
+
+function coupeSVG(pleine, hauteur){
+  // hauteur : 0 à 1, la part du bol déjà remplie. Ignorée si la coupe est pleine.
+  const or = '#E8B923';
+  if(pleine){
+    return '<svg class="trophy-cup" viewBox="0 0 76 90" aria-hidden="true">'
+      + '<path d="M8 8 C-4 13 -4 33 12 39" fill="none" stroke="' + or + '" stroke-width="3"/>'
+      + '<path d="M68 8 C80 13 80 33 64 39" fill="none" stroke="' + or + '" stroke-width="3"/>'
+      + '<polygon points="8,3 68,3 55,55 21,55" fill="' + or + '"/>'
+      + '<rect x="30" y="55" width="16" height="20" fill="' + or + '"/>'
+      + '<rect x="12" y="75" width="52" height="10" rx="2" fill="' + or + '"/></svg>';
+  }
+  const id = 'cupclip' + Math.random().toString(36).slice(2, 8);
+  const haut = 55 - (52 * hauteur);
+  return '<svg class="trophy-cup" viewBox="0 0 76 90" aria-hidden="true">'
+    + '<defs><clipPath id="' + id + '"><rect x="0" y="' + haut + '" width="76" height="' + (56 - haut) + '"/></clipPath></defs>'
+    + '<path d="M8 8 C-4 13 -4 33 12 39" fill="none" stroke="#6b7dc4" stroke-width="3" stroke-dasharray="5 5"/>'
+    + '<path d="M68 8 C80 13 80 33 64 39" fill="none" stroke="#6b7dc4" stroke-width="3" stroke-dasharray="5 5"/>'
+    + '<polygon points="8,3 68,3 55,55 21,55" fill="#25408f" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/>'
+    + '<polygon points="8,3 68,3 55,55 21,55" fill="' + or + '" clip-path="url(#' + id + ')"/>'
+    + '<rect x="30" y="55" width="16" height="20" fill="none" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/>'
+    + '<rect x="12" y="75" width="52" height="10" rx="2" fill="none" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/></svg>';
+}
+
+async function goToTrophies(){
+  switchView('trophies');
+  const shelf = document.getElementById('trophy-shelf');
+  const cups  = document.getElementById('trophy-cups');
+  if(!shelf || !cups) return;
+
+  shelf.innerHTML = '<div class="placeholder">Chargement de ta vitrine…</div>';
+  cups.innerHTML = '';
+
+  let d = null;
+  try{
+    const res = await fetch(`${API_BASE}/Group/Trophies/${getUserId()}`);
+    const json = await res.json();
+    if(json.success && json.data){ d = json.data; }
+  }catch(e){ d = null; }
+
+  if(!d){
+    shelf.innerHTML = '<div class="placeholder">Impossible de charger ta vitrine.</div>';
+    return;
+  }
+
+  const compte = d.medalCounts || [0,0,0,0,0];
+
+  shelf.innerHTML = METAUX.map(function(m, i){
+    const nb = compte[i] || 0;
+    let visuel;
+    if(i === 3){ visuel = hexagoneSVG(nb > 0, nb); }
+    else if(i === 4){ visuel = gemmeSVG(nb > 0, nb); }
+    else if(nb > 0){ visuel = '<div class="trophy-medal gagnee ' + m.cle + '">' + nb + '</div>'; }
+    else { visuel = '<div class="trophy-medal ghost"></div>'; }
+    return '<div class="trophy-slot">' + visuel
+         + '<div class="trophy-label">' + m.nom + '</div></div>';
+  }).join('');
+
+  const pleines = d.cupsCompleted || 0;
+  const reste = d.cupProgress || 0;
+  const cible = d.cupTarget || 12;
+  let html = '';
+  for(let i = 0; i < pleines; i++){
+    html += '<div class="trophy-cup-slot">' + coupeSVG(true, 1)
+          + '<div class="trophy-label">Coupe ' + (i + 1) + '</div></div>';
+  }
+  html += '<div class="trophy-cup-slot">' + coupeSVG(false, reste / cible)
+        + '<div class="trophy-label">' + reste + ' / ' + cible + '</div></div>';
+  cups.innerHTML = html;
 }
 
 // ===== INVITATION PAR LIEN =====
