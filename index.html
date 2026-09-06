@@ -3953,8 +3953,8 @@ document.addEventListener('keydown', function(e){
 // Vingt-quatre badges, six lignes de quatre. Rien n'est stocké : le jour où on les
 // branchera, l'état débloqué se recalculera à partir de l'historique du joueur.
 // cat désigne où lire la note, min le seuil à atteindre. Les badges marqués
-// 'serie' dépendent de l'historique et du calendrier : ils restent verrouillés
-// tant qu'on ne les aura pas branchés.
+// 'serie' se calculent à part, en croisant l'historique du joueur avec le
+// calendrier du PSG — voir seriesDebloquees().
 // n : le niveau de difficulté, qui décide de la couleur une fois le badge décroché.
 // 1 facile, 2 moyen, 3 difficile. Un badge verrouillé reste en pointillés, sans couleur.
 const BADGES = [
@@ -4048,6 +4048,48 @@ function badgeSvg(b, unlocked){
        + lines + `</svg>`;
 }
 
+
+// --- Les badges de série ---
+// « D'affilée » ne veut rien dire sans le calendrier : il faut savoir quels matchs
+// le joueur a sautés. On construit donc la suite des matchs du PSG déjà commencés,
+// dans l'ordre, et on regarde ce que le joueur y a fait. Un match manqué casse la
+// série ; un match à venir ne la casse pas, il ne compte simplement pas encore.
+function seriesDebloquees(matchsPasses, pronosParMatch, notesParMatch){
+  const acquis = [];
+
+  let suite = 0, meilleureSuite = 0;
+  let suite80 = 0, meilleureSuite80 = 0;
+
+  matchsPasses.forEach(function(m){
+    const aJoue = pronosParMatch.has(m.id);
+    if(aJoue){
+      suite += 1;
+      if(suite > meilleureSuite) meilleureSuite = suite;
+    } else {
+      suite = 0;
+    }
+
+    // Pour « 3 × 80 », un match non noté ne compte pas encore mais ne casse rien :
+    // la note peut tomber plus tard. Un match manqué, lui, casse la série.
+    const note = notesParMatch.has(m.id) ? notesParMatch.get(m.id) : null;
+    if(!aJoue){
+      suite80 = 0;
+    } else if(note !== null){
+      if(note >= 80){
+        suite80 += 1;
+        if(suite80 > meilleureSuite80) meilleureSuite80 = suite80;
+      } else {
+        suite80 = 0;
+      }
+    }
+  });
+
+  if(meilleureSuite >= 5)  acquis.push("5|pronos d'affilée");
+  if(meilleureSuite >= 10) acquis.push("10|pronos d'affilée");
+  if(meilleureSuite80 >= 3) acquis.push("3 × 80|au match d'affilée");
+  return acquis;
+}
+
 // Identifiant unique d'un badge, pour comparer sans se fier à l'ordre.
 function badgeKey(b){ return b.v + '|' + b.l.join(' '); }
 
@@ -4068,7 +4110,10 @@ async function goToBadges(){
   try{
     const userId = getUserId();
     const teamId = await getPsgTeamId();
-    const histJson = await fetch(`${API_BASE}/UserStats/ByUserTeam/${userId}/${teamId}?page=1&limit=50`).then(r => r.json());
+    const [histJson, calJson] = await Promise.all([
+      fetch(`${API_BASE}/UserStats/ByUserTeam/${userId}/${teamId}?page=1&limit=50`).then(r => r.json()),
+      fetch(`${API_BASE}/Match/ByTeamId/${teamId}?limit=50`).then(r => r.json()).catch(() => null)
+    ]);
     const rows = (histJson.success && histJson.data && histJson.data.page) ? histJson.data.page : [];
 
     const noted = rows.filter(r => r.score).map(r => r.matchId);
@@ -4085,6 +4130,27 @@ async function goToBadges(){
     // « 1er prono » se mérite dès l'enregistrement du premier pronostic,
     // sans attendre que le match soit joué ni noté.
     if(rows.length > 0) unlocked.add('1er|prono');
+
+    // Les trois badges de série. Le front compare lui-même le coup d'envoi à
+    // l'horloge du téléphone : le serveur range encore un match commencé parmi
+    // les matchs à venir pendant deux heures (défaut de fuseau connu).
+    const tousMatchs = (calJson && calJson.success && calJson.data && calJson.data.page)
+      ? calJson.data.page : [];
+    const maintenant = Date.now();
+    const passes = tousMatchs
+      .filter(m => m && m.dateTime && new Date(m.dateTime).getTime() <= maintenant)
+      .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+    const pronosParMatch = new Set(rows.map(r => r.matchId));
+    const notesParMatch = new Map();
+    allStats.forEach(st => {
+      if(st && st.result && st.result.team && st.result.team.total !== undefined
+         && st.result.team.total !== null && st.matchResult){
+        notesParMatch.set(st.matchResult.id, st.result.team.total);
+      }
+    });
+
+    seriesDebloquees(passes, pronosParMatch, notesParMatch).forEach(k => unlocked.add(k));
 
     grid.innerHTML = BADGES.map(b => badgeSvg(b, unlocked.has(badgeKey(b)))).join('');
     if(countEl){
