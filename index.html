@@ -1250,6 +1250,11 @@
   }
 
   .dash-history-label{ color:var(--text-dim); font-size:13px; margin-bottom:10px; }
+  /* Le repère d'avancement du tunnel : six écrans, et on sait toujours où on en est. */
+  .etape{
+    color:var(--text-dim); font-size:12px;
+    letter-spacing:.5px; text-align:center; margin-bottom:8px;
+  }
   .profil-carte{
     background:var(--surface); border:1px solid var(--border);
     border-radius:12px; padding:20px; text-align:center;
@@ -1581,7 +1586,8 @@
       <div id="home-no-match" class="placeholder" style="display:none;">Aucun match à venir pour l'instant.</div>
     </section>
     <section id="view-play" class="view" style="display:none;">
-      <h2 class="play-title">Choisis tes 11 titulaires</h2>
+      <div class="etape">Étape 1/6</div>
+      <h2 class="play-title">DEVINE LES 11 TITULAIRES</h2>
       <span class="back-link" id="play-back-link" onclick="leaveComposition()">← Retour à l'accueil</span>
 
       <div class="squad-count" id="squad-count">0 / 11 joueurs sélectionnés</div>
@@ -1591,7 +1597,8 @@
       <button class="cta-play" id="composition-next-btn" onclick="goToNextStep()" disabled>Suivant</button>
     </section>
     <section id="view-possession" class="view" style="display:none;">
-      <h2 class="play-title">Qui aura la possession ?</h2>
+      <div class="etape">Étape 2/6</div>
+      <h2 class="play-title">POSSESSION</h2>
       <span class="back-link" onclick="switchView('play'); renderSquad();">← Retour</span>
 
       <div class="possession-teams">
@@ -1612,6 +1619,7 @@
       <button class="cta-play" onclick="goToNextStepPossession()">Suivant</button>
     </section>
     <section id="view-shots" class="view" style="display:none;">
+      <div class="etape">Étape 3/6</div>
       <h2 class="play-title">TIRS</h2>
       <span class="back-link" onclick="enterPossessionScreen()">← Retour</span>
 
@@ -1644,6 +1652,7 @@
       <button class="cta-play" style="margin-top:32px;" onclick="goToNextStepShots()">Suivant</button>
     </section>
     <section id="view-fouls" class="view" style="display:none;">
+      <div class="etape">Étape 4/6</div>
       <h2 class="play-title">FAUTES</h2>
       <span class="back-link" onclick="enterShotsScreen()">← Retour</span>
 
@@ -1684,6 +1693,7 @@
       <button class="cta-play" style="margin-top:32px;" onclick="goToNextStepFouls()">Suivant</button>
     </section>
     <section id="view-crosses" class="view" style="display:none;">
+      <div class="etape">Étape 5/6</div>
       <h2 class="play-title">CENTRES</h2>
       <span class="back-link" onclick="enterFoulsScreen()">← Retour</span>
 
@@ -1714,6 +1724,7 @@
       <button class="cta-play" style="margin-top:32px;" onclick="goToNextStepCrosses()">Suivant</button>
     </section>
     <section id="view-score" class="view" style="display:none;">
+      <div class="etape">Étape 6/6</div>
       <h2 class="play-title">SCORE</h2>
       <span class="back-link" onclick="enterCrossesScreen()">← Retour</span>
 
