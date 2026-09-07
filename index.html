@@ -2886,7 +2886,10 @@ function renderSalon(){
 
   // Le joueur d'abord, les autres dans l'ordre renvoyé par le serveur.
   const membres = d.members.slice().sort((a,b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0));
-  const nbJoueurs = d.predictionCount;
+  // Le dénominateur des choix est celui de tous les participants du site, pas
+  // celui du groupe : « 6/8 » pèse plus lourd que « 6/6 ». On retombe sur le
+  // compte du groupe si le serveur ne renvoie pas encore le chiffre global.
+  const nbJoueurs = d.participantCount || d.predictionCount;
 
   let html = '';
 
