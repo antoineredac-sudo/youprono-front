@@ -1962,7 +1962,6 @@
       </div>
 
       <div class="kop-intertitre" id="kops-liste-titre">les kops</div>
-      <div class="kop-note" id="kops-note" style="display:none;"></div>
 
       <input type="text" id="kops-search" class="kop-search" placeholder="Chercher un kop par son nom" oninput="filtrerKops()">
 
@@ -4333,7 +4332,6 @@ function majBandeauMonKop(){
   const bloc = document.getElementById('kops-mine-bloc');
   const carte = document.getElementById('kops-mine');
   const titreListe = document.getElementById('kops-liste-titre');
-  const note = document.getElementById('kops-note');
   const creation = document.getElementById('kops-create-bloc');
 
   if(monKopId){
@@ -4347,15 +4345,11 @@ function majBandeauMonKop(){
       '</div>';
 
     titreListe.textContent = 'les autres kops';
-    note.innerHTML = 'Tu es déjà dans le kop «\u00a0<b>' + echapper(monKopNom || '') +
-                     '</b>\u00a0». Quitte-le pour en rejoindre un autre.';
-    note.style.display = 'block';
     creation.style.display = 'none';
   }else{
     bloc.style.display = 'none';
     carte.innerHTML = '';
     titreListe.textContent = 'les kops';
-    note.style.display = 'none';
     creation.style.display = 'block';
   }
 }
@@ -4474,7 +4468,7 @@ async function rejoindreKopParCode(code){
     const res = await fetch(`${API_BASE}/Group/Join/${code}/${getUserId()}`, { method:'POST' });
     const json = await res.json();
     if(!json.success || !json.data){
-      alert(json.message || "Impossible de rejoindre ce kop.");
+      alert(messageKopDejaPris());
       return;
     }
     openKop(json.data.id);
@@ -4526,8 +4520,15 @@ function afficherKop(k){
   // bouton pour entrer.
   document.getElementById('kop-invite-box').style.display = k.isMember ? 'block' : 'none';
   document.getElementById('kop-leave-btn').style.display = k.isMember ? 'block' : 'none';
-  document.getElementById('kop-join-box').style.display =
-    (!k.isMember && getUserId()) ? 'block' : 'none';
+  const boiteEntree = document.getElementById('kop-join-box');
+  if(k.isMember || !getUserId()){
+    boiteEntree.style.display = 'none';
+  }else{
+    boiteEntree.style.display = 'block';
+    boiteEntree.innerHTML = monKopId
+      ? '<p class="kop-note" style="margin:0;text-align:center;">' + echapper(messageKopDejaPris()) + '</p>'
+      : '<button class="cta-play" onclick="rejoindreCeKop()">Rejoins ce kop</button>';
+  }
   document.getElementById('kop-code').textContent = k.inviteCode || '';
 
   afficherClassementDuKop(k);
@@ -4683,6 +4684,13 @@ function afficherClassementDuKop(k){
   // le bon comportement pour quelqu'un qui decouvre le kop.
   const moi = document.getElementById('kop-row-moi');
   if(moi){ try{ moi.scrollIntoView({ block:'center' }); }catch(e){} }
+}
+
+// Le message ne s'affiche qu'au moment où quelqu'un essaie d'entrer dans un
+// second kop. Sur la page des kops, la carte du haut dit déjà qu'il en a un.
+function messageKopDejaPris(){
+  const nom = monKopNom ? ('«\u00a0' + monKopNom + '\u00a0»') : 'un kop';
+  return 'Tu es déjà dans le kop ' + nom + '. Quitte-le pour en rejoindre un autre.';
 }
 
 // --- Le partage ---
@@ -5305,7 +5313,7 @@ async function accepterInvitationKop(){
     btn.disabled = false;
 
     if(!json.success || !json.data){
-      alert(json.message || "Impossible de rejoindre ce kop. Tu appartiens peut-être déjà à un autre.");
+      alert(messageKopDejaPris());
       return;
     }
     refuserInvitationKop();
