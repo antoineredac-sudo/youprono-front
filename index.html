@@ -1349,6 +1349,11 @@
   .dash-history-match{ font-size:13px; }
   .dash-history-score{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--gold); }
 /* ===== LES KOPS ===== */
+.kop-invite-banner{
+  border:1px solid #e8b923; border-radius:12px;
+  padding:16px; margin-bottom:18px; text-align:center;
+}
+.kop-invite-banner-text{ font-size:15px; line-height:1.5; margin-bottom:14px; }
 .kop-search{ width:100%; margin:0 0 14px; }
 .kop-hint{ font-size:12px; color:#c2cae8; margin-top:6px; line-height:1.5; }
 .kop-card{
@@ -1442,6 +1447,11 @@
 
   <main>
     <section id="view-home" class="view">
+      <div id="kop-invite-banner" class="kop-invite-banner" style="display:none;">
+        <div class="kop-invite-banner-text" id="kop-invite-banner-text"></div>
+        <button class="cta-play" id="kop-invite-banner-btn" onclick="accepterInvitationKop()"></button>
+        <span class="small-link" onclick="refuserInvitationKop()">Non merci</span>
+      </div>
       <div id="home-loading" class="placeholder">Chargement du prochain match…</div>
 
       <div id="home-salon" style="display:none;"></div>
@@ -2166,6 +2176,7 @@ async function submitAuth(){
       return;
     }
 
+    venaitDeSInscrire = (authMode === 'register');
     localStorage.setItem(LS_AUTH, JSON.stringify({ token: json.data, displayName }));
     enterApp();
   }catch(e){
@@ -4890,6 +4901,7 @@ async function goToTrophies(){
 // On récupère le code au chargement, on le garde de côté, et on fait rejoindre
 // le groupe dès que la personne est connectée (ou dès qu'elle vient de s'inscrire).
 var pendingInviteCode = null;
+var venaitDeSInscrire = false;
 
 // Le fichier s'appelle desormais index.html, donc la racine du site suffit :
 // les liens partages ressemblent a https://youprono.fr/?groupe=ABCDEF
@@ -4912,22 +4924,130 @@ function siteBaseUrl(){
   try{ history.replaceState(null, '', window.location.pathname); }catch(e){}
 
   // Personne pas encore connectée : on lui explique pourquoi elle est là.
+  // Neuf fois sur dix c'est un nouveau venu, donc c'est le texte qu'il verra en
+  // premier de tout le jeu. On le personnalise dès que le serveur a dit à quoi
+  // correspond le code.
   if(!getAuth()){
     var banner = document.getElementById('auth-invite-banner');
     if(banner){
       banner.innerHTML = 'On t\'invite à rejoindre un groupe sur YouProno (code <strong>'
         + code + '</strong>).<br>Crée ton compte et on t\'y ajoute tout de suite.';
       banner.style.display = 'block';
+      personnaliserBandeauInvitation(code, banner);
     }
     switchAuthTab('register');
   }
 })();
 
+// Le nom vaut mieux que le code : « Les anciens du PSG t'attend » donne une
+// raison d'entrer, « code QCDZHS » n'en donne aucune. Si le serveur ne répond
+// pas, le texte générique reste affiché.
+async function personnaliserBandeauInvitation(code, banner){
+  try{
+    const res = await fetch(`${API_BASE}/Group/ByCode/${encodeURIComponent(code)}`);
+    const json = await res.json();
+    if(!json.success || !json.data) return;
+
+    const nom = (json.data.name || '').trim();
+    if(!nom) return;
+
+    if(String(json.data.type || '').toLowerCase() === 'kop'){
+      const avecKop = /^kops?\b/i.test(nom) ? nom : ('kop ' + nom);
+      banner.innerHTML = 'On t\'invite à rejoindre le <strong>' + avecKop
+        + '</strong> sur YouProno.<br>Choisis ton pseudo, fais tes pronos et retrouve ton kop dans le menu principal';
+    }else{
+      banner.innerHTML = 'On t\'invite à rejoindre <strong>' + nom
+        + '</strong> sur YouProno.<br>Crée ton compte et on t\'y ajoute tout de suite.';
+    }
+  }catch(e){ /* le texte générique fait l'affaire */ }
+}
+
+let invitationKopEnAttente = null;
+
+// Un lien partage peut mener a un groupe d'amis ou a un kop. On demande d'abord
+// au serveur ce que le code designe : un groupe d'amis se rejoint d'office,
+// comme avant, mais on n'entre jamais dans un kop sans l'avoir voulu — on
+// n'en a qu'un, et y entrer par megarde ferme la porte de tous les autres.
 async function acceptPendingInvite(){
   var code = pendingInviteCode;
   pendingInviteCode = null;
   if(!code) return;
 
+  try{
+    const res = await fetch(`${API_BASE}/Group/ByCode/${encodeURIComponent(code)}/${getUserId()}`);
+    const json = await res.json();
+
+    if(json.success && json.data && String(json.data.type || '').toLowerCase() === 'kop'){
+      if(json.data.alreadyMember){ openKop(json.data.id); return; }
+
+      // Nouveau venu : il a cliqué sur le lien, puis créé son compte. Lui
+      // reposer la question serait une porte de plus devant le même oui.
+      // On le fait entrer sans rien lui demander, mais on le laisse sur
+      // l'accueil : ce qu'il doit voir en premier, c'est le match à
+      // pronostiquer. Son kop l'attend dans le menu.
+      if(venaitDeSInscrire){
+        venaitDeSInscrire = false;
+        const entree = await fetch(`${API_BASE}/Group/Join/${code}/${getUserId()}`, { method:'POST' });
+        const ok = await entree.json();
+        if(ok.success && ok.data){ return; }
+      }
+
+      proposerInvitationKop(code, json.data);
+      return;
+    }
+  }catch(e){
+    // Serveur muet ou route absente : on retombe sur l'ancien comportement
+    // plutot que de laisser l'invite sans rien.
+  }
+
+  await rejoindreGroupeDAmis(code);
+}
+
+// Le bandeau au-dessus du prochain match. On reste sur l'accueil : celui qui
+// arrive doit d'abord voir le match a pronostiquer, le kop vient ensuite.
+function proposerInvitationKop(code, infos){
+  invitationKopEnAttente = { code: code, infos: infos };
+
+  const nom = (infos.name || '').trim();
+  const avecKop = /^kops?\b/i.test(nom) ? nom : ('kop ' + nom);
+
+  switchView('home');
+  document.getElementById('kop-invite-banner-text').textContent =
+    'On t\'invite à rejoindre le ' + avecKop + '.';
+  document.getElementById('kop-invite-banner-btn').textContent = 'Rejoindre le ' + avecKop;
+  document.getElementById('kop-invite-banner').style.display = 'block';
+}
+
+function refuserInvitationKop(){
+  invitationKopEnAttente = null;
+  document.getElementById('kop-invite-banner').style.display = 'none';
+}
+
+async function accepterInvitationKop(){
+  if(!invitationKopEnAttente) return;
+  const code = invitationKopEnAttente.code;
+  const btn = document.getElementById('kop-invite-banner-btn');
+  btn.disabled = true;
+
+  try{
+    const res = await fetch(`${API_BASE}/Group/Join/${code}/${getUserId()}`, { method:'POST' });
+    const json = await res.json();
+    btn.disabled = false;
+
+    if(!json.success || !json.data){
+      alert(json.message || "Impossible de rejoindre ce kop. Tu appartiens peut-être déjà à un autre.");
+      return;
+    }
+    refuserInvitationKop();
+    openKop(json.data.id);
+  }catch(e){
+    btn.disabled = false;
+    alert("Impossible de contacter le serveur.");
+  }
+}
+
+// L'ancien comportement, inchange : un groupe d'amis se rejoint d'office.
+async function rejoindreGroupeDAmis(code){
   switchView('groups');
 
   try{
