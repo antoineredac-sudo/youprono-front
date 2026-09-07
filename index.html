@@ -1895,18 +1895,18 @@
         <h2 class="play-title" id="kop-name">KOP</h2>
         <div class="group-season-info" id="kop-sub"></div>
 
-        <div id="kop-prono-block" style="display:none;">
-          <div class="dash-history-label" id="kop-prono-title">Le prono du kop</div>
-          <div class="kop-card" id="kop-prono"></div>
-        </div>
+        <div class="dash-history-label">Le classement du kop</div>
+        <div class="kop-card" id="kop-ranking"></div>
 
         <div id="kop-lastmatch-block" style="display:none;">
-          <div class="dash-history-label">Les meilleurs du dernier match</div>
+          <div class="dash-history-label" style="margin-top:20px;">Les meilleurs du dernier match</div>
           <div class="kop-card" id="kop-lastmatch"></div>
         </div>
 
-        <div class="dash-history-label" style="margin-top:20px;">Le classement du kop</div>
-        <div class="kop-card" id="kop-ranking"></div>
+        <div id="kop-prono-block" style="display:none;">
+          <div class="dash-history-label" id="kop-prono-title" style="margin-top:20px;">Les pronos du kop</div>
+          <div class="kop-card" id="kop-prono"></div>
+        </div>
 
         <div class="group-invite-box" style="margin-top:28px;" id="kop-invite-box">
           <div class="group-invite-title">Fais grandir ton kop</div>
@@ -4312,9 +4312,9 @@ function afficherKop(k){
     (!k.isMember && getUserId()) ? 'block' : 'none';
   document.getElementById('kop-code').textContent = k.inviteCode || '';
 
-  afficherPronoDuKop(k);
-  afficherDernierMatchDuKop(k);
   afficherClassementDuKop(k);
+  afficherDernierMatchDuKop(k);
+  afficherPronoDuKop(k);
 }
 
 // Bloc 1. Avant la saisie des statistiques, c'est le prono collectif. Apres,
@@ -4327,8 +4327,13 @@ function afficherPronoDuKop(k){
   if(!k.prono){ bloc.style.display = 'none'; return; }
   bloc.style.display = 'block';
 
+  // « Les pronos du kop face à Monaco » : l'adversaire du match affiché. S'il
+  // manque, on retombe sur le titre neutre plutôt que sur « face à undefined ».
   const reel = k.real;
-  titre.textContent = reel ? 'Le kop face au réel' : 'Le prono du kop';
+  const adversaire = (k.opponentName || '').trim();
+  titre.textContent = adversaire
+    ? ('Les pronos du kop face à ' + adversaire)
+    : 'Les pronos du kop';
 
   const p = k.prono;
   let html = '';
