@@ -1348,6 +1348,40 @@
   }
   .dash-history-match{ font-size:13px; }
   .dash-history-score{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--gold); }
+/* ===== LES KOPS ===== */
+.kop-search{ width:100%; margin:0 0 14px; }
+.kop-hint{ font-size:12px; color:#c2cae8; margin-top:6px; line-height:1.5; }
+.kop-card{
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
+  border-radius:10px; padding:10px 12px; margin-bottom:14px;
+}
+.kop-row{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:9px 0; border-bottom:1px solid rgba(255,255,255,.10); font-size:14px;
+}
+.kop-row:last-child{ border-bottom:none; }
+.kop-row.moi{ font-weight:700; }
+.kop-note{ color:#e8b923; }
+.kop-general{
+  display:inline-block; font-size:11px; color:#c2cae8;
+  border:1px solid rgba(255,255,255,.2); border-radius:20px;
+  padding:1px 7px; margin-right:6px;
+}
+.kop-liste-item{
+  display:flex; justify-content:space-between; align-items:center;
+  gap:10px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.10);
+}
+.kop-liste-item:last-child{ border-bottom:none; }
+.kop-liste-nom{ font-size:15px; font-weight:600; }
+.kop-liste-meta{ font-size:12px; color:#c2cae8; margin-top:3px; }
+.kop-liste-btn{
+  flex:0 0 auto; background:transparent; color:#fff; cursor:pointer;
+  border:1px solid rgba(255,255,255,.35); border-radius:20px;
+  padding:7px 14px; font-size:13px;
+}
+.kop-ligne-stat{ display:flex; justify-content:space-between; padding:5px 0; font-size:13px; }
+.kop-compo-joueur{ display:flex; justify-content:space-between; padding:4px 0; font-size:13px; }
+.kop-compo-joueur.trouve{ color:#e8b923; }
 </style>
 </head>
 <body>
@@ -1397,6 +1431,7 @@
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Mon profil</button>
       <button data-view="groups" onclick="navFromMenu('groups')">Mes groupes d'amis</button>
+      <button data-view="kops" onclick="navFromMenu('kops')">Les kops</button>
       <button data-view="trophies" onclick="navFromMenu('trophies')">Mes trophées</button>
       <button data-view="badges" onclick="navFromMenu('badges')">Mes badges</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
@@ -1816,6 +1851,69 @@
 
       <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
+    <section id="view-kops" class="view" style="display:none;">
+      <h2 class="play-title">TROUVE TON KOP</h2>
+
+      <div id="kops-mine" style="display:none;"></div>
+
+      <input type="text" id="kops-search" class="kop-search" placeholder="Chercher un kop par son nom" oninput="filtrerKops()">
+
+      <div id="kops-loading" class="placeholder">Chargement des kops…</div>
+      <div id="kops-list"></div>
+      <div id="kops-empty" class="placeholder" style="display:none;">Aucun kop pour le moment. Ouvre le premier.</div>
+
+      <div class="group-invite-box" style="margin-top:24px;">
+        <p class="groups-pitch" id="kops-create-pitch">Un kop rassemble autant de supporters que tu veux. On n'y gagne ni point ni médaille : on s'y situe, au coefficient expert.</p>
+        <button class="cta-play" id="kops-create-btn" onclick="ouvrirCreationKop()">Crée ton kop</button>
+      </div>
+    </section>
+
+    <section id="view-kop-create" class="view" style="display:none;">
+      <h2 class="play-title">CRÉE TON KOP</h2>
+      <label>Nom du kop</label>
+      <input type="text" id="kop-create-name" maxlength="30" placeholder="Le Kop du Parc" oninput="majCompteurKop()">
+      <div class="kop-hint">Le nom que verront tous ceux qui te rejoindront. 30 caractères maximum. <span id="kop-create-count">0/30</span></div>
+      <div class="field-error" id="kop-create-error"></div>
+      <button class="cta-play" id="kop-create-submit" style="margin-top:24px;" onclick="creerKop()">Créer</button>
+      <span class="small-link" onclick="goToKops()">Annuler</span>
+    </section>
+
+    <section id="view-kop" class="view" style="display:none;">
+      <div id="kop-loading" class="placeholder">Chargement du kop…</div>
+
+      <div id="kop-content" style="display:none;">
+        <h2 class="play-title" id="kop-name">KOP</h2>
+        <div class="group-season-info" id="kop-sub"></div>
+
+        <div id="kop-prono-block" style="display:none;">
+          <div class="dash-history-label" id="kop-prono-title">Le prono du kop</div>
+          <div class="kop-card" id="kop-prono"></div>
+        </div>
+
+        <div id="kop-lastmatch-block" style="display:none;">
+          <div class="dash-history-label">Les meilleurs du dernier match</div>
+          <div class="kop-card" id="kop-lastmatch"></div>
+        </div>
+
+        <div class="dash-history-label" style="margin-top:20px;">Le classement du kop</div>
+        <div class="kop-card" id="kop-ranking"></div>
+
+        <div class="group-invite-box" style="margin-top:28px;" id="kop-invite-box">
+          <div class="group-invite-title">Fais grandir ton kop</div>
+          <div class="group-invite-label">Code d'invitation à partager</div>
+          <div class="group-invite-code" id="kop-code"></div>
+          <button class="cta-play-outline" style="margin-top:16px;" onclick="partagerKopSurX()">Partager sur X</button>
+          <button class="cta-play-outline" style="margin-top:10px;" onclick="partagerKopSurWhatsApp()">Partager sur WhatsApp</button>
+        </div>
+
+        <div class="group-invite-box" id="kop-join-box" style="margin-top:16px;display:none;">
+          <button class="cta-play" onclick="rejoindreCeKop()">Rejoins ce kop</button>
+        </div>
+
+        <span class="small-link" onclick="goToKops()">← Retour aux kops</span>
+        <span class="small-link" id="kop-leave-link" style="margin-top:8px;" onclick="quitterKop()">Quitter le kop</span>
+      </div>
+    </section>
     <section id="view-salon" class="view" style="display:none;">
       <h2 class="play-title" id="salon-titre">LES PRONOS DU GROUPE</h2>
       <span class="back-link" onclick="switchView('home')">← Retour à l'accueil</span>
@@ -2118,6 +2216,8 @@ function restoreRoute(brut){
     else if(nom === 'group-detail' && parts[1]){ openGroupDetail(parts[1]); }
     else if(nom === 'results'){ goToResults(parts[1]); }
     else if(nom === 'groups'){ goToGroups(); }
+    else if(nom === 'kops'){ goToKops(); }
+    else if(nom === 'kop' && parts[1]){ openKop(parts[1]); }
     else if(nom === 'ranking'){ goToRanking(); }
     else if(nom === 'profile'){ goToProfile(); }
     else if(nom === 'badges'){ goToBadges(); }
@@ -3499,7 +3599,7 @@ async function inviteFromConfirm(){
   }
 
   if(groupe.memberCount >= MAX_MEMBRES_GROUPE){
-    alert("Désolé, un groupe de supporters ne peut pas dépasser 10 membres sur YouProno, mais tu peux en créer un 2ème.");
+    alert("Désolé, un groupe d'amis ne peut pas dépasser 10 membres sur YouProno, mais tu peux en créer un 2ème.");
     goToGroups();
     return;
   }
@@ -3949,6 +4049,400 @@ document.addEventListener('keydown', function(e){
   if(e.key === 'Escape') closeMenu();
 });
 
+
+// ===== LES KOPS DE SUPPORTERS =====
+// Un kop n'a pas de plafond de membres, ne distribue ni point ni medaille, et
+// on n'y appartient qu'a un seul a la fois. Tout ce qu'on y fait, c'est se
+// situer : son rang dans le kop, et son rang dans le jeu entier.
+
+let kopsCharges = [];      // la liste renvoyee par le serveur
+let monKopId = null;       // le kop du joueur, s'il en a un
+let monKopNom = null;
+let kopCourant = null;     // le kop actuellement ouvert
+
+function goToKops(){
+  switchView('kops');
+  chargerKops();
+}
+
+async function chargerKops(){
+  const userId = getUserId();
+  const loading = document.getElementById('kops-loading');
+  const liste = document.getElementById('kops-list');
+  const vide = document.getElementById('kops-empty');
+
+  loading.style.display = 'block';
+  liste.innerHTML = '';
+  vide.style.display = 'none';
+
+  try{
+    const res = await fetch(`${API_BASE}/Group/Kops/${userId}`);
+    const json = await res.json();
+    if(!json.success || !json.data){ throw new Error('reponse invalide'); }
+
+    kopsCharges = json.data.kops || [];
+    monKopId = json.data.myKopId || null;
+    monKopNom = json.data.myKopName || null;
+  }catch(e){
+    loading.textContent = "Impossible de charger les kops. Réessaie dans un instant.";
+    return;
+  }
+
+  loading.style.display = 'none';
+  majBandeauMonKop();
+  afficherKops(kopsCharges);
+}
+
+// En haut de l'ecran : le kop du joueur, detache du reste. S'il en a un, la
+// creation et l'adhesion cedent la place a la phrase qui explique pourquoi.
+function majBandeauBoutonCreation(){
+  const box = document.getElementById('kops-create-pitch');
+  const btn = document.getElementById('kops-create-btn');
+  if(monKopId){
+    box.innerHTML = 'Tu es déjà dans le <b>' + echapper(monKopNom || 'ton kop') +
+                    '</b>. Quitte-le pour en rejoindre un autre.';
+    btn.style.display = 'none';
+  }else{
+    box.textContent = "Un kop rassemble autant de supporters que tu veux. On n'y gagne ni point ni médaille : on s'y situe, au coefficient expert.";
+    btn.style.display = '';
+  }
+}
+
+function majBandeauMonKop(){
+  const bloc = document.getElementById('kops-mine');
+  if(!monKopId){
+    bloc.style.display = 'none';
+    bloc.innerHTML = '';
+  }else{
+    bloc.style.display = 'block';
+    bloc.innerHTML =
+      '<div class="kop-card" style="cursor:pointer;" onclick="openKop(\'' + monKopId + '\')">' +
+        '<div class="kop-liste-nom">' + echapper(monKopNom || 'Mon kop') + '</div>' +
+        '<div class="kop-liste-meta">Ton kop · voir le classement ›</div>' +
+      '</div>';
+  }
+  majBandeauBoutonCreation();
+}
+
+function echapper(txt){
+  const d = document.createElement('div');
+  d.textContent = txt == null ? '' : String(txt);
+  return d.innerHTML;
+}
+
+function afficherKops(liste){
+  const cible = document.getElementById('kops-list');
+  const vide = document.getElementById('kops-empty');
+
+  if(!liste.length){
+    cible.innerHTML = '';
+    vide.style.display = 'block';
+    return;
+  }
+  vide.style.display = 'none';
+
+  let html = '<div class="kop-card">';
+  liste.forEach(function(k){
+    const estLeMien = monKopId && String(k.id).toLowerCase() === String(monKopId).toLowerCase();
+
+    let meta = k.memberCount + (k.memberCount > 1 ? ' membres' : ' membre');
+    if(k.bestScore != null && k.bestScoreName){
+      meta += ' · meilleure note du dernier match : ' +
+              Number(k.bestScore).toFixed(1) + ' (' + echapper(k.bestScoreName) + ')';
+    }
+
+    let bouton = '';
+    if(estLeMien){ bouton = '<span class="kop-liste-meta">ton kop</span>'; }
+    else if(!monKopId){
+      bouton = '<button class="kop-liste-btn" onclick="event.stopPropagation();rejoindreKopParCode(\'' +
+               k.inviteCode + '\')">Rejoins ce kop</button>';
+    }
+
+    html += '<div class="kop-liste-item" onclick="openKop(\'' + k.id + '\')">' +
+              '<div>' +
+                '<div class="kop-liste-nom">' + echapper(k.name) + '</div>' +
+                '<div class="kop-liste-meta">' + meta + '</div>' +
+              '</div>' + bouton +
+            '</div>';
+  });
+  html += '</div>';
+  cible.innerHTML = html;
+}
+
+// La recherche par nom : c'est elle qui rend la decouverte possible quand la
+// liste sera longue, le tri par taille favorisant toujours les memes.
+function filtrerKops(){
+  const q = (document.getElementById('kops-search').value || '').trim().toLowerCase();
+  if(!q){ afficherKops(kopsCharges); return; }
+  afficherKops(kopsCharges.filter(function(k){
+    return (k.name || '').toLowerCase().indexOf(q) !== -1;
+  }));
+}
+
+function ouvrirCreationKop(){
+  document.getElementById('kop-create-name').value = '';
+  document.getElementById('kop-create-error').classList.remove('show');
+  majCompteurKop();
+  switchView('kop-create');
+}
+
+function majCompteurKop(){
+  const v = document.getElementById('kop-create-name').value || '';
+  document.getElementById('kop-create-count').textContent = v.length + '/30';
+}
+
+async function creerKop(){
+  const nom = (document.getElementById('kop-create-name').value || '').trim();
+  const err = document.getElementById('kop-create-error');
+  err.classList.remove('show');
+
+  if(!nom){
+    err.textContent = 'Merci de donner un nom à ton kop.';
+    err.classList.add('show');
+    return;
+  }
+  if(nom.length > 30){
+    err.textContent = 'Le nom d\'un kop ne peut pas dépasser 30 caractères.';
+    err.classList.add('show');
+    return;
+  }
+
+  const btn = document.getElementById('kop-create-submit');
+  btn.disabled = true;
+
+  try{
+    const res = await fetch(`${API_BASE}/Group/Create/${getUserId()}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name: nom, type: 'kop' })
+    });
+    const json = await res.json();
+    btn.disabled = false;
+
+    if(!json.success || !json.data){
+      err.textContent = json.message || "Tu appartiens déjà à un kop. Quitte-le pour en créer un autre.";
+      err.classList.add('show');
+      return;
+    }
+    openKop(json.data.id);
+  }catch(e){
+    btn.disabled = false;
+    err.textContent = "Impossible de contacter le serveur.";
+    err.classList.add('show');
+  }
+}
+
+async function rejoindreKopParCode(code){
+  try{
+    const res = await fetch(`${API_BASE}/Group/Join/${code}/${getUserId()}`, { method:'POST' });
+    const json = await res.json();
+    if(!json.success || !json.data){
+      alert(json.message || "Impossible de rejoindre ce kop.");
+      return;
+    }
+    openKop(json.data.id);
+  }catch(e){
+    alert("Impossible de contacter le serveur.");
+  }
+}
+
+function rejoindreCeKop(){
+  if(!kopCourant) return;
+  rejoindreKopParCode(kopCourant.inviteCode);
+}
+
+async function openKop(groupId){
+  switchView('kop');
+  setRoute('kop', groupId);
+
+  document.getElementById('kop-loading').style.display = 'block';
+  document.getElementById('kop-content').style.display = 'none';
+
+  try{
+    const teamId = await getPsgTeamId();
+    const userId = getUserId();
+    const url = userId
+      ? `${API_BASE}/Group/Kop/${teamId}/${groupId}/${userId}`
+      : `${API_BASE}/Group/Kop/${teamId}/${groupId}`;
+
+    const res = await fetch(url);
+    const json = await res.json();
+    if(!json.success || !json.data){ throw new Error('reponse invalide'); }
+
+    kopCourant = json.data;
+    afficherKop(kopCourant);
+  }catch(e){
+    document.getElementById('kop-loading').textContent =
+      "Impossible de charger ce kop. Réessaie dans un instant.";
+  }
+}
+
+function afficherKop(k){
+  document.getElementById('kop-loading').style.display = 'none';
+  document.getElementById('kop-content').style.display = 'block';
+
+  document.getElementById('kop-name').textContent = (k.name || 'KOP').toUpperCase();
+  document.getElementById('kop-sub').textContent =
+    k.memberCount + (k.memberCount > 1 ? ' membres' : ' membre');
+
+  // Le bloc d'invitation n'a de sens que pour un membre. Un visiteur voit le
+  // bouton pour entrer.
+  document.getElementById('kop-invite-box').style.display = k.isMember ? 'block' : 'none';
+  document.getElementById('kop-leave-link').style.display = k.isMember ? 'block' : 'none';
+  document.getElementById('kop-join-box').style.display =
+    (!k.isMember && getUserId()) ? 'block' : 'none';
+  document.getElementById('kop-code').textContent = k.inviteCode || '';
+
+  afficherPronoDuKop(k);
+  afficherDernierMatchDuKop(k);
+  afficherClassementDuKop(k);
+}
+
+// Bloc 1. Avant la saisie des statistiques, c'est le prono collectif. Apres,
+// c'est le meme bloc avec la colonne du reel — d'ou le titre qui change.
+function afficherPronoDuKop(k){
+  const bloc = document.getElementById('kop-prono-block');
+  const titre = document.getElementById('kop-prono-title');
+  const cible = document.getElementById('kop-prono');
+
+  if(!k.prono){ bloc.style.display = 'none'; return; }
+  bloc.style.display = 'block';
+
+  const reel = k.real;
+  titre.textContent = reel ? 'Le kop face au réel' : 'Le prono du kop';
+
+  const p = k.prono;
+  let html = '';
+
+  function ligne(libelle, prono, vrai){
+    return '<div class="kop-ligne-stat"><span>' + libelle + '</span>' +
+           '<span class="droite">' + prono +
+           (vrai != null ? ' <span class="kop-note">· ' + vrai + '</span>' : '') +
+           '</span></div>';
+  }
+
+  html += ligne('Score', p.topTeamScore + '-' + p.topOpponentScore +
+                ' (' + p.topScoreCount + '/' + p.predictionCount + ')',
+                reel ? (reel.teamScore + '-' + reel.opponentScore) : null);
+  html += ligne('Possession', p.teamPossession + ' %', reel ? (reel.teamPossession + ' %') : null);
+  html += ligne('Tirs', p.teamShots, reel ? reel.teamShots : null);
+  html += ligne('Fautes', p.teamFouls, reel ? reel.teamFouls : null);
+  html += ligne('Centres', p.teamCrosses, reel ? reel.teamCrosses : null);
+
+  if(p.topEleven && p.topEleven.length){
+    html += '<div class="kop-liste-meta" style="margin-top:10px;">Le onze du kop</div>';
+    p.topEleven.forEach(function(j){
+      const nom = ((j.firstName || '') + ' ' + (j.lastName || '')).trim() || '?';
+      html += '<div class="kop-compo-joueur' + (j.found ? ' trouve' : '') + '">' +
+                '<span>' + echapper(nom) + '</span>' +
+                '<span>' + j.choiceCount + '/' + p.predictionCount + '</span>' +
+              '</div>';
+    });
+  }
+
+  html += '<div class="kop-liste-meta" style="margin-top:10px;">' +
+          p.predictionCount + (p.predictionCount > 1 ? ' membres ont pronostiqué' : ' membre a pronostiqué') +
+          ' ce match</div>';
+
+  cible.innerHTML = html;
+}
+
+// Bloc 2. C'est lui qui apporte le mouvement : le coefficient expert est une
+// moyenne de saison, elle bouge a peine d'un match a l'autre.
+function afficherDernierMatchDuKop(k){
+  const bloc = document.getElementById('kop-lastmatch-block');
+  const cible = document.getElementById('kop-lastmatch');
+
+  if(!k.lastMatch || !k.lastMatch.length){ bloc.style.display = 'none'; return; }
+  bloc.style.display = 'block';
+
+  let html = '';
+  k.lastMatch.slice(0, 10).forEach(function(r){
+    html += '<div class="kop-row' + (r.isMe ? ' moi' : '') + '">' +
+              '<span>' + r.rank + ' · ' + echapper(r.displayName) + '</span>' +
+              '<span class="kop-note">' + Number(r.score).toFixed(3) + '</span>' +
+            '</div>';
+  });
+  cible.innerHTML = html;
+}
+
+// Bloc 3. Deux rangs par ligne : celui du kop en clair, celui du jeu entier en
+// pastille. Etre premier de son kop et 43e du jeu dit deux choses, pas une.
+function afficherClassementDuKop(k){
+  const cible = document.getElementById('kop-ranking');
+  if(!k.ranking || !k.ranking.length){
+    cible.innerHTML = '<div class="kop-liste-meta">Personne n\'a encore de note dans ce kop.</div>';
+    return;
+  }
+
+  let html = '';
+  k.ranking.forEach(function(r){
+    const general = r.generalRank > 0
+      ? '<span class="kop-general">' + r.generalRank + '<sup>e</sup> au jeu</span>'
+      : '';
+    html += '<div class="kop-row' + (r.isMe ? ' moi' : '') + '" ' +
+              (r.isMe ? 'id="kop-row-moi"' : '') + '>' +
+              '<span>' + r.rank + ' · ' + echapper(r.displayName) + '</span>' +
+              '<span class="droite">' + general +
+                '<span class="kop-note">' + Number(r.expertCoef).toFixed(3) + '</span>' +
+              '</span></div>';
+  });
+  cible.innerHTML = html;
+
+  // Le classement s'ouvre sur la ligne du joueur, amenee au centre. Un visiteur
+  // non connecte n'a pas de ligne : il voit le haut du classement, ce qui est
+  // le bon comportement pour quelqu'un qui decouvre le kop.
+  const moi = document.getElementById('kop-row-moi');
+  if(moi){ try{ moi.scrollIntoView({ block:'center' }); }catch(e){} }
+}
+
+// --- Le partage ---
+// Le lien reprend le mecanisme deja en place : ?groupe=CODE fait entrer dans le
+// bon kop apres l'inscription, sans que le nouveau venu ait rien a recopier.
+function lienDuKop(){
+  if(!kopCourant) return siteBaseUrl();
+  return siteBaseUrl() + '?groupe=' + encodeURIComponent(kopCourant.inviteCode);
+}
+
+function partagerKopSurX(){
+  if(!kopCourant) return;
+  const texte =
+    "J'ai ouvert le " + kopCourant.name + " sur YouProno.\n\n" +
+    "Compo, possession, tirs, fautes, centres, score, on fait ses pronos et on a une note dès qu'ils sont comparés aux stats officielles. On va voir qui sont les vrais experts du PSG. Rejoins-moi";
+
+  const url = 'https://twitter.com/intent/tweet'
+            + '?text=' + encodeURIComponent(texte)
+            + '&url=' + encodeURIComponent(lienDuKop());
+  window.open(url, '_blank');
+}
+
+function partagerKopSurWhatsApp(){
+  if(!kopCourant) return;
+  const texte =
+    "J'ai ouvert le " + kopCourant.name + " sur YouProno. On fait nos pronos avant le match, "
+    + "et on a une note dès qu'ils sont comparés aux stats officielles. Rejoins-moi\n"
+    + lienDuKop();
+  window.location.href = 'https://wa.me/?text=' + encodeURIComponent(texte);
+}
+
+async function quitterKop(){
+  if(!kopCourant) return;
+  if(!confirm("Tu vas quitter le " + kopCourant.name + ". Tu pourras en rejoindre un autre ensuite.")) return;
+
+  try{
+    const res = await fetch(`${API_BASE}/Group/Leave/${kopCourant.id}/${getUserId()}`, { method:'POST' });
+    const json = await res.json();
+    if(!json.success){
+      alert(json.message || "Impossible de quitter ce kop.");
+      return;
+    }
+    kopCourant = null;
+    goToKops();
+  }catch(e){
+    alert("Impossible de contacter le serveur.");
+  }
+}
+
 // ===== BADGES =====
 // Vingt-quatre badges, six lignes de quatre. Rien n'est stocké : le jour où on les
 // branchera, l'état débloqué se recalculera à partir de l'historique du joueur.
@@ -4258,6 +4752,7 @@ function navFromMenu(name){
   else if(name === 'myprono'){ goToMyProno(); }
   else if(name === 'results'){ goToResults(); }
   else if(name === 'groups'){ goToGroups(); }
+  else if(name === 'kops'){ goToKops(); }
   else if(name === 'ranking'){ goToRanking(); }
   else if(name === 'trophies'){ goToTrophies(); }
   else if(name === 'badges'){ goToBadges(); }
