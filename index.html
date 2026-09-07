@@ -1412,6 +1412,20 @@
 .kop-liste-item:last-child{ border-bottom:none; }
 .kop-liste-nom{ font-size:15px; font-weight:600; }
 .kop-liste-meta{ font-size:12px; color:#c2cae8; margin-top:3px; }
+.kop-intertitre{ color:#c2cae8; font-size:11px; margin:18px 0 6px; }
+.kop-note{ color:#c2cae8; font-size:12px; line-height:1.5; margin:0 0 10px; }
+.kop-carte-mienne{
+  background:#3554ab; border:1px solid #e8b923; border-radius:8px;
+  padding:13px; cursor:pointer;
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+}
+.kop-carte-mienne .chevron{ color:#e8b923; font-size:16px; flex:0 0 auto; }
+.kop-quitter{
+  display:block; width:100%; margin-top:14px; cursor:pointer;
+  background:transparent; color:#c2cae8;
+  border:1px solid rgba(255,255,255,.25); border-radius:8px;
+  padding:11px; font-size:14px; font-family:inherit;
+}
 .kop-liste-btn{
   flex:0 0 auto; background:transparent; color:#fff; cursor:pointer;
   border:1px solid rgba(255,255,255,.35); border-radius:20px;
@@ -1940,19 +1954,25 @@
     </section>
 
     <section id="view-kops" class="view" style="display:none;">
-      <h2 class="play-title">TROUVE TON KOP</h2>
+      <h2 class="play-title">LES KOPS</h2>
 
-      <div id="kops-mine" style="display:none;"></div>
+      <div id="kops-mine-bloc" style="display:none;">
+        <div class="kop-intertitre">ton kop</div>
+        <div id="kops-mine"></div>
+      </div>
+
+      <div class="kop-intertitre" id="kops-liste-titre">les kops</div>
+      <div class="kop-note" id="kops-note" style="display:none;"></div>
 
       <input type="text" id="kops-search" class="kop-search" placeholder="Chercher un kop par son nom" oninput="filtrerKops()">
 
       <div id="kops-loading" class="placeholder">Chargement des kops…</div>
       <div id="kops-list"></div>
-      <div id="kops-empty" class="placeholder" style="display:none;">Aucun kop pour le moment. Ouvre le premier.</div>
+      <div id="kops-empty" class="placeholder" style="display:none;">Aucun kop pour le moment.</div>
 
-      <div class="group-invite-box" style="margin-top:24px;">
-        <p class="groups-pitch" id="kops-create-pitch">Un kop rassemble autant de supporters que tu veux. On n'y gagne ni point ni médaille : on s'y situe, au coefficient expert.</p>
-        <button class="cta-play" id="kops-create-btn" onclick="ouvrirCreationKop()">Crée ton kop</button>
+      <div id="kops-create-bloc" style="display:none;">
+        <button class="cta-play" style="margin-top:22px;" onclick="ouvrirCreationKop()">Crée ton kop</button>
+        <p class="kop-note" style="text-align:center;">Aucun ne te ressemble ? Ouvre le tien.</p>
       </div>
     </section>
 
@@ -2008,8 +2028,8 @@
           <button class="cta-play" onclick="rejoindreCeKop()">Rejoins ce kop</button>
         </div>
 
+        <button class="kop-quitter" id="kop-leave-btn" onclick="quitterKop()">Quitter ce kop</button>
         <span class="small-link" onclick="goToKops()">← Retour aux kops</span>
-        <span class="small-link" id="kop-leave-link" style="margin-top:8px;" onclick="quitterKop()">Quitter le kop</span>
       </div>
     </section>
     <section id="view-salon" class="view" style="display:none;">
@@ -4262,6 +4282,7 @@ async function enregistrerEmail(){
 let kopsCharges = [];      // la liste renvoyee par le serveur
 let monKopId = null;       // le kop du joueur, s'il en a un
 let monKopNom = null;
+let monKopMembres = 0;
 let kopCourant = null;     // le kop actuellement ouvert
 
 function goToKops(){
@@ -4284,9 +4305,15 @@ async function chargerKops(){
     const json = await res.json();
     if(!json.success || !json.data){ throw new Error('reponse invalide'); }
 
-    kopsCharges = json.data.kops || [];
+    const tous = json.data.kops || [];
     monKopId = json.data.myKopId || null;
     monKopNom = json.data.myKopName || null;
+
+    const mien = tous.find(k => monKopId && String(k.id).toLowerCase() === String(monKopId).toLowerCase());
+    monKopMembres = mien ? mien.memberCount : 0;
+
+    // Son kop est affiché au-dessus : le laisser dans la liste le montrerait deux fois.
+    kopsCharges = tous.filter(k => !monKopId || String(k.id).toLowerCase() !== String(monKopId).toLowerCase());
   }catch(e){
     loading.textContent = "Impossible de charger les kops. Réessaie dans un instant.";
     return;
@@ -4299,33 +4326,38 @@ async function chargerKops(){
 
 // En haut de l'ecran : le kop du joueur, detache du reste. S'il en a un, la
 // creation et l'adhesion cedent la place a la phrase qui explique pourquoi.
-function majBandeauBoutonCreation(){
-  const box = document.getElementById('kops-create-pitch');
-  const btn = document.getElementById('kops-create-btn');
-  if(monKopId){
-    box.innerHTML = 'Tu es déjà dans le <b>' + echapper(monKopNom || 'ton kop') +
-                    '</b>. Quitte-le pour en rejoindre un autre.';
-    btn.style.display = 'none';
-  }else{
-    box.textContent = "Un kop rassemble autant de supporters que tu veux. On n'y gagne ni point ni médaille : on s'y situe, au coefficient expert.";
-    btn.style.display = '';
-  }
-}
-
+// Deux états d'une même page. Avec un kop : le sien est détaché en haut, les
+// autres en dessous, et la création disparaît puisqu'on n'en a qu'un. Sans kop :
+// on regarde d'abord ce qui existe, et le bouton attend en bas.
 function majBandeauMonKop(){
-  const bloc = document.getElementById('kops-mine');
-  if(!monKopId){
-    bloc.style.display = 'none';
-    bloc.innerHTML = '';
-  }else{
+  const bloc = document.getElementById('kops-mine-bloc');
+  const carte = document.getElementById('kops-mine');
+  const titreListe = document.getElementById('kops-liste-titre');
+  const note = document.getElementById('kops-note');
+  const creation = document.getElementById('kops-create-bloc');
+
+  if(monKopId){
     bloc.style.display = 'block';
-    bloc.innerHTML =
-      '<div class="kop-card" style="cursor:pointer;" onclick="openKop(\'' + monKopId + '\')">' +
-        '<div class="kop-liste-nom">' + echapper(monKopNom || 'Mon kop') + '</div>' +
-        '<div class="kop-liste-meta">Ton kop · voir le classement ›</div>' +
+    carte.innerHTML =
+      '<div class="kop-carte-mienne" onclick="openKop(\'' + monKopId + '\')">' +
+        '<div><div class="kop-liste-nom">' + echapper(monKopNom || 'Mon kop') + '</div>' +
+        '<div class="kop-liste-meta">' + (monKopMembres || 0) +
+        (monKopMembres > 1 ? ' membres' : ' membre') + '</div></div>' +
+        '<span class="chevron">›</span>' +
       '</div>';
+
+    titreListe.textContent = 'les autres kops';
+    note.innerHTML = 'Tu es déjà dans le kop «\u00a0<b>' + echapper(monKopNom || '') +
+                     '</b>\u00a0». Quitte-le pour en rejoindre un autre.';
+    note.style.display = 'block';
+    creation.style.display = 'none';
+  }else{
+    bloc.style.display = 'none';
+    carte.innerHTML = '';
+    titreListe.textContent = 'les kops';
+    note.style.display = 'none';
+    creation.style.display = 'block';
   }
-  majBandeauBoutonCreation();
 }
 
 function echapper(txt){
@@ -4340,6 +4372,9 @@ function afficherKops(liste){
 
   if(!liste.length){
     cible.innerHTML = '';
+    vide.textContent = monKopId
+      ? "Il n'y a pas d'autre kop pour le moment."
+      : "Aucun kop pour le moment.";
     vide.style.display = 'block';
     return;
   }
@@ -4347,7 +4382,6 @@ function afficherKops(liste){
 
   let html = '<div class="kop-card">';
   liste.forEach(function(k){
-    const estLeMien = monKopId && String(k.id).toLowerCase() === String(monKopId).toLowerCase();
 
     let meta = k.memberCount + (k.memberCount > 1 ? ' membres' : ' membre');
     if(k.bestScore != null && k.bestScoreName){
@@ -4356,8 +4390,7 @@ function afficherKops(liste){
     }
 
     let bouton = '';
-    if(estLeMien){ bouton = '<span class="kop-liste-meta">ton kop</span>'; }
-    else if(!monKopId){
+    if(!monKopId){
       bouton = '<button class="kop-liste-btn" onclick="event.stopPropagation();rejoindreKopParCode(\'' +
                k.inviteCode + '\')">Rejoins ce kop</button>';
     }
@@ -4492,7 +4525,7 @@ function afficherKop(k){
   // Le bloc d'invitation n'a de sens que pour un membre. Un visiteur voit le
   // bouton pour entrer.
   document.getElementById('kop-invite-box').style.display = k.isMember ? 'block' : 'none';
-  document.getElementById('kop-leave-link').style.display = k.isMember ? 'block' : 'none';
+  document.getElementById('kop-leave-btn').style.display = k.isMember ? 'block' : 'none';
   document.getElementById('kop-join-box').style.display =
     (!k.isMember && getUserId()) ? 'block' : 'none';
   document.getElementById('kop-code').textContent = k.inviteCode || '';
