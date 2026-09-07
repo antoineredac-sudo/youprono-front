@@ -1350,6 +1350,14 @@
   }
   .dash-history-match{ font-size:13px; }
   .dash-history-score{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--gold); }
+/* ===== L'ADRESSE E-MAIL ===== */
+.mail-note{ font-size:12px; color:#c2cae8; line-height:1.5; margin-top:6px; }
+.mail-case{
+  display:flex; align-items:flex-start; gap:9px;
+  font-size:13px; line-height:1.45; margin-top:12px; cursor:pointer;
+}
+.mail-case input{ width:auto; margin:2px 0 0; flex:0 0 auto; }
+
 /* ===== LES KOPS ===== */
 .kop-invite-banner{
   border:1px solid #e8b923; border-radius:12px;
@@ -1429,6 +1437,16 @@
 
       <label>Mot de passe</label>
       <input type="password" id="auth-password" autocomplete="current-password" placeholder="Ton mot de passe">
+
+      <div id="auth-email-bloc" style="display:none;">
+        <label>Adresse e-mail</label>
+        <input type="email" id="auth-email" autocomplete="email" placeholder="ton@adresse.fr">
+        <div class="mail-note">Ton adresse sert à récupérer ton compte si tu oublies ton pseudo ou ton mot de passe. Elle n'est transmise à personne.</div>
+        <label class="mail-case">
+          <input type="checkbox" id="auth-email-optin">
+          <span>Préviens-moi avant chaque match du PSG pour que je n'oublie jamais de pronostiquer.</span>
+        </label>
+      </div>
 
       <div class="field-error" id="auth-error"></div>
 
@@ -1877,6 +1895,22 @@
 
       <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
+    <section id="view-email" class="view" style="display:none;">
+      <h2 class="play-title">TON ADRESSE E-MAIL</h2>
+      <p class="groups-pitch">Merci d'entrer ton email afin de pouvoir te connecter si tu as oublié ton pseudo et/ou ton mot de passe.</p>
+
+      <label>Adresse e-mail</label>
+      <input type="email" id="email-champ" autocomplete="email" placeholder="ton@adresse.fr">
+      <div class="mail-note">Elle n'est transmise à personne.</div>
+      <label class="mail-case">
+        <input type="checkbox" id="email-optin">
+        <span>Préviens-moi avant chaque match du PSG pour que je n'oublie jamais de pronostiquer.</span>
+      </label>
+
+      <div class="field-error" id="email-erreur"></div>
+      <button class="cta-play" id="email-submit" style="margin-top:20px;" onclick="enregistrerEmail()">Enregistrer</button>
+    </section>
+
     <section id="view-kops" class="view" style="display:none;">
       <h2 class="play-title">TROUVE TON KOP</h2>
 
@@ -2167,7 +2201,22 @@ function switchAuthTab(mode){
   document.getElementById('tab-login').classList.toggle('active', mode==='login');
   document.getElementById('tab-register').classList.toggle('active', mode==='register');
   document.getElementById('auth-submit').textContent = mode==='login' ? 'Se connecter' : 'Créer mon compte';
+  // L'adresse n'est demandée qu'à l'inscription. La réclamer pour se connecter
+  // ferait croire qu'elle remplace le pseudo.
+  document.getElementById('auth-email-bloc').style.display = (mode==='register') ? 'block' : 'none';
   document.getElementById('auth-error').classList.remove('show');
+}
+
+// Même souplesse que le serveur : on attrape la faute de frappe évidente sans
+// rejeter une adresse valide mais inhabituelle.
+function adressePlausible(email){
+  const e = (email || '').trim();
+  const at = e.indexOf('@');
+  if(at <= 0 || at !== e.lastIndexOf('@')) return false;
+  const domaine = e.slice(at + 1);
+  return domaine.length >= 3 && domaine.includes('.')
+      && !domaine.startsWith('.') && !domaine.endsWith('.')
+      && !e.includes(' ');
 }
 
 function getAuth(){
@@ -2184,10 +2233,16 @@ function showError(msg){
 async function submitAuth(){
   const displayName = document.getElementById('auth-username').value.trim();
   const password = document.getElementById('auth-password').value;
+  const email = document.getElementById('auth-email').value.trim();
+  const emailOptIn = document.getElementById('auth-email-optin').checked;
   const btn = document.getElementById('auth-submit');
 
   if(!displayName || !password){
     showError('Merci de remplir ton pseudo et ton mot de passe.');
+    return;
+  }
+  if(authMode === 'register' && !adressePlausible(email)){
+    showError('Merci d\'indiquer une adresse e-mail valide.');
     return;
   }
 
@@ -2200,7 +2255,9 @@ async function submitAuth(){
     const res = await fetch(API_BASE + endpoint, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ displayName, password })
+      body: JSON.stringify(authMode === 'login'
+        ? { displayName, password }
+        : { displayName, password, email, emailOptIn })
     });
     const json = await res.json();
 
@@ -2242,6 +2299,7 @@ function enterApp(restaurer){
   loadHomeMatch();
   if(pendingInviteCode){ acceptPendingInvite(); }
   checkMatchNotification();
+  verifierAdresseEmail();
 
   // Au rafraîchissement, on rouvre l'écran lu plus haut. Après une connexion,
   // non : on entre par l'accueil.
@@ -4108,6 +4166,64 @@ document.addEventListener('keydown', function(e){
 // l'invitation WhatsApp de fin de pronostic. On ne l'atteint que par le menu.
 function estUnKop(g){
   return g && String(g.type || '').toLowerCase() === 'kop';
+}
+
+// ===== L'ADRESSE E-MAIL DES JOUEURS DÉJÀ INSCRITS =====
+// Ceux qui se sont inscrits avant que le champ existe n'ont pas d'adresse. On la
+// leur demande à leur prochaine connexion, une fois — l'écran est passable, mais
+// il revient tant qu'elle n'est pas donnée.
+let emailEnregistre = false;
+
+async function verifierAdresseEmail(){
+  if(emailEnregistre) return;
+  const userId = getUserId();
+  if(!userId) return;
+
+  try{
+    const res = await fetch(`${API_BASE}/User/Email/${userId}`);
+    const json = await res.json();
+    if(json.success && json.data && json.data.hasEmail === false){
+      switchView('email');
+    }
+  }catch(e){ /* on ne bloque jamais l'entrée dans le jeu pour ça */ }
+}
+
+async function enregistrerEmail(){
+  const email = (document.getElementById('email-champ').value || '').trim();
+  const optIn = document.getElementById('email-optin').checked;
+  const err = document.getElementById('email-erreur');
+  err.classList.remove('show');
+
+  if(!adressePlausible(email)){
+    err.textContent = 'Merci d\'indiquer une adresse e-mail valide.';
+    err.classList.add('show');
+    return;
+  }
+
+  const btn = document.getElementById('email-submit');
+  btn.disabled = true;
+
+  try{
+    const res = await fetch(`${API_BASE}/User/Email/${getUserId()}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email: email, emailOptIn: optIn })
+    });
+    const json = await res.json();
+    btn.disabled = false;
+
+    if(!json.success){
+      err.textContent = "Impossible d'enregistrer cette adresse.";
+      err.classList.add('show');
+      return;
+    }
+    emailEnregistre = true;
+    switchView('home');
+  }catch(e){
+    btn.disabled = false;
+    err.textContent = "Impossible de contacter le serveur.";
+    err.classList.add('show');
+  }
 }
 
 // ===== LES KOPS DE SUPPORTERS =====
