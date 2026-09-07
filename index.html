@@ -2698,7 +2698,7 @@ async function refreshHomeSalon(courant, precedent){
     const userId = getUserId();
     const res = await fetch(`${API_BASE}/Group/ByUserId/${userId}`);
     const json = await res.json();
-    salonMesGroupes = (json.success && json.data) ? json.data : [];
+    salonMesGroupes = ((json.success && json.data) ? json.data : []).filter(g => !estUnKop(g));
   }catch(e){ salonMesGroupes = []; }
 
   const etat = await salonEtatDuMatch(cible);
@@ -3411,7 +3411,7 @@ async function enterGroupsScreen(){
   try{
     const res = await fetch(`${API_BASE}/Group/ByUserId/${userId}`);
     const json = await res.json();
-    const groups = (json.success && json.data) ? json.data : [];
+    const groups = ((json.success && json.data) ? json.data : []).filter(g => !estUnKop(g));
 
     // Le bouton d'invitation doit avoir son code avant le premier clic.
     const userId2 = getUserId();
@@ -3472,6 +3472,7 @@ async function mesGroupesCrees(){
     const json = await res.json();
     const tous = (json.success && Array.isArray(json.data)) ? json.data : [];
     return tous
+      .filter(g => !estUnKop(g))
       .filter(g => (g.creatorId || '').toLowerCase() === userId.toLowerCase())
       .sort((a, b) => new Date(a.createdDate) - new Date(b.createdDate));
   }catch(e){
@@ -4049,6 +4050,13 @@ document.addEventListener('keydown', function(e){
   if(e.key === 'Escape') closeMenu();
 });
 
+
+// Un kop n'est pas un groupe d'amis : il ne remonte ni sur l'accueil, ni dans
+// « Mes groupes d'amis », et il ne peut jamais servir de groupe personnel pour
+// l'invitation WhatsApp de fin de pronostic. On ne l'atteint que par le menu.
+function estUnKop(g){
+  return g && String(g.type || '').toLowerCase() === 'kop';
+}
 
 // ===== LES KOPS DE SUPPORTERS =====
 // Un kop n'a pas de plafond de membres, ne distribue ni point ni medaille, et
