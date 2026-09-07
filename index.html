@@ -4404,24 +4404,33 @@ function lienDuKop(){
   return siteBaseUrl() + '?groupe=' + encodeURIComponent(kopCourant.inviteCode);
 }
 
+// « le kop Les Enfants du Parc », mais « le Kop du Parc » : le mot n'est ajoute
+// que si le nom ne commence pas deja par lui. Sans cette regle, le nom le plus
+// probable de tous produirait « le kop Kop du Parc ».
+function nomAvecKop(nom){
+  const n = (nom || '').trim();
+  return /^kops?\b/i.test(n) ? n : ('kop ' + n);
+}
+
+// Le meme texte sur les deux reseaux. Il est ecrit une seule fois : deux copies
+// finiraient par diverger a la premiere retouche.
+function messageDuKop(){
+  return "J'ai ouvert le " + nomAvecKop(kopCourant.name) + " sur YouProno.\n\n"
+       + "Compo, possession, tirs, fautes, centres, score, on fait ses pronos et on a une note dès qu'ils sont comparés aux vraies stats. On va voir qui sont les vrais experts du PSG. Rejoins-moi";
+}
+
 function partagerKopSurX(){
   if(!kopCourant) return;
-  const texte =
-    "J'ai ouvert le " + kopCourant.name + " sur YouProno.\n\n" +
-    "Compo, possession, tirs, fautes, centres, score, on fait ses pronos et on a une note dès qu'ils sont comparés aux stats officielles. On va voir qui sont les vrais experts du PSG. Rejoins-moi";
-
   const url = 'https://twitter.com/intent/tweet'
-            + '?text=' + encodeURIComponent(texte)
+            + '?text=' + encodeURIComponent(messageDuKop())
             + '&url=' + encodeURIComponent(lienDuKop());
   window.open(url, '_blank');
 }
 
 function partagerKopSurWhatsApp(){
   if(!kopCourant) return;
-  const texte =
-    "J'ai ouvert le " + kopCourant.name + " sur YouProno. On fait nos pronos avant le match, "
-    + "et on a une note dès qu'ils sont comparés aux stats officielles. Rejoins-moi\n"
-    + lienDuKop();
+  // WhatsApp n'a pas de champ separe pour le lien : il vient a la suite du texte.
+  const texte = messageDuKop() + "\n" + lienDuKop();
   window.location.href = 'https://wa.me/?text=' + encodeURIComponent(texte);
 }
 
