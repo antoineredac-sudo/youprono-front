@@ -103,7 +103,7 @@
     margin-top:16px;
   }
   label:first-of-type{ margin-top:0; }
-  input[type=text], input[type=password]{
+  input[type=text], input[type=password], input[type=email]{
     width:100%;
     background:var(--surface);
     border:1px solid var(--border);
@@ -1351,6 +1351,29 @@
   .dash-history-match{ font-size:13px; }
   .dash-history-score{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--gold); }
 /* ===== L'ADRESSE E-MAIL ===== */
+/* Le champ avec son enveloppe : la bordure passe sur l'enveloppe extérieure et
+   le champ lui-même devient transparent, sinon on verrait deux cadres. */
+.mail-champ{
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:8px; padding:0 14px;
+}
+.mail-champ:focus-within{ border-color:var(--red); }
+.mail-icone{ color:var(--gold); width:19px; height:19px; flex:0 0 auto; }
+.mail-champ input[type=email]{
+  border:none; background:transparent; padding:13px 0; border-radius:0;
+}
+.mail-champ input[type=email]:focus{ border:none; }
+
+/* Le bloc détaché de l'écran des joueurs déjà inscrits. */
+.mail-bloc{
+  border:1px solid var(--gold); border-radius:10px;
+  padding:14px; margin-top:16px;
+}
+.mail-bloc label:first-of-type{ margin-top:0; }
+.mail-bloc .mail-case{
+  margin-top:12px; padding-top:12px; border-top:1px solid var(--border);
+}
 .mail-note{ font-size:12px; color:#c2cae8; line-height:1.5; margin-top:6px; }
 .mail-case{
   display:flex; align-items:flex-start; gap:9px;
@@ -1440,7 +1463,10 @@
 
       <div id="auth-email-bloc" style="display:none;">
         <label>Adresse e-mail</label>
-        <input type="email" id="auth-email" autocomplete="email" placeholder="ton@adresse.fr">
+        <div class="mail-champ">
+          <svg class="mail-icone" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 7 12 13l8.5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <input type="email" id="auth-email" autocomplete="email" placeholder="ton@adresse.fr">
+        </div>
         <div class="mail-note">Ton adresse sert à récupérer ton compte si tu oublies ton pseudo ou ton mot de passe. Elle n'est transmise à personne.</div>
         <label class="mail-case">
           <input type="checkbox" id="auth-email-optin">
@@ -1899,13 +1925,15 @@
       <h2 class="play-title">TON ADRESSE E-MAIL</h2>
       <p class="groups-pitch">Merci d'entrer ton email afin de pouvoir te connecter si tu as oublié ton pseudo et/ou ton mot de passe.</p>
 
-      <label>Adresse e-mail</label>
-      <input type="email" id="email-champ" autocomplete="email" placeholder="ton@adresse.fr">
-      <div class="mail-note">Elle n'est transmise à personne.</div>
-      <label class="mail-case">
-        <input type="checkbox" id="email-optin">
-        <span>Préviens-moi avant chaque match du PSG pour que je n'oublie jamais de pronostiquer.</span>
-      </label>
+      <div class="mail-bloc">
+        <label>Adresse e-mail</label>
+        <input type="email" id="email-champ" autocomplete="email" placeholder="ton@adresse.fr">
+        <div class="mail-note">Elle n'est transmise à personne.</div>
+        <label class="mail-case">
+          <input type="checkbox" id="email-optin">
+          <span>Préviens-moi avant chaque match du PSG pour que je n'oublie jamais de pronostiquer.</span>
+        </label>
+      </div>
 
       <div class="field-error" id="email-erreur"></div>
       <button class="cta-play" id="email-submit" style="margin-top:20px;" onclick="enregistrerEmail()">Enregistrer</button>
