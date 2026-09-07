@@ -1251,6 +1251,13 @@
 
   .dash-history-label{ color:var(--text-dim); font-size:13px; margin-bottom:10px; }
   /* Le repère d'avancement du tunnel : six écrans, et on sait toujours où on en est. */
+  .rdv-label{ color:var(--text-dim); font-size:12px; margin:20px 0 7px; }
+  .rdv{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:12px 14px; margin-bottom:8px;
+  }
+  .rdv-heure{ color:var(--gold); font-size:12px; font-weight:600; }
+  .rdv-texte{ color:var(--text); font-size:13px; line-height:1.5; margin-top:3px; }
   .etape{
     color:var(--text-dim); font-size:12px;
     letter-spacing:.5px; text-align:center; margin-bottom:8px;
@@ -2069,6 +2076,16 @@
     </section>
     <section id="view-confirm" class="view" style="display:none;">
       <h2 class="play-title" id="confirm-title">Pronostic enregistré</h2>
+
+      <div class="rdv-label">tes deux rendez-vous</div>
+      <div class="rdv">
+        <div class="rdv-heure">45 min avant le coup d'envoi</div>
+        <div class="rdv-texte">La compo tombe. Découvre ta note en compo.</div>
+      </div>
+      <div class="rdv">
+        <div class="rdv-heure">5 min après le coup de sifflet final</div>
+        <div class="rdv-texte">Ta note finale et ta place au classement.</div>
+      </div>
 
       <div class="group-invite-box" style="margin-top:20px;">
         <p class="confirm-pitch">Qui est le vrai expert du PSG parmi tes amis ? Invite-les sur WhatsApp. À chaque match vous serez classés du premier au dernier. Tous les 5 matchs, un champion.</p>
