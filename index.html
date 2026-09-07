@@ -755,6 +755,8 @@
   .compo-col-label{ color:var(--text-dim); font-size:11px; margin-bottom:4px; }
   .compo-name{ display:block; font-size:13px; padding:2px 0; }
   .compo-wrong{ text-decoration:line-through; color:var(--text-dim); }
+  /* La composition officielle, celle du coach : doré, comme les notes. */
+  .compo-name.compo-reel{ color:#e8b923; }
 
   /* --- Classement entre amis : la place au général, en pastille --- */
   .ami-pastille{
@@ -2145,6 +2147,17 @@
 
 <script>
 const API_BASE = 'https://youprono-back.onrender.com';
+
+// Certains joueurs sont enregistrés en base avec le même prénom et nom —
+// « Vitinha Vitinha », « Marquinhos Marquinhos ». On n'affiche le mot qu'une fois.
+function nomJoueurAffiche(prenom, nom){
+  const a = (prenom || '').trim();
+  const b = (nom || '').trim();
+  if(!a) return b || '—';
+  if(!b) return a;
+  if(a.toLowerCase() === b.toLowerCase()) return a;
+  return a + ' ' + b;
+}
 const LS_AUTH = 'youprono_auth';
 
 let authMode = 'login';
@@ -2596,16 +2609,16 @@ function renderCompoNote(prediction){
 
   const nomDe = (id) => {
     const officiel = officialCompoPlayers.find(p => p.id === id);
-    if(officiel) return officiel.firstName + ' ' + officiel.lastName;
+    if(officiel) return nomJoueurAffiche(officiel.firstName, officiel.lastName);
     const p = squadData.find(sp => sp.id === id);
-    return p ? p.firstName + ' ' + p.lastName : '—';
+    return p ? nomJoueurAffiche(p.firstName, p.lastName) : '—';
   };
 
   const tonHtml = predictedIds.map(id =>
     `<span class="compo-name ${realIds.has(id) ? '' : 'compo-wrong'}">${nomDe(id)}</span>`).join('');
 
   const reelHtml = officialCompoPlayers.map(p =>
-    `<span class="compo-name">${p.firstName} ${p.lastName}</span>`).join('');
+    `<span class="compo-name compo-reel">${nomJoueurAffiche(p.firstName, p.lastName)}</span>`).join('');
 
   // La composition d'abord : c'est la seule catégorie déjà tranchée, et la seule
   // qu'on peut lire nom par nom.
@@ -3402,12 +3415,13 @@ function renderResults(prediction, stats, matchDetail){
 
   const predictedNamesHtml = prediction.players.map(id => {
     const p = squadData.find(sp => sp.id === id);
-    const name = p ? p.firstName + ' ' + p.lastName : id.slice(0,8) + '…';
+    const name = p ? nomJoueurAffiche(p.firstName, p.lastName) : id.slice(0,8) + '…';
     const correct = realIds.has(id);
     return `<span class="compo-name ${correct ? '' : 'compo-wrong'}">${name}</span>`;
   }).join('');
 
-  const realNamesHtml = realTeamPlayers.map(p => `<span class="compo-name">${p.firstName} ${p.lastName}</span>`).join('');
+  const realNamesHtml = realTeamPlayers.map(p =>
+    `<span class="compo-name compo-reel">${nomJoueurAffiche(p.firstName, p.lastName)}</span>`).join('');
 
   const compoAccuracy = stats.result.team.composition?.formula || 0;
   html += `
