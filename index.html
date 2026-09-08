@@ -1300,6 +1300,23 @@
     color:#dbe3ff; font-size:9px; margin-top:4px; line-height:1.2;
     overflow-wrap:anywhere;
   }
+  /* --- Le verdict de fin de mini-championnat --- */
+  .verdict{
+    border:1px solid var(--gold); border-radius:12px;
+    padding:16px; margin-bottom:20px;
+  }
+  .verdict-groupe{ color:var(--text-dim); font-size:12px; }
+  .verdict-rang{
+    font-family:'Oswald',sans-serif; font-size:22px;
+    color:var(--text); margin-top:4px;
+  }
+  .verdict-metal{ color:var(--gold); font-size:15px; font-weight:600; margin-top:12px; }
+  .verdict-texte{ color:var(--text); font-size:13px; line-height:1.6; margin-top:4px; }
+  .verdict-coupe{
+    color:var(--text-dim); font-size:12px; line-height:1.6;
+    margin-top:12px; padding-top:12px; border-top:1px solid var(--border);
+  }
+  .verdict .cta-play-outline{ margin-top:14px; }
   .groups-intro{
     color:var(--text-dim); font-size:13px; line-height:1.6;
     margin:14px 0 18px; text-align:center;
@@ -2201,6 +2218,8 @@
       <h2 class="play-title">MES TROPHÉES</h2>
 
       <p class="trophy-pitch">Finis haut dans les classements de groupe pour remplir ta vitrine de trophées</p>
+
+      <div class="verdict" id="trophy-verdict" style="display:none;"></div>
 
       <div class="trophy-case">
         <div class="trophy-case-inner" id="trophy-inner">
@@ -5342,6 +5361,68 @@ function coupeSVG(pleine, hauteur){
     + '<rect x="12" y="75" width="52" height="10" rx="2" fill="none" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/></svg>';
 }
 
+// Le verdict du dernier mini-championnat achevé. Les textes sont assemblés à
+// partir de fragments : une ligne de rang, un corps selon le métal, une ligne
+// de coupe. Neuf fragments couvrent les 54 combinaisons de taille et de place.
+const VERDICT_METAUX = {
+  5: { nom:'Diamant', phrase:'Le métal le plus rare du jeu.' },
+  4: { nom:'Platine', phrase:'Très peu de joueurs montent aussi haut.' },
+  3: { nom:'Or',      phrase:'Une belle série.' },
+  2: { nom:'Argent',  phrase:'Solide.' },
+  1: { nom:'Bronze',  phrase:'La première marche.' }
+};
+
+function verdictHtml(m, d){
+  const grand = '<div class="verdict-groupe">' + echapper(m.groupName)
+              + ' · championnat n°' + m.cycleNumber + '</div>';
+
+  // Un groupe de deux ne donne pas de médaille : c'est un duel, il a ses textes.
+  if(m.memberCount === 2){
+    const autre = echapper(m.opponentName || 'ton adversaire');
+    const corps = m.isChampion
+      ? 'Bravo, tu as battu ' + autre + ' sur un mini-championnat.'
+      : autre + ' t\'a battu sur ce mini-championnat. À deux, il n\'y a pas de médaille — mais à trois, il y en a une.';
+    return grand
+         + '<div class="verdict-texte">' + corps + '</div>'
+         + '<button class="cta-play-outline" onclick="goToGroups()">Défie encore plus d\'amis</button>';
+  }
+
+  // Personne n'a zéro point en ayant joué : le plancher du barème est de 2 par match.
+  if(!m.points){
+    return grand
+         + '<div class="verdict-texte">Tu n\'as joué aucun des cinq matchs de ce championnat. Le prochain vient de commencer.</div>'
+         + '<button class="cta-play-outline" onclick="switchView(\'home\')">Voir le prochain match</button>';
+  }
+
+  let rang;
+  if(m.rank === 1){ rang = 'Champion du groupe'; }
+  else if(m.rank <= 3){ rang = 'Sur le podium'; }
+  else { rang = m.rank + 'ᵉ sur ' + m.memberCount; }
+
+  let html = grand + '<div class="verdict-rang">' + rang + '</div>';
+
+  const metal = VERDICT_METAUX[m.metalLevel];
+  if(metal){
+    html += '<div class="verdict-metal">' + metal.nom + '</div>'
+          + '<div class="verdict-texte">' + m.points + ' points en cinq matchs. '
+          + metal.phrase + ' Il pèse ' + m.metalValue + ' dans ta coupe.</div>';
+
+    const cible = d.cupTarget || 12;
+    const reste = cible - (d.cupProgress || 0);
+    html += (d.cupProgress === 0 && d.cupsCompleted > 0)
+      ? '<div class="verdict-coupe">Ta coupe est pleine. Elle rejoint ta vitrine, et une nouvelle commence.</div>'
+      : '<div class="verdict-coupe">Ta coupe est à <b>' + (d.cupProgress || 0) + '/' + cible
+        + '</b>. Encore ' + reste + ' points et elle rejoint ta vitrine.</div>';
+  }else{
+    const seuil = d.bronzeThreshold || 15;
+    html += '<div class="verdict-metal">Pas de médaille cette fois.</div>'
+          + '<div class="verdict-texte">' + m.points + ' points en cinq matchs, il en fallait '
+          + seuil + ' pour le bronze. Le prochain championnat commence au match suivant.</div>';
+  }
+
+  return html;
+}
+
 async function goToTrophies(){
   switchView('trophies');
   const shelf = document.getElementById('trophy-shelf');
@@ -5361,6 +5442,17 @@ async function goToTrophies(){
   if(!d){
     shelf.innerHTML = '<div class="placeholder">Impossible de charger ta vitrine.</div>';
     return;
+  }
+
+  // Le dernier cycle achevé, tous groupes confondus : le serveur les renvoie
+  // du plus récent au plus ancien.
+  const verdict = document.getElementById('trophy-verdict');
+  const dernier = (d.medals && d.medals.length) ? d.medals[0] : null;
+  if(dernier){
+    verdict.innerHTML = verdictHtml(dernier, d);
+    verdict.style.display = 'block';
+  }else{
+    verdict.style.display = 'none';
   }
 
   const compte = d.medalCounts || [0,0,0,0,0];
