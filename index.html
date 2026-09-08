@@ -4573,14 +4573,22 @@ function installerLeJeu(){
 // Un nouveau venu arrive dans un kop sans jamais le voir : l'accueil affiche les
 // groupes d'amis, pas les kops, et le menu est le seul chemin. On le lui montre
 // deux fois — après son premier prono, et sur l'accueil tant qu'il n'y est pas allé.
-const LS_KOP_VU = 'youprono_kop_vu';
+// Le rappel ne s'adresse qu'à celui qui vient de créer son compte depuis un
+// lien d'invitation : il a été mis dans un kop sans jamais le voir. Un joueur
+// déjà inscrit sait où il est, et celui qui a créé le kop encore plus.
+// Le repère n'est posé qu'à ce moment-là, et retiré dès qu'il l'a ouvert.
+const LS_KOP_A_MONTRER = 'youprono_kop_a_montrer';
 
-function kopDejaVu(){
-  try{ return localStorage.getItem(LS_KOP_VU) === '1'; }catch(e){ return true; }
+function kopAMontrer(){
+  try{ return localStorage.getItem(LS_KOP_A_MONTRER) === '1'; }catch(e){ return false; }
+}
+
+function marquerKopAMontrer(){
+  try{ localStorage.setItem(LS_KOP_A_MONTRER, '1'); }catch(e){}
 }
 
 function marquerKopVu(){
-  try{ localStorage.setItem(LS_KOP_VU, '1'); }catch(e){}
+  try{ localStorage.removeItem(LS_KOP_A_MONTRER); }catch(e){}
 }
 
 // Charge le kop du joueur s'il n'est pas déjà connu, sans afficher d'écran.
@@ -4614,6 +4622,7 @@ async function rappelKopSurConfirmation(){
   const bloc = document.getElementById('confirm-kop');
   if(!bloc) return;
   bloc.style.display = 'none';
+  if(!kopAMontrer()) return;
   if(!(await assurerMonKop())) return;
   bloc.innerHTML = texteRappelKop();
   bloc.style.display = 'block';
@@ -4624,7 +4633,7 @@ async function rappelKopSurAccueil(){
   const bloc = document.getElementById('home-kop-rappel');
   if(!bloc) return;
   bloc.style.display = 'none';
-  if(kopDejaVu()) return;
+  if(!kopAMontrer()) return;
   if(!(await assurerMonKop())) return;
   bloc.innerHTML = texteRappelKop();
   bloc.style.display = 'block';
@@ -5776,7 +5785,11 @@ async function acceptPendingInvite(){
         venaitDeSInscrire = false;
         const entree = await fetch(`${API_BASE}/Group/Join/${code}/${getUserId()}`, { method:'POST' });
         const ok = await entree.json();
-        if(ok.success && ok.data){ return; }
+        if(ok.success && ok.data){
+          // Il est entré dans le kop sans le voir : il faudra le lui montrer.
+          marquerKopAMontrer();
+          return;
+        }
       }
 
       proposerInvitationKop(code, json.data);
