@@ -1269,6 +1269,38 @@
   }
   .rdv-heure{ color:var(--gold); font-size:12px; font-weight:600; }
   .rdv-texte{ color:var(--text); font-size:13px; line-height:1.5; margin-top:3px; }
+  /* --- Le terrain du récapitulatif --- */
+  .terrain{
+    position:relative; background:#152a63; border:1px solid #35529f;
+    border-radius:8px; padding:16px 4px 18px; overflow:hidden; margin-top:8px;
+  }
+  .terrain-ligne-mediane{ position:absolute; top:0; left:0; right:0; height:1px; background:rgba(255,255,255,.14); }
+  .terrain-rond{
+    position:absolute; top:-28px; left:50%; transform:translateX(-50%);
+    width:60px; height:60px; border:1px solid rgba(255,255,255,.14); border-radius:50%;
+  }
+  .terrain-surface{
+    position:absolute; bottom:0; left:20%; right:20%; height:56px;
+    border:1px solid rgba(255,255,255,.14); border-bottom:none;
+  }
+  .terrain-six{
+    position:absolute; bottom:0; left:35%; right:35%; height:24px;
+    border:1px solid rgba(255,255,255,.14); border-bottom:none;
+  }
+  .terrain-ligne{ position:relative; display:flex; justify-content:space-around; margin-top:20px; }
+  .terrain-ligne:first-of-type{ margin-top:0; }
+  .terrain-joueur{ text-align:center; flex:1 1 0; min-width:0; padding:0 2px; }
+  .terrain-pastille{
+    width:32px; height:32px; border-radius:50%; margin:0 auto;
+    background:var(--gold); color:#152a63;
+    font-size:12px; font-weight:700; line-height:32px;
+  }
+  .terrain-pastille.gardien{ background:var(--text); }
+  .terrain-nom{
+    color:#dbe3ff; font-size:9px; margin-top:4px; line-height:1.2;
+    overflow-wrap:anywhere;
+  }
+  .terrain-formation{ color:var(--gold); font-size:13px; font-weight:600; }
   .etape{
     color:var(--text-dim); font-size:12px;
     letter-spacing:.5px; text-align:center; margin-bottom:8px;
@@ -1766,7 +1798,7 @@
 
       <div class="recap-section">
         <div class="recap-label-row">
-          <div class="recap-label">Composition</div>
+          <div class="recap-label">Composition <span class="terrain-formation" id="recap-formation"></span></div>
           <span class="recap-edit-link" onclick="editCompositionFromRecap()">Modifier</span>
         </div>
         <div class="recap-value" id="recap-players"></div>
@@ -5854,6 +5886,64 @@ function fmtNote(n){
   return Number(n).toFixed(3).replace('.', ',');
 }
 
+// Range les onze en quatre lignes et les ordonne de gauche à droite.
+// Le rang vient du serveur ; un joueur sans rang se met en fin de ligne,
+// départagé par son numéro de maillot.
+const TERRAIN_LIGNES = ['Attaquant', 'Milieu', 'Défenseur', 'Gardien'];
+
+function terrainHtml(ids){
+  const joueurs = ids.map(id => squadData.find(sp => sp.id === id)).filter(Boolean);
+  if(!joueurs.length) return '';
+
+  const parLigne = {};
+  TERRAIN_LIGNES.forEach(l => parLigne[l] = []);
+  const orphelins = [];
+
+  joueurs.forEach(p => {
+    const ligne = (p.position || '').trim();
+    if(parLigne[ligne]) parLigne[ligne].push(p);
+    else orphelins.push(p);
+  });
+
+  // Un joueur sans poste connu ne disparaît pas : il rejoint le milieu.
+  orphelins.forEach(p => parLigne['Milieu'].push(p));
+
+  TERRAIN_LIGNES.forEach(l => parLigne[l].sort((a, b) => {
+    const ra = a.positionOrder > 0 ? a.positionOrder : 99;
+    const rb = b.positionOrder > 0 ? b.positionOrder : 99;
+    if(ra !== rb) return ra - rb;
+    return (a.shirtNumber || 0) - (b.shirtNumber || 0);
+  }));
+
+  let html = '<div class="terrain">'
+           + '<div class="terrain-ligne-mediane"></div><div class="terrain-rond"></div>'
+           + '<div class="terrain-surface"></div><div class="terrain-six"></div>';
+
+  TERRAIN_LIGNES.forEach(ligne => {
+    const l = parLigne[ligne];
+    if(!l.length) return;
+    html += '<div class="terrain-ligne">';
+    l.forEach(p => {
+      html += '<div class="terrain-joueur">'
+            + '<div class="terrain-pastille' + (ligne === 'Gardien' ? ' gardien' : '') + '">'
+            + (p.shirtNumber || '-') + '</div>'
+            + '<div class="terrain-nom">' + nomJoueurAffiche(p.firstName, p.lastName) + '</div>'
+            + '</div>';
+    });
+    html += '</div>';
+  });
+
+  return html + '</div>';
+}
+
+// « 4-3-3 » : les trois lignes de champ, du fond vers l'avant.
+function formationHtml(ids){
+  const joueurs = ids.map(id => squadData.find(sp => sp.id === id)).filter(Boolean);
+  const compte = l => joueurs.filter(p => (p.position || '').trim() === l).length;
+  const d = compte('Défenseur'), m = compte('Milieu'), a = compte('Attaquant');
+  return (d + m + a) === 10 ? (d + '-' + m + '-' + a) : '';
+}
+
 function renderRecap(){
   const opponentName = getOpponentName();
 
@@ -5861,7 +5951,11 @@ function renderRecap(){
     const p = squadData.find(sp => sp.id === id);
     return p ? nomJoueurAffiche(p.firstName, p.lastName) : '?';
   });
-  document.getElementById('recap-players').textContent = playerNames.join(', ');
+  const terrain = terrainHtml(predictionDraft.players);
+  const bloc = document.getElementById('recap-players');
+  if(terrain){ bloc.innerHTML = terrain; }
+  else { bloc.textContent = playerNames.join(', '); }
+  document.getElementById('recap-formation').textContent = formationHtml(predictionDraft.players);
 
   document.getElementById('recap-possession-opp-label').textContent = opponentName;
   document.getElementById('recap-shots-opp-label').textContent = opponentName;
