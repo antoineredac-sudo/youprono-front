@@ -298,6 +298,10 @@
     font-size:19px; line-height:1.35; text-transform:none;
     letter-spacing:0; margin-bottom:14px;
   }
+  .note-modifiable{
+    color:var(--text-dim); font-size:13px; line-height:1.6;
+    text-align:center; margin:12px 0 0;
+  }
   .countdown{
     display:flex;
     justify-content:center;
@@ -1920,6 +1924,7 @@
       </div>
 
       <button class="cta-play" style="margin-top:24px;" onclick="submitPrediction()" id="submit-prediction-btn">Valider mon prono</button>
+      <p class="note-modifiable">Tu pourras le modifier tant que tu veux jusqu'à la clôture des pronos.</p>
     </section>
     <section id="view-myprono" class="view" style="display:none;">
       <div id="myprono-loading" class="placeholder">Chargement de ton pronostic…</div>
