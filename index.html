@@ -11,6 +11,12 @@
 <meta property="og:site_name" content="YouProno">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:url" content="https://youprono.fr/">
+<meta name="theme-color" content="#25408f">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="YouProno">
 <meta property="og:title" content="YouProno — le jeu de pronos des supporters du PSG">
 <meta property="og:description" content="Devine le onze de départ, la possession, les tirs, les fautes, les centres et le score. Après le match, ta note tombe.">
 <meta property="og:image" content="https://youprono.fr/youprono-og-1.png">
@@ -1251,6 +1257,11 @@
 
   .dash-history-label{ color:var(--text-dim); font-size:13px; margin-bottom:10px; }
   /* Le repère d'avancement du tunnel : six écrans, et on sait toujours où on en est. */
+  .install-invite{
+    border:1px solid var(--gold); border-radius:10px;
+    padding:14px; margin-top:20px; text-align:center;
+  }
+  .install-invite-texte{ font-size:13px; line-height:1.5; margin-bottom:12px; }
   .rdv-label{ color:var(--text-dim); font-size:12px; margin:20px 0 7px; }
   .rdv{
     background:var(--surface); border:1px solid var(--border);
@@ -1540,6 +1551,7 @@
       <button data-view="profile" onclick="navFromMenu('profile')">Tableau de bord</button>
       <button data-view="groups" onclick="navFromMenu('groups')">Mes groupes d'amis</button>
       <button data-view="kops" onclick="navFromMenu('kops')">Les kops</button>
+      <button data-view="install" onclick="navFromMenu('install')">Installer le jeu</button>
       <button data-view="trophies" onclick="navFromMenu('trophies')">Mes trophées</button>
       <button data-view="badges" onclick="navFromMenu('badges')">Mes badges</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
@@ -1880,6 +1892,11 @@
         <div id="results-categories"></div>
 
         <div class="results-badges" id="results-badges"></div>
+
+        <div class="install-invite" id="install-invite-results" style="display:none;">
+          <div class="install-invite-texte">Retrouve tes notes plus vite : mets le jeu sur ton écran d'accueil.</div>
+          <button class="cta-play-outline" onclick="goToInstall()">Mettre YouProno sur mon téléphone</button>
+        </div>
       </div>
     </section>
     <section id="view-groups" class="view" style="display:none;">
@@ -1970,6 +1987,46 @@
 
       <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
+    <section id="view-install" class="view" style="display:none;">
+      <h2 class="play-title">METS YOUPRONO SUR TON TÉLÉPHONE</h2>
+      <p class="groups-pitch">Le jeu devient une icône à côté de tes applis. Il s'ouvre en plein écran, sans passer par le navigateur, et tu n'as plus d'adresse à taper.</p>
+
+      <div id="install-deja" class="rdv" style="display:none;">
+        <div class="rdv-heure">C'est déjà fait</div>
+        <div class="rdv-texte">Tu joues depuis l'icône. Rien à installer.</div>
+      </div>
+
+      <button class="cta-play" id="install-bouton" style="display:none;margin-top:16px;" onclick="lancerInstallation()">Installer YouProno</button>
+
+      <div id="install-ios" style="display:none;">
+        <div class="rdv">
+          <div class="rdv-heure">1 · Le bouton Partager</div>
+          <div class="rdv-texte">En bas de l'écran de Safari, le carré avec la flèche vers le haut.</div>
+        </div>
+        <div class="rdv">
+          <div class="rdv-heure">2 · Sur l'écran d'accueil</div>
+          <div class="rdv-texte">Fais défiler le menu jusqu'à cette ligne, puis touche-la.</div>
+        </div>
+        <div class="rdv">
+          <div class="rdv-heure">3 · Ajouter</div>
+          <div class="rdv-texte">En haut à droite. L'icône apparaît sur ton écran d'accueil.</div>
+        </div>
+      </div>
+
+      <div id="install-android" style="display:none;">
+        <div class="rdv">
+          <div class="rdv-heure">1 · Le menu du navigateur</div>
+          <div class="rdv-texte">Les trois points en haut à droite de Chrome.</div>
+        </div>
+        <div class="rdv">
+          <div class="rdv-heure">2 · Ajouter à l'écran d'accueil</div>
+          <div class="rdv-texte">Ou « Installer l'application », selon ta version.</div>
+        </div>
+      </div>
+
+      <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
+    </section>
+
     <section id="view-email" class="view" style="display:none;">
       <h2 class="play-title">TON ADRESSE E-MAIL</h2>
       <p class="groups-pitch">Merci d'entrer ton email afin de pouvoir te connecter si tu as oublié ton pseudo et/ou ton mot de passe.</p>
@@ -2085,6 +2142,11 @@
       <div class="rdv">
         <div class="rdv-heure">5 min après le coup de sifflet final</div>
         <div class="rdv-texte">Ta note finale et ta place au classement.</div>
+      </div>
+
+      <div class="install-invite" id="install-invite-confirm" style="display:none;">
+        <div class="install-invite-texte">Pour ne rater aucun des deux, mets le jeu sur ton écran d'accueil. Une icône, plus d'adresse à taper.</div>
+        <button class="cta-play-outline" onclick="goToInstall()">Mettre YouProno sur mon téléphone</button>
       </div>
 
       <div class="group-invite-box" style="margin-top:20px;">
@@ -2237,6 +2299,14 @@
         <div class="faq-item">
           <div class="faq-q">Que se passe-t-il en cas de match nul et en cas de prolongations et/ou tirs au but ?</div>
           <p class="faq-a">Nous prenons en compte les résultats à la fin du temps réglementaire sans prendre en compte les prolongations et les tirs au but. Nous faisons ce choix pour que tout le monde soit sur un pied d'égalité.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Comment mettre YouProno sur mon téléphone ?</div>
+          <p class="faq-a">YouProno s'installe sans passer par un magasin d'applications. Le jeu devient une icône sur ton écran d'accueil, s'ouvre en plein écran, et tu n'as plus jamais d'adresse à taper.</p>
+          <p class="faq-a">Sur iPhone : touche le bouton Partager en bas de Safari, fais défiler jusqu'à « Sur l'écran d'accueil », puis Ajouter.</p>
+          <p class="faq-a">Sur Android : ouvre le menu de Chrome en haut à droite, puis « Ajouter à l'écran d'accueil ».</p>
+          <p class="faq-a">Tout est expliqué pas à pas dans le menu, à la ligne « Installer le jeu ».</p>
         </div>
 
         <div class="faq-item">
@@ -2406,6 +2476,7 @@ function restoreRoute(brut){
     else if(nom === 'results'){ goToResults(parts[1]); }
     else if(nom === 'groups'){ goToGroups(); }
     else if(nom === 'kops'){ goToKops(); }
+    else if(nom === 'install'){ goToInstall(); }
     else if(nom === 'kop' && parts[1]){ openKop(parts[1]); }
     else if(nom === 'ranking'){ goToRanking(); }
     else if(nom === 'profile'){ goToProfile(); }
@@ -3402,6 +3473,7 @@ function renderMyProno(match, prediction){
 // ===== ÉCRAN RÉSULTATS =====
 async function goToResults(matchId){
   switchView('results');
+  proposerInstallation('note', 'install-invite-results');
   if(matchId){ setRoute('results', matchId); }
   await enterResultsScreen(matchId);
 }
@@ -4305,6 +4377,78 @@ function estUnKop(g){
   return g && String(g.type || '').toLowerCase() === 'kop';
 }
 
+// ===== METTRE LE JEU SUR L'ÉCRAN D'ACCUEIL =====
+// L'invitation apparaît sur les trois premiers pronostics validés et sur les
+// trois premières notes reçues. Ensuite elle se tait : au-delà, une proposition
+// répétée cesse d'être une proposition.
+const LS_INSTALL_VUES = 'youprono_install_vues';
+
+function proposerInstallation(cle, elementId){
+  const bloc = document.getElementById(elementId);
+  if(!bloc) return;
+
+  if(dejaInstalle()){ bloc.style.display = 'none'; return; }
+
+  let vues = {};
+  try{ vues = JSON.parse(localStorage.getItem(LS_INSTALL_VUES)) || {}; }catch(e){}
+
+  const n = vues[cle] || 0;
+  if(n >= 3){ bloc.style.display = 'none'; return; }
+
+  vues[cle] = n + 1;
+  try{ localStorage.setItem(LS_INSTALL_VUES, JSON.stringify(vues)); }catch(e){}
+  bloc.style.display = 'block';
+}
+
+
+// Sur Android, le navigateur propose lui-même l'installation : on capte sa
+// proposition et on la déclenche par un vrai bouton. Sur iPhone, aucune
+// installation automatique n'existe — il faut expliquer les trois gestes.
+let propositionInstallation = null;
+
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  propositionInstallation = e;
+});
+
+function dejaInstalle(){
+  return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+}
+
+function estSurIOS(){
+  return /iphone|ipad|ipod/i.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function goToInstall(){
+  switchView('install');
+  setRoute('install');
+
+  const deja = document.getElementById('install-deja');
+  const bouton = document.getElementById('install-bouton');
+  const ios = document.getElementById('install-ios');
+  const android = document.getElementById('install-android');
+
+  deja.style.display = 'none';
+  bouton.style.display = 'none';
+  ios.style.display = 'none';
+  android.style.display = 'none';
+
+  if(dejaInstalle()){ deja.style.display = 'block'; return; }
+  if(propositionInstallation){ bouton.style.display = 'block'; return; }
+  if(estSurIOS()){ ios.style.display = 'block'; return; }
+  android.style.display = 'block';
+}
+
+async function lancerInstallation(){
+  if(!propositionInstallation) return;
+  propositionInstallation.prompt();
+  try{ await propositionInstallation.userChoice; }catch(e){}
+  propositionInstallation = null;
+  goToInstall();
+}
+
 // ===== L'ADRESSE E-MAIL DES JOUEURS DÉJÀ INSCRITS =====
 // Ceux qui se sont inscrits avant que le champ existe n'ont pas d'adresse. On la
 // leur demande à leur prochaine connexion, une fois — l'écran est passable, mais
@@ -5149,6 +5293,7 @@ function navFromMenu(name){
   else if(name === 'results'){ goToResults(); }
   else if(name === 'groups'){ goToGroups(); }
   else if(name === 'kops'){ goToKops(); }
+  else if(name === 'install'){ goToInstall(); }
   else if(name === 'ranking'){ goToRanking(); }
   else if(name === 'trophies'){ goToTrophies(); }
   else if(name === 'badges'){ goToBadges(); }
@@ -5844,6 +5989,7 @@ async function submitPrediction(){
       // pour lui proposer d'embarquer quelqu'un.
       document.getElementById('confirm-title').textContent = wasEdit ? 'Pronostic modifié' : 'Pronostic enregistré';
       switchView('confirm');
+      proposerInstallation('prono', 'install-invite-confirm');
       // On regarde s'il a deja un groupe, sans en creer : si oui, le bouton
       // d'invitation ouvrira WhatsApp sans attente et sans quitter le jeu.
       assureMonGroupe(false);
