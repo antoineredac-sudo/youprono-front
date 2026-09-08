@@ -3613,9 +3613,12 @@ function messagesDuMatch(d){
     const profondeur = p.memberCount < 5 ? 1 : (p.memberCount < 7 ? 2 : 3);
     if(p.rank > profondeur) return;
 
-    if(p.rank === 1){ msg.push('Meilleure note de ' + echapper(p.groupName) + ' sur ce match.'); }
-    else if(p.rank === 2){ msg.push('Deuxième meilleure note de ' + echapper(p.groupName) + ' sur ce match.'); }
-    else { msg.push('Sur le podium de ' + echapper(p.groupName) + ' sur ce match.'); }
+    // « du groupe » devant le nom : il est libre, donc aucune élision ne
+    // fonctionnerait à tous les coups.
+    const g = 'du groupe ' + echapper(p.groupName);
+    if(p.rank === 1){ msg.push('Meilleure note ' + g + ' sur ce match.'); }
+    else if(p.rank === 2){ msg.push('Deuxième meilleure note ' + g + ' sur ce match.'); }
+    else { msg.push('Sur le podium ' + g + ' sur ce match.'); }
     honores++;
   });
 
@@ -3635,7 +3638,7 @@ function messagesDuMatch(d){
     if(proche){
       const e = proche.pointsFromPodium;
       msg.push('Il t\'a manqué ' + fmtNote(e) + ' point' + (e >= 2 ? 's' : '')
-             + ' pour le podium de ' + echapper(proche.groupName) + '.');
+             + ' pour le podium du groupe ' + echapper(proche.groupName) + '.');
     }
   }
 
