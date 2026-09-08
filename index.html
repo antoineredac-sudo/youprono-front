@@ -292,6 +292,12 @@
     margin-top:24px;
   }
 
+  /* Le rendez-vous de la compo est le seul que le joueur ne connaît pas
+     d'avance : il mérite deux lignes et un corps plus généreux. */
+  .countdown-label.grand{
+    font-size:19px; line-height:1.35; text-transform:none;
+    letter-spacing:0; margin-bottom:14px;
+  }
   .countdown{
     display:flex;
     justify-content:center;
@@ -2588,7 +2594,13 @@ function cibleDuCompteARebours(){
   }
   if(matchKickoff){
     const compo = new Date(matchKickoff.getTime() - COMPO_AVANT_MS);
-    if(now < compo){ return { date: compo, label: 'Compo officielle dans :' }; }
+    if(now < compo){
+      return {
+        date: compo,
+        label: 'Ta note en compo<br>45 minutes avant le coup d\'envoi',
+        grand: true
+      };
+    }
     if(now < matchKickoff){ return { date: matchKickoff, label: "Coup d'envoi dans :" }; }
   }
   return null;
@@ -2604,7 +2616,9 @@ function updateCountdown(){
     return;
   }
   if(bloc) bloc.style.display = 'block';
-  document.getElementById('countdown-label').textContent = cible.label;
+  const etiquette = document.getElementById('countdown-label');
+  etiquette.innerHTML = cible.label;
+  etiquette.classList.toggle('grand', !!cible.grand);
 
   const now = new Date();
   let diff = Math.max(0, cible.date - now);
