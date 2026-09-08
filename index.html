@@ -1043,6 +1043,8 @@
     margin:6px 0 2px 0;
   }
   .notif-note-sub{ font-size:13px; color:var(--text-dim); margin-bottom:18px; }
+  .notif-evenements{ margin-bottom:16px; }
+  .notif-evenements .evenement{ text-align:left; }
   .notif-line{ font-size:16px; line-height:1.4; font-weight:600; margin-bottom:14px; }
   .notif-badges{
     display:flex;
@@ -1301,6 +1303,15 @@
     overflow-wrap:anywhere;
   }
   /* --- Le verdict de fin de mini-championnat --- */
+  /* --- Ce qui s'est passé pour toi sur ce match --- */
+  .evenements{ margin-bottom:18px; }
+  .evenement{
+    background:var(--surface); border:1px solid var(--border);
+    border-left:3px solid var(--gold); border-radius:8px;
+    padding:11px 14px; margin-bottom:8px;
+    font-size:14px; line-height:1.5; color:var(--text);
+  }
+  .evenement:last-child{ margin-bottom:0; }
   .verdict{
     border:1px solid var(--gold); border-radius:12px;
     padding:16px; margin-bottom:20px;
@@ -1940,6 +1951,8 @@
           <div class="results-rank" id="results-rank"></div>
         </div>
 
+        <div class="evenements" id="results-evenements" style="display:none;"></div>
+
         <div id="results-categories"></div>
 
         <div class="results-badges" id="results-badges"></div>
@@ -2337,6 +2350,7 @@
       <div class="notif-label">Ta note sur ce match</div>
       <div class="notif-note" id="notif-note">0</div>
       <div class="notif-note-sub">sur 100</div>
+      <div class="notif-evenements" id="notif-evenements"></div>
       <div class="notif-line" id="notif-line"></div>
       <div class="notif-badges" id="notif-badges"></div>
       <div class="notif-actions">
@@ -3485,6 +3499,91 @@ function renderMyProno(match, prediction){
 }
 
 // ===== ÉCRAN RÉSULTATS =====
+// Les messages affichés avec la note. Le serveur renvoie des faits, on les met
+// en phrases ici. Trois messages au maximum, du plus rare au plus courant :
+// première note, record, podium de groupe, progression, échec de peu.
+// Quand rien ne s'est passé, on n'écrit rien : la félicitation du vainqueur ne
+// vaut que parce qu'elle est rare.
+const EVENEMENTS_MAX = 3;
+
+function messagesDuMatch(d){
+  const msg = [];
+  if(!d || !d.hasScore) return msg;
+
+  if(d.isFirstScoredMatch){
+    msg.push('Première note enregistrée. Ton coefficient expert commence ici.');
+  }
+
+  if(d.isPersonalRecord){
+    msg.push('Ta meilleure note depuis le début. ' + fmtNote(d.score) + ' sur 100, ton record tombe.');
+  }
+
+  // Le podium, groupe par groupe, le mieux classé d'abord. Deux au maximum :
+  // au-delà, la liste devient un relevé et ne félicite plus personne.
+  let honores = 0;
+  (d.podiums || []).forEach(function(p){
+    if(honores >= 2) return;
+
+    if(p.memberCount === 2){
+      if(p.rank === 1){
+        msg.push('Tu as battu ' + echapper(p.opponentName || 'ton adversaire') + ' sur ce match.');
+        honores++;
+      }
+      return;
+    }
+
+    const profondeur = p.memberCount < 5 ? 1 : (p.memberCount < 7 ? 2 : 3);
+    if(p.rank > profondeur) return;
+
+    if(p.rank === 1){ msg.push('Meilleure note de ' + echapper(p.groupName) + ' sur ce match.'); }
+    else if(p.rank === 2){ msg.push('Deuxième meilleure note de ' + echapper(p.groupName) + ' sur ce match.'); }
+    else { msg.push('Sur le podium de ' + echapper(p.groupName) + ' sur ce match.'); }
+    honores++;
+  });
+
+  // Trois places gagnées au classement général, ou plus.
+  const gain = (d.generalRankBefore > 0 && d.generalRankAfter > 0)
+             ? (d.generalRankBefore - d.generalRankAfter) : 0;
+  if(gain >= 3){
+    msg.push('Tu gagnes ' + gain + ' places au classement général. Tu es ' + d.generalRankAfter + 'ᵉ.');
+  }
+
+  // Il t'a manqué peu : moins de deux points de la dernière place honorée.
+  if(!honores){
+    const proche = (d.podiums || []).find(function(p){
+      return p.memberCount >= 3 && p.placesFromPodium > 0
+          && p.pointsFromPodium > 0 && p.pointsFromPodium < 2;
+    });
+    if(proche){
+      const e = proche.pointsFromPodium;
+      msg.push('Il t\'a manqué ' + fmtNote(e) + ' point' + (e >= 2 ? 's' : '')
+             + ' pour le podium de ' + echapper(proche.groupName) + '.');
+    }
+  }
+
+  return msg.slice(0, EVENEMENTS_MAX);
+}
+
+async function afficherEvenementsDuMatch(matchId){
+  const bloc = document.getElementById('results-evenements');
+  if(!bloc) return;
+  bloc.style.display = 'none';
+  bloc.innerHTML = '';
+
+  try{
+    const teamId = await getPsgTeamId();
+    const res = await fetch(`${API_BASE}/Group/MatchEvents/${teamId}/${matchId}/${getUserId()}`);
+    const json = await res.json();
+    if(!json.success || !json.data) return;
+
+    const msg = messagesDuMatch(json.data);
+    if(!msg.length) return;
+
+    bloc.innerHTML = msg.map(function(m){ return '<div class="evenement">' + m + '</div>'; }).join('');
+    bloc.style.display = 'block';
+  }catch(e){ /* un message manquant ne doit jamais masquer la note */ }
+}
+
 async function goToResults(matchId){
   switchView('results');
   proposerInstallation('note', 'install-invite-results');
@@ -3580,6 +3679,7 @@ async function enterResultsScreen(matchId){
     }
 
     renderResults(predRes.data, statsRes.data, matchDetailRes.data);
+    afficherEvenementsDuMatch(matchId);
     document.getElementById('results-content').style.display = 'block';
   }catch(e){
     document.getElementById('results-loading').style.display = 'none';
@@ -5245,16 +5345,30 @@ async function checkMatchNotification(){
       fresh = BADGES.filter(b => badgeKey(b) === '1er|prono').concat(fresh);
     }
 
-    showMatchNotification(lastStats, fresh, seenKey, last.matchId);
+    // Les messages de la soirée : podiums de groupe, record, progression.
+    // Ils s'affichent dans la même notification, qui ne s'ouvre qu'une fois
+    // par match noté et sur n'importe quel écran.
+    let evenements = [];
+    try{
+      const evJson = await fetch(`${API_BASE}/Group/MatchEvents/${teamId}/${last.matchId}/${userId}`)
+        .then(r => r.json());
+      if(evJson.success && evJson.data){ evenements = messagesDuMatch(evJson.data); }
+    }catch(e){ /* la notification s'ouvre quand même */ }
+
+    showMatchNotification(lastStats, fresh, seenKey, last.matchId, evenements);
   }catch(e){
     // Rien ne doit empêcher le jeu de s'ouvrir : en cas d'échec, pas d'annonce.
   }
 }
 
-function showMatchNotification(stats, fresh, seenKey, matchId){
+function showMatchNotification(stats, fresh, seenKey, matchId, evenements){
   const team = (stats && stats.result && stats.result.team) ? stats.result.team : null;
   const note = (team && team.total !== undefined && team.total !== null) ? team.total : null;
   document.getElementById('notif-note').textContent = (note !== null) ? fmtNote(note) : '–';
+
+  const ev = document.getElementById('notif-evenements');
+  const msg = evenements || [];
+  ev.innerHTML = msg.map(function(m){ return '<div class="evenement">' + m + '</div>'; }).join('');
 
   const line = document.getElementById('notif-line');
   const row  = document.getElementById('notif-badges');
