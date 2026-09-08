@@ -1264,6 +1264,12 @@
     padding:14px; margin-top:20px; text-align:center;
   }
   .install-invite-texte{ font-size:13px; line-height:1.5; margin-bottom:12px; }
+  .kop-rappel{
+    border:1px solid var(--gold); border-radius:10px;
+    padding:13px 15px; margin:18px 0 0; cursor:pointer;
+    font-size:14px; line-height:1.55; color:var(--text);
+  }
+  .kop-rappel b{ color:var(--gold); }
   .rdv-label{ color:var(--text-dim); font-size:12px; margin:20px 0 7px; }
   .rdv{
     background:var(--surface); border:1px solid var(--border);
@@ -1624,6 +1630,8 @@
 
   <main>
     <section id="view-home" class="view">
+      <div class="kop-rappel" id="home-kop-rappel" style="display:none;" onclick="ouvrirMonKop()"></div>
+
       <div id="kop-invite-banner" class="kop-invite-banner" style="display:none;">
         <div class="kop-invite-banner-text" id="kop-invite-banner-text"></div>
         <button class="cta-play" id="kop-invite-banner-btn" onclick="accepterInvitationKop()"></button>
@@ -2162,6 +2170,8 @@
     <section id="view-confirm" class="view" style="display:none;">
       <h2 class="play-title" id="confirm-title">Pronostic enregistré</h2>
 
+      <div class="kop-rappel" id="confirm-kop" style="display:none;" onclick="ouvrirMonKop()"></div>
+
       <div class="rdv-label">tes deux rendez-vous</div>
       <div class="rdv">
         <div class="rdv-heure">45 min avant le coup d'envoi</div>
@@ -2490,6 +2500,7 @@ function enterApp(restaurer){
   if(pendingInviteCode){ acceptPendingInvite(); }
   checkMatchNotification();
   verifierAdresseEmail();
+  rappelKopSurAccueil();
 
   // Au rafraîchissement, on rouvre l'écran lu plus haut. Après une connexion,
   // non : on entre par l'accueil.
@@ -4558,6 +4569,67 @@ function installerLeJeu(){
   switchView('faq');
 }
 
+// ===== RETROUVER SON KOP =====
+// Un nouveau venu arrive dans un kop sans jamais le voir : l'accueil affiche les
+// groupes d'amis, pas les kops, et le menu est le seul chemin. On le lui montre
+// deux fois — après son premier prono, et sur l'accueil tant qu'il n'y est pas allé.
+const LS_KOP_VU = 'youprono_kop_vu';
+
+function kopDejaVu(){
+  try{ return localStorage.getItem(LS_KOP_VU) === '1'; }catch(e){ return true; }
+}
+
+function marquerKopVu(){
+  try{ localStorage.setItem(LS_KOP_VU, '1'); }catch(e){}
+}
+
+// Charge le kop du joueur s'il n'est pas déjà connu, sans afficher d'écran.
+async function assurerMonKop(){
+  if(monKopId) return true;
+  const userId = getUserId();
+  if(!userId) return false;
+  try{
+    const res = await fetch(`${API_BASE}/Group/Kops/${userId}`);
+    const json = await res.json();
+    if(!json.success || !json.data) return false;
+    monKopId = json.data.myKopId || null;
+    monKopNom = json.data.myKopName || null;
+    return !!monKopId;
+  }catch(e){ return false; }
+}
+
+function texteRappelKop(){
+  return 'Tu peux désormais rejoindre ton kop <b>' + echapper(monKopNom || '')
+       + '</b> que tu peux toujours retrouver dans le menu en haut à gauche.';
+}
+
+function ouvrirMonKop(){
+  if(!monKopId) return;
+  marquerKopVu();
+  openKop(monKopId);
+}
+
+// Après le premier pronostic : il vient de jouer, il veut savoir où ça se compare.
+async function rappelKopSurConfirmation(){
+  const bloc = document.getElementById('confirm-kop');
+  if(!bloc) return;
+  bloc.style.display = 'none';
+  if(!(await assurerMonKop())) return;
+  bloc.innerHTML = texteRappelKop();
+  bloc.style.display = 'block';
+}
+
+// Sur l'accueil, tant qu'il n'a pas ouvert son kop une première fois.
+async function rappelKopSurAccueil(){
+  const bloc = document.getElementById('home-kop-rappel');
+  if(!bloc) return;
+  bloc.style.display = 'none';
+  if(kopDejaVu()) return;
+  if(!(await assurerMonKop())) return;
+  bloc.innerHTML = texteRappelKop();
+  bloc.style.display = 'block';
+}
+
 // ===== L'ADRESSE E-MAIL DES JOUEURS DÉJÀ INSCRITS =====
 // Ceux qui se sont inscrits avant que le champ existe n'ont pas d'adresse. On la
 // leur demande à leur prochaine connexion, une fois — l'écran est passable, mais
@@ -4826,6 +4898,7 @@ function rejoindreCeKop(){
 }
 
 async function openKop(groupId){
+  marquerKopVu();
   switchView('kop');
   setRoute('kop', groupId);
 
@@ -6243,6 +6316,7 @@ async function submitPrediction(){
       // pour lui proposer d'embarquer quelqu'un.
       document.getElementById('confirm-title').textContent = wasEdit ? 'Pronostic modifié' : 'Pronostic enregistré';
       switchView('confirm');
+      rappelKopSurConfirmation();
       proposerInstallation('prono', 'install-invite-confirm');
       // On regarde s'il a deja un groupe, sans en creer : si oui, le bouton
       // d'invitation ouvrira WhatsApp sans attente et sans quitter le jeu.
