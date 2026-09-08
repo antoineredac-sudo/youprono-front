@@ -1655,10 +1655,10 @@
         <div class="match-date" id="match-date"></div>
 
         <div id="home-countdown-block">
-          <p class="countdown-label">Fin des pronos dans :</p>
+          <p class="countdown-label" id="countdown-label">Fin des pronos dans :</p>
           <div class="countdown">
-            <div class="cd-unit"><span id="cd-days">00</span><small>jours</small></div>
-            <div class="cd-unit"><span id="cd-hours">00</span><small>heures</small></div>
+            <div class="cd-unit" id="cd-unit-days"><span id="cd-days">00</span><small>jours</small></div>
+            <div class="cd-unit" id="cd-unit-hours"><span id="cd-hours">00</span><small>heures</small></div>
             <div class="cd-unit"><span id="cd-minutes">00</span><small>min</small></div>
             <div class="cd-unit"><span id="cd-seconds">00</span><small>sec</small></div>
           </div>
@@ -2571,9 +2571,43 @@ let matchKickoff = null;
 let predictionsDeadline = null;
 let countdownInterval = null;
 
-function updateCountdown(){
+// Le compte à rebours vise trois cibles selon le moment de la soirée.
+//   1. Avant la clôture : la fermeture des pronostics.
+//   2. Après la clôture : l'annonce de la composition officielle, 45 minutes
+//      avant le coup d'envoi. C'est le premier verdict du jeu, et le seul
+//      rendez-vous que le joueur ne connaît pas d'avance.
+//   3. Si l'heure de la compo est passée sans qu'elle soit saisie : le coup
+//      d'envoi, plutôt que de laisser un compte à rebours figé à zéro.
+const COMPO_AVANT_MS = 45*60*1000;
+
+function cibleDuCompteARebours(){
   const now = new Date();
-  let diff = Math.max(0, predictionsDeadline - now);
+
+  if(predictionsDeadline && now < predictionsDeadline){
+    return { date: predictionsDeadline, label: 'Fin des pronos dans :' };
+  }
+  if(matchKickoff){
+    const compo = new Date(matchKickoff.getTime() - COMPO_AVANT_MS);
+    if(now < compo){ return { date: compo, label: 'Compo officielle dans :' }; }
+    if(now < matchKickoff){ return { date: matchKickoff, label: "Coup d'envoi dans :" }; }
+  }
+  return null;
+}
+
+function updateCountdown(){
+  const cible = cibleDuCompteARebours();
+  const bloc = document.getElementById('home-countdown-block');
+
+  if(!cible){
+    if(bloc) bloc.style.display = 'none';
+    updatePlayButtonLabel();
+    return;
+  }
+  if(bloc) bloc.style.display = 'block';
+  document.getElementById('countdown-label').textContent = cible.label;
+
+  const now = new Date();
+  let diff = Math.max(0, cible.date - now);
   const days = Math.floor(diff / 86400000); diff -= days*86400000;
   const hours = Math.floor(diff / 3600000); diff -= hours*3600000;
   const minutes = Math.floor(diff / 60000); diff -= minutes*60000;
@@ -2583,6 +2617,11 @@ function updateCountdown(){
   document.getElementById('cd-hours').textContent = String(hours).padStart(2,'0');
   document.getElementById('cd-minutes').textContent = String(minutes).padStart(2,'0');
   document.getElementById('cd-seconds').textContent = String(seconds).padStart(2,'0');
+
+  // À moins d'une heure, les jours et les heures n'apprennent rien : deux cases
+  // suffisent, et les chiffres respirent.
+  document.getElementById('cd-unit-days').style.display = (days > 0) ? '' : 'none';
+  document.getElementById('cd-unit-hours').style.display = (days > 0 || hours > 0) ? '' : 'none';
 
   updatePlayButtonLabel();
 }
@@ -2700,8 +2739,7 @@ async function loadHomeMatch(){
       updateCountdown();
       countdownInterval = setInterval(updateCountdown, 1000);
     } else {
-      // Plus de compte à rebours : il n'y a plus rien à attendre, les
-      // pronostics de ce match sont clos depuis la veille.
+      // Le match a commencé : il n'y a plus aucun rendez-vous à attendre.
       if(countdownInterval){ clearInterval(countdownInterval); countdownInterval = null; }
       predictionsDeadline = null;
 
@@ -2715,7 +2753,7 @@ async function loadHomeMatch(){
         document.getElementById('match-date').textContent =
           "Coup d'envoi : " + formatMatchDate(matchKickoff);
         document.getElementById('deadline-note').textContent =
-          "Les pronostics sont fermés. Suis le match avec ta feuille sous les yeux — ta note tombera après le coup de sifflet final.";
+          "Découvre ta note finale 5 minutes après le coup de sifflet final.";
       } else {
         badge.classList.add('waiting');
         badgeText.textContent = 'MATCH TERMINÉ';
