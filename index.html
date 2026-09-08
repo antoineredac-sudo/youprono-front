@@ -3210,8 +3210,10 @@ function renderSalon(){
 
   if(d.state === 'results' && d.real){
     html += `<tr class="reel"><td class="nom">Réel</td>
-      <td>${fmtRecapNum(d.real.teamPossession)}</td><td>${d.real.teamShots}</td>
-      <td>${d.real.teamFouls}</td><td>${d.real.teamCrosses}</td>
+      <td>${fmtRecapNum(d.real.teamPossession)}</td>
+      <td>${d.real.teamShots}-${d.real.opponentShots}</td>
+      <td>${d.real.teamFouls}-${d.real.opponentFouls}</td>
+      <td>${d.real.teamCrosses}-${d.real.opponentCrosses}</td>
       <td>${d.real.teamScore}-${d.real.opponentScore}</td></tr>`;
   }
 
@@ -3221,10 +3223,15 @@ function renderSalon(){
       html += `<tr class="corps absent"><td class="nom">${nom}</td><td colspan="5">n'a pas joué ce match</td></tr>`;
       return;
     }
+    // Tirs, fautes et centres portent les deux équipes, dans la grammaire du
+    // score : « 18-8 » se lit d'un coup d'œil, là où trois colonnes de plus
+    // rendraient le tableau illisible sur un téléphone.
     html += `<tr class="corps">
       <td class="nom${m.isMe ? ' salon-moi' : ''}">${nom}</td>
-      <td>${fmtRecapNum(m.teamPossession)}</td><td>${m.teamShots}</td>
-      <td>${m.teamFouls}</td><td>${m.teamCrosses}</td>
+      <td>${fmtRecapNum(m.teamPossession)}</td>
+      <td>${m.teamShots}-${m.opponentShots}</td>
+      <td>${m.teamFouls}-${m.opponentFouls}</td>
+      <td>${m.teamCrosses}-${m.opponentCrosses}</td>
       <td class="score">${m.teamScore}-${m.opponentScore}</td></tr>`;
   });
   html += `</table></div>`;
