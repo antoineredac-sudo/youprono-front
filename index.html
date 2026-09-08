@@ -1300,7 +1300,6 @@
     color:#dbe3ff; font-size:9px; margin-top:4px; line-height:1.2;
     overflow-wrap:anywhere;
   }
-  .terrain-formation{ color:var(--gold); font-size:13px; font-weight:600; }
   .etape{
     color:var(--text-dim); font-size:12px;
     letter-spacing:.5px; text-align:center; margin-bottom:8px;
@@ -1798,7 +1797,7 @@
 
       <div class="recap-section">
         <div class="recap-label-row">
-          <div class="recap-label">Composition <span class="terrain-formation" id="recap-formation"></span></div>
+          <div class="recap-label">Composition</div>
           <span class="recap-edit-link" onclick="editCompositionFromRecap()">Modifier</span>
         </div>
         <div class="recap-value" id="recap-players"></div>
@@ -5936,14 +5935,6 @@ function terrainHtml(ids){
   return html + '</div>';
 }
 
-// « 4-3-3 » : les trois lignes de champ, du fond vers l'avant.
-function formationHtml(ids){
-  const joueurs = ids.map(id => squadData.find(sp => sp.id === id)).filter(Boolean);
-  const compte = l => joueurs.filter(p => (p.position || '').trim() === l).length;
-  const d = compte('Défenseur'), m = compte('Milieu'), a = compte('Attaquant');
-  return (d + m + a) === 10 ? (d + '-' + m + '-' + a) : '';
-}
-
 function renderRecap(){
   const opponentName = getOpponentName();
 
@@ -5955,7 +5946,6 @@ function renderRecap(){
   const bloc = document.getElementById('recap-players');
   if(terrain){ bloc.innerHTML = terrain; }
   else { bloc.textContent = playerNames.join(', '); }
-  document.getElementById('recap-formation').textContent = formationHtml(predictionDraft.players);
 
   document.getElementById('recap-possession-opp-label').textContent = opponentName;
   document.getElementById('recap-shots-opp-label').textContent = opponentName;
