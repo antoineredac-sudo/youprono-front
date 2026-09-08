@@ -1551,7 +1551,6 @@
       <button data-view="profile" onclick="navFromMenu('profile')">Tableau de bord</button>
       <button data-view="groups" onclick="navFromMenu('groups')">Mes groupes d'amis</button>
       <button data-view="kops" onclick="navFromMenu('kops')">Les kops</button>
-      <button data-view="install" onclick="navFromMenu('install')">Installer le jeu</button>
       <button data-view="trophies" onclick="navFromMenu('trophies')">Mes trophées</button>
       <button data-view="badges" onclick="navFromMenu('badges')">Mes badges</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
@@ -1895,7 +1894,7 @@
 
         <div class="install-invite" id="install-invite-results" style="display:none;">
           <div class="install-invite-texte">Retrouve tes notes plus vite : mets le jeu sur ton écran d'accueil.</div>
-          <button class="cta-play-outline" onclick="goToInstall()">Mettre YouProno sur mon téléphone</button>
+          <button class="cta-play-outline" onclick="installerLeJeu()">Mettre YouProno sur mon téléphone</button>
         </div>
       </div>
     </section>
@@ -1987,46 +1986,6 @@
 
       <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
-    <section id="view-install" class="view" style="display:none;">
-      <h2 class="play-title">METS YOUPRONO SUR TON TÉLÉPHONE</h2>
-      <p class="groups-pitch">Le jeu devient une icône à côté de tes applis. Il s'ouvre en plein écran, sans passer par le navigateur, et tu n'as plus d'adresse à taper.</p>
-
-      <div id="install-deja" class="rdv" style="display:none;">
-        <div class="rdv-heure">C'est déjà fait</div>
-        <div class="rdv-texte">Tu joues depuis l'icône. Rien à installer.</div>
-      </div>
-
-      <button class="cta-play" id="install-bouton" style="display:none;margin-top:16px;" onclick="lancerInstallation()">Installer YouProno</button>
-
-      <div id="install-ios" style="display:none;">
-        <div class="rdv">
-          <div class="rdv-heure">1 · Le bouton Partager</div>
-          <div class="rdv-texte">En bas de l'écran de Safari, le carré avec la flèche vers le haut.</div>
-        </div>
-        <div class="rdv">
-          <div class="rdv-heure">2 · Sur l'écran d'accueil</div>
-          <div class="rdv-texte">Fais défiler le menu jusqu'à cette ligne, puis touche-la.</div>
-        </div>
-        <div class="rdv">
-          <div class="rdv-heure">3 · Ajouter</div>
-          <div class="rdv-texte">En haut à droite. L'icône apparaît sur ton écran d'accueil.</div>
-        </div>
-      </div>
-
-      <div id="install-android" style="display:none;">
-        <div class="rdv">
-          <div class="rdv-heure">1 · Le menu du navigateur</div>
-          <div class="rdv-texte">Les trois points en haut à droite de Chrome.</div>
-        </div>
-        <div class="rdv">
-          <div class="rdv-heure">2 · Ajouter à l'écran d'accueil</div>
-          <div class="rdv-texte">Ou « Installer l'application », selon ta version.</div>
-        </div>
-      </div>
-
-      <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
-    </section>
-
     <section id="view-email" class="view" style="display:none;">
       <h2 class="play-title">TON ADRESSE E-MAIL</h2>
       <p class="groups-pitch">Merci d'entrer ton email afin de pouvoir te connecter si tu as oublié ton pseudo et/ou ton mot de passe.</p>
@@ -2146,7 +2105,7 @@
 
       <div class="install-invite" id="install-invite-confirm" style="display:none;">
         <div class="install-invite-texte">Pour ne rater aucun match ni aucun rdv, mets le jeu sur ton écran d'accueil. Une icône, plus d'adresse à taper.</div>
-        <button class="cta-play-outline" onclick="goToInstall()">Mettre YouProno sur mon téléphone</button>
+        <button class="cta-play-outline" onclick="installerLeJeu()">Mettre YouProno sur mon téléphone</button>
       </div>
 
       <div class="group-invite-box" style="margin-top:20px;">
@@ -2476,7 +2435,6 @@ function restoreRoute(brut){
     else if(nom === 'results'){ goToResults(parts[1]); }
     else if(nom === 'groups'){ goToGroups(); }
     else if(nom === 'kops'){ goToKops(); }
-    else if(nom === 'install'){ goToInstall(); }
     else if(nom === 'kop' && parts[1]){ openKop(parts[1]); }
     else if(nom === 'ranking'){ goToRanking(); }
     else if(nom === 'profile'){ goToProfile(); }
@@ -3421,7 +3379,7 @@ function renderMyProno(match, prediction){
 
   const noms = (prediction.players || []).map(id => {
     const p = squadData.find(sp => sp.id === id);
-    return p ? p.firstName + ' ' + p.lastName : '—';
+    return p ? nomJoueurAffiche(p.firstName, p.lastName) : '—';
   });
   const moitie = Math.ceil(noms.length / 2);
   const colonne = (arr) => arr.map(n => `<span class="compo-name">${n}</span>`).join('');
@@ -4421,32 +4379,18 @@ function estSurIOS(){
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
-function goToInstall(){
-  switchView('install');
-  setRoute('install');
-
-  const deja = document.getElementById('install-deja');
-  const bouton = document.getElementById('install-bouton');
-  const ios = document.getElementById('install-ios');
-  const android = document.getElementById('install-android');
-
-  deja.style.display = 'none';
-  bouton.style.display = 'none';
-  ios.style.display = 'none';
-  android.style.display = 'none';
-
-  if(dejaInstalle()){ deja.style.display = 'block'; return; }
-  if(propositionInstallation){ bouton.style.display = 'block'; return; }
-  if(estSurIOS()){ ios.style.display = 'block'; return; }
-  android.style.display = 'block';
-}
-
-async function lancerInstallation(){
-  if(!propositionInstallation) return;
-  propositionInstallation.prompt();
-  try{ await propositionInstallation.userChoice; }catch(e){}
-  propositionInstallation = null;
-  goToInstall();
+// Le bouton des deux invitations. Sur Android, le navigateur sait installer :
+// un seul geste suffit. Sur iPhone, aucune installation automatique n'existe,
+// on renvoie donc vers la FAQ où les trois étapes sont écrites.
+function installerLeJeu(){
+  if(propositionInstallation){
+    propositionInstallation.prompt();
+    propositionInstallation.userChoice
+      .then(function(){ propositionInstallation = null; })
+      .catch(function(){ propositionInstallation = null; });
+    return;
+  }
+  switchView('faq');
 }
 
 // ===== L'ADRESSE E-MAIL DES JOUEURS DÉJÀ INSCRITS =====
@@ -5293,7 +5237,6 @@ function navFromMenu(name){
   else if(name === 'results'){ goToResults(); }
   else if(name === 'groups'){ goToGroups(); }
   else if(name === 'kops'){ goToKops(); }
-  else if(name === 'install'){ goToInstall(); }
   else if(name === 'ranking'){ goToRanking(); }
   else if(name === 'trophies'){ goToTrophies(); }
   else if(name === 'badges'){ goToBadges(); }
@@ -5663,7 +5606,7 @@ function renderSquad(){
     html += `
       <div class="player-row ${isPicked?'picked':''}" onclick="togglePlayer('${p.id}')">
         <div class="player-shirt">${p.shirtNumber || '-'}</div>
-        <div class="player-name">${p.firstName} ${p.lastName}</div>
+        <div class="player-name">${nomJoueurAffiche(p.firstName, p.lastName)}</div>
         <div class="player-order">${isPicked ? order+1 : ''}</div>
       </div>`;
   });
@@ -5916,7 +5859,7 @@ function renderRecap(){
 
   const playerNames = predictionDraft.players.map(id => {
     const p = squadData.find(sp => sp.id === id);
-    return p ? p.firstName + ' ' + p.lastName : '?';
+    return p ? nomJoueurAffiche(p.firstName, p.lastName) : '?';
   });
   document.getElementById('recap-players').textContent = playerNames.join(', ');
 
