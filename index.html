@@ -4496,7 +4496,8 @@ document.addEventListener('keydown', function(e){
 // « Mes groupes d'amis », et il ne peut jamais servir de groupe personnel pour
 // l'invitation WhatsApp de fin de pronostic. On ne l'atteint que par le menu.
 function estUnKop(g){
-  return g && String(g.type || '').toLowerCase() === 'kop';
+  const t = String((g && g.type) || '').toLowerCase();
+  return t === 'kop' || t === 'kopmedia';
 }
 
 // ===== METTRE LE JEU SUR L'ÉCRAN D'ACCUEIL =====
@@ -5051,9 +5052,15 @@ function nomAvecKop(nom){
   return /^kops?\b/i.test(n) ? n : ('kop ' + n);
 }
 
-// Le meme texte sur les deux reseaux. Il est ecrit une seule fois : deux copies
-// finiraient par diverger a la premiere retouche.
+// Le même texte sur les deux réseaux. Il est écrit une seule fois : deux copies
+// finiraient par diverger à la première retouche.
+// Un kop de partenaire parle au nom d'un média à ses abonnés — « on » plutôt que
+// « je », et la promesse d'un classement publié plutôt qu'une invitation
+// personnelle. Le type vient du serveur.
 function messageDuKop(){
+  if(kopCourant && String(kopCourant.type || '').toLowerCase() === 'kopmedia'){
+    return "On lance notre kop sur YouProno. Avant chaque match du PSG, vous pronostiquez la compo d'Enrique, la possession, les tirs, le score. Les vraies stats tombent après, et on publie le classement du kop. On saura enfin qui a raison ici.";
+  }
   return "J'ai ouvert le " + nomAvecKop(kopCourant.name) + " sur YouProno.\n\n"
        + "Compo, possession, tirs, fautes, centres, score, on fait ses pronos et on a une note dès qu'ils sont comparés aux vraies stats. On va voir qui sont les vrais experts du PSG. Rejoins-moi";
 }
