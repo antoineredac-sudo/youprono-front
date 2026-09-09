@@ -3298,7 +3298,7 @@ function renderSalon(){
         .sort((a, b) => a.cycleRank - b.cycleRank);
 
       if(cumul.length){
-        html += `<div class="salon-legende">le classement du groupe</div><div class="salon-liste">`;
+        html += `<div class="salon-legende">le nouveau classement du groupe</div><div class="salon-liste">`;
         cumul.forEach(m => {
           const moi = m.isMe ? ' salon-moi' : '';
           const avant = m.cycleRankBefore || 0;
