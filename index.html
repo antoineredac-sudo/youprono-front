@@ -867,6 +867,10 @@
   .salon-annonce.dore{ border-color:var(--gold); }
   .salon-annonce b{ color:var(--gold); display:block; margin-bottom:3px; font-weight:600; }
 
+  .mvt{ font-size:12px; margin-right:8px; }
+  .mvt.monte{ color:#4caf7d; }
+  .mvt.descend{ color:#e0665a; }
+  .mvt.stable{ color:var(--text-dim); }
   .salon-legende{ color:var(--text-dim); font-size:11px; margin-bottom:6px; }
 
   .salon-liste{
@@ -3285,6 +3289,28 @@ function renderSalon(){
                  <span class="note${moi}">${fmtNote(m.noteTotal)}<span class="pts">+${m.groupPoints} pts</span></span></div>`;
       });
       html += `</div>`;
+
+      // --- Le classement du mini-championnat, après ce match ---
+      // Le mouvement se lit à côté du rang : qui monte, qui descend, qui ne
+      // bouge pas. Vide au premier match du cycle, où personne n'a de passé.
+      const cumul = d.members
+        .filter(m => m.cycleRank)
+        .sort((a, b) => a.cycleRank - b.cycleRank);
+
+      if(cumul.length){
+        html += `<div class="salon-legende">le classement du groupe</div><div class="salon-liste">`;
+        cumul.forEach(m => {
+          const moi = m.isMe ? ' salon-moi' : '';
+          const avant = m.cycleRankBefore || 0;
+          let mvt = '<span class="mvt stable">–</span>';
+          if(avant > 0 && avant > m.cycleRank){ mvt = `<span class="mvt monte">▲${avant - m.cycleRank}</span>`; }
+          else if(avant > 0 && avant < m.cycleRank){ mvt = `<span class="mvt descend">▼${m.cycleRank - avant}</span>`; }
+
+          html += `<div class="salon-ligne"><span class="${moi.trim()}">${m.cycleRank} · ${m.isMe ? 'toi' : m.displayName}</span>
+                   <span>${mvt}<span class="note${moi}">${m.cyclePoints} pts</span></span></div>`;
+        });
+        html += `</div>`;
+      }
     }
   }
 
