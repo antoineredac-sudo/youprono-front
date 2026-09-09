@@ -765,6 +765,8 @@
     padding:2px 0;
   }
   .result-cat-row b{ color:var(--text); font-weight:500; }
+  /* Tout ce qui est doré est au PSG : la lecture devient verticale. */
+  .result-cat-row b.valeur-psg{ color:var(--gold); }
 
   .compo-compare{ display:flex; gap:16px; margin-top:10px; }
   .compo-col{ flex:1; }
@@ -1313,7 +1315,6 @@
     background:var(--gold); color:#152a63;
     font-size:12px; font-weight:700; line-height:32px;
   }
-  .terrain-pastille.gardien{ background:var(--text); }
   .terrain-nom{
     color:#dbe3ff; font-size:9px; margin-top:4px; line-height:1.2;
     overflow-wrap:anywhere;
@@ -3571,7 +3572,7 @@ function renderMyProno(match, prediction){
         </div>
         <div class="result-cat-row">
           <span>PSG</span>
-          <span><b>${fmtNum(prediction.team[cat.key])}${cat.unit}</b></span>
+          <span><b class="valeur-psg">${fmtNum(prediction.team[cat.key])}${cat.unit}</b></span>
         </div>
         <div class="result-cat-row">
           <span>${opponentName}</span>
@@ -6310,7 +6311,7 @@ function terrainHtml(ids){
     html += '<div class="terrain-ligne">';
     l.forEach(p => {
       html += '<div class="terrain-joueur">'
-            + '<div class="terrain-pastille' + (ligne === 'Gardien' ? ' gardien' : '') + '">'
+            + '<div class="terrain-pastille">'
             + (p.shirtNumber || '-') + '</div>'
             + '<div class="terrain-nom">' + nomJoueurAffiche(p.firstName, p.lastName) + '</div>'
             + '</div>';
