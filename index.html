@@ -2097,7 +2097,7 @@
     </section>
 
     <section id="view-kops" class="view" style="display:none;">
-      <h2 class="play-title">LES KOPS</h2>
+      <h2 class="play-title" id="kops-titre">LES KOPS</h2>
 
       <p class="groups-intro">Les kops sont des ligues privées avec un nombre de membres illimité et qui ont leur propre classement interne.</p>
 
@@ -4889,8 +4889,14 @@ async function chargerKops(){
 // L'entrée de menu dit « Mon kop » à celui qui en a un, « Rejoins un kop » aux
 // autres. Rien ne promet une possession que le joueur n'a pas.
 function majLibelleMenuKop(){
+  const libelle = monKopId ? 'Mon kop' : 'Rejoins un kop';
+
   const btn = document.getElementById('menu-kops');
-  if(btn){ btn.textContent = monKopId ? 'Mon kop' : 'Rejoins un kop'; }
+  if(btn){ btn.textContent = libelle; }
+
+  // Le bandeau de la page dit la même chose que le menu qui y mène.
+  const titre = document.getElementById('kops-titre');
+  if(titre){ titre.textContent = libelle.toUpperCase(); }
 }
 
 function majBandeauMonKop(){
