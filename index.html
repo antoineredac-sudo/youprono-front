@@ -1350,6 +1350,8 @@
     font-size:14px; line-height:1.5; color:var(--text);
   }
   .evenement:last-child{ margin-bottom:0; }
+  .evenement-lien{ cursor:pointer; }
+  .evenement-lien b{ color:var(--gold); font-weight:600; white-space:nowrap; }
   .verdict{
     border:1px solid var(--gold); border-radius:12px;
     padding:16px; margin-bottom:20px;
@@ -3620,64 +3622,49 @@ function renderMyProno(match, prediction){
 // première note, record, podium de groupe, progression, échec de peu.
 // Quand rien ne s'est passé, on n'écrit rien : la félicitation du vainqueur ne
 // vaut que parce qu'elle est rare.
-const EVENEMENTS_MAX = 3;
+const EVENEMENTS_MAX = 4;
 
-function messagesDuMatch(d){
+function messagesDuMatch(d, matchId){
   const msg = [];
   if(!d || !d.hasScore) return msg;
 
+  // --- Une ligne par groupe d'amis, toujours ---
+  // Le joueur veut savoir où il finit dans chacun, pas seulement là où il est
+  // sur le podium. La ligne est cliquable et ouvre les résultats du groupe.
+  (d.podiums || []).slice(0, 3).forEach(function(p){
+    const g = echapper(p.groupName);
+    let texte;
+
+    if(p.memberCount === 2){
+      texte = (p.rank === 1)
+        ? 'Tu as battu ' + echapper(p.opponentName || 'ton adversaire') + ' sur ce match.'
+        : echapper(p.opponentName || 'Ton adversaire') + ' t\'a battu sur ce match.';
+    }else if(p.rank === 1){
+      texte = 'Meilleure note du groupe ' + g + ' sur ce match.';
+    }else if(p.rank === 2){
+      texte = 'Deuxième meilleure note du groupe ' + g + ' sur ce match.';
+    }else if(p.rank === 3 && p.memberCount >= 7){
+      texte = 'Sur le podium du groupe ' + g + ' sur ce match.';
+    }else{
+      texte = p.rank + 'ᵉ sur ' + p.memberCount + ' dans le groupe ' + g + ' sur ce match.';
+    }
+
+    msg.push('<span class="evenement-lien" onclick="goToSalon(\'' + p.groupId
+           + '\',\'' + matchId + '\')">' + texte + ' <b>Voir →</b></span>');
+  });
+
+  // --- Ce qui n'arrive pas tous les matchs ---
   if(d.isFirstScoredMatch){
     msg.push('Première note enregistrée. Ton coefficient expert commence ici.');
   }
-
   if(d.isPersonalRecord){
     msg.push('Ta meilleure note depuis le début. ' + fmtNote(d.score) + ' sur 100, ton record tombe.');
   }
 
-  // Le podium, groupe par groupe, le mieux classé d'abord. Deux au maximum :
-  // au-delà, la liste devient un relevé et ne félicite plus personne.
-  let honores = 0;
-  (d.podiums || []).forEach(function(p){
-    if(honores >= 2) return;
-
-    if(p.memberCount === 2){
-      if(p.rank === 1){
-        msg.push('Tu as battu ' + echapper(p.opponentName || 'ton adversaire') + ' sur ce match.');
-        honores++;
-      }
-      return;
-    }
-
-    const profondeur = p.memberCount < 5 ? 1 : (p.memberCount < 7 ? 2 : 3);
-    if(p.rank > profondeur) return;
-
-    // « du groupe » devant le nom : il est libre, donc aucune élision ne
-    // fonctionnerait à tous les coups.
-    const g = 'du groupe ' + echapper(p.groupName);
-    if(p.rank === 1){ msg.push('Meilleure note ' + g + ' sur ce match.'); }
-    else if(p.rank === 2){ msg.push('Deuxième meilleure note ' + g + ' sur ce match.'); }
-    else { msg.push('Sur le podium ' + g + ' sur ce match.'); }
-    honores++;
-  });
-
-  // Trois places gagnées au classement général, ou plus.
   const gain = (d.generalRankBefore > 0 && d.generalRankAfter > 0)
              ? (d.generalRankBefore - d.generalRankAfter) : 0;
   if(gain >= 3){
     msg.push('Tu gagnes ' + gain + ' places au classement général. Tu es ' + d.generalRankAfter + 'ᵉ.');
-  }
-
-  // Il t'a manqué peu : moins de deux points de la dernière place honorée.
-  if(!honores){
-    const proche = (d.podiums || []).find(function(p){
-      return p.memberCount >= 3 && p.placesFromPodium > 0
-          && p.pointsFromPodium > 0 && p.pointsFromPodium < 2;
-    });
-    if(proche){
-      const e = proche.pointsFromPodium;
-      msg.push('Il t\'a manqué ' + fmtNote(e) + ' point' + (e >= 2 ? 's' : '')
-             + ' pour le podium du groupe ' + echapper(proche.groupName) + '.');
-    }
   }
 
   return msg.slice(0, EVENEMENTS_MAX);
@@ -3695,7 +3682,7 @@ async function afficherEvenementsDuMatch(matchId){
     const json = await res.json();
     if(!json.success || !json.data) return;
 
-    const msg = messagesDuMatch(json.data);
+    const msg = messagesDuMatch(json.data, matchId);
     if(!msg.length) return;
 
     bloc.innerHTML = msg.map(function(m){ return '<div class="evenement">' + m + '</div>'; }).join('');
@@ -5632,7 +5619,7 @@ async function checkMatchNotification(){
     try{
       const evJson = await fetch(`${API_BASE}/Group/MatchEvents/${teamId}/${last.matchId}/${userId}`)
         .then(r => r.json());
-      if(evJson.success && evJson.data){ evenements = messagesDuMatch(evJson.data); }
+      if(evJson.success && evJson.data){ evenements = messagesDuMatch(evJson.data, last.matchId); }
     }catch(e){ /* la notification s'ouvre quand même */ }
 
     showMatchNotification(lastStats, fresh, seenKey, last.matchId, evenements);
