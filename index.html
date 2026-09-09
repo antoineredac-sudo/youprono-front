@@ -3530,23 +3530,29 @@ function renderMyProno(match, prediction){
   const noted = isMatchPlayed(match);
   document.getElementById('myprono-noted-banner').style.display = noted ? 'block' : 'none';
 
-  const noms = (prediction.players || []).map(id => {
-    const p = squadData.find(sp => sp.id === id);
-    return p ? nomJoueurAffiche(p.firstName, p.lastName) : '—';
-  });
-  const moitie = Math.ceil(noms.length / 2);
-  const colonne = (arr) => arr.map(n => `<span class="compo-name">${n}</span>`).join('');
+  // Le même terrain que sur le récapitulatif : mêmes postes, même ordre de
+  // gauche à droite. Si l'effectif n'a pas pu être chargé, on retombe sur la
+  // liste de noms plutôt que d'afficher un cadre vide.
+  const terrain = terrainHtml(prediction.players || []);
+  const corps = terrain || (() => {
+    const noms = (prediction.players || []).map(id => {
+      const p = squadData.find(sp => sp.id === id);
+      return p ? nomJoueurAffiche(p.firstName, p.lastName) : '—';
+    });
+    const moitie = Math.ceil(noms.length / 2);
+    const colonne = (arr) => arr.map(n => `<span class="compo-name">${n}</span>`).join('');
+    return `<div class="compo-compare">
+        <div class="compo-col">${colonne(noms.slice(0, moitie))}</div>
+        <div class="compo-col">${colonne(noms.slice(moitie))}</div>
+      </div>`;
+  })();
 
   let html = `
     <div class="result-category">
       <div class="result-cat-head">
         <span class="result-cat-name">Ton onze de départ</span>
-
       </div>
-      <div class="compo-compare">
-        <div class="compo-col">${colonne(noms.slice(0, moitie))}</div>
-        <div class="compo-col">${colonne(noms.slice(moitie))}</div>
-      </div>
+      ${corps}
     </div>`;
 
   const categories = [
