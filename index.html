@@ -766,6 +766,7 @@
   }
   .result-cat-row b{ color:var(--text); font-weight:500; }
   /* Tout ce qui est doré est au PSG : la lecture devient verticale. */
+  .result-cat-row .valeur-psg,
   .result-cat-row b.valeur-psg{ color:var(--gold); }
 
   .compo-compare{ display:flex; gap:16px; margin-top:10px; }
@@ -3571,7 +3572,7 @@ function renderMyProno(match, prediction){
           <span class="result-cat-name">${cat.label}</span>
         </div>
         <div class="result-cat-row">
-          <span>PSG</span>
+          <span class="valeur-psg">PSG</span>
           <span><b class="valeur-psg">${fmtNum(prediction.team[cat.key])}${cat.unit}</b></span>
         </div>
         <div class="result-cat-row">
