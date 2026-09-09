@@ -1634,7 +1634,7 @@
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Tableau de bord</button>
       <button data-view="groups" onclick="navFromMenu('groups')">Défis entre amis</button>
-      <button data-view="kops" onclick="navFromMenu('kops')">Les kops</button>
+      <button data-view="kops" onclick="navFromMenu('kops')" id="menu-kops">Rejoins un kop</button>
       <button data-view="trophies" onclick="navFromMenu('trophies')">Mes trophées</button>
       <button data-view="badges" onclick="navFromMenu('badges')">Mes badges</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
@@ -2518,6 +2518,7 @@ function enterApp(restaurer){
   checkMatchNotification();
   verifierAdresseEmail();
   rappelKopSurAccueil();
+  assurerMonKop().then(majLibelleMenuKop);
 
   // Au rafraîchissement, on rouvre l'écran lu plus haut. Après une connexion,
   // non : on entre par l'accueil.
@@ -4885,6 +4886,13 @@ async function chargerKops(){
 // Deux états d'une même page. Avec un kop : le sien est détaché en haut, les
 // autres en dessous, et la création disparaît puisqu'on n'en a qu'un. Sans kop :
 // on regarde d'abord ce qui existe, et le bouton attend en bas.
+// L'entrée de menu dit « Mon kop » à celui qui en a un, « Rejoins un kop » aux
+// autres. Rien ne promet une possession que le joueur n'a pas.
+function majLibelleMenuKop(){
+  const btn = document.getElementById('menu-kops');
+  if(btn){ btn.textContent = monKopId ? 'Mon kop' : 'Rejoins un kop'; }
+}
+
 function majBandeauMonKop(){
   const bloc = document.getElementById('kops-mine-bloc');
   const carte = document.getElementById('kops-mine');
@@ -4909,6 +4917,8 @@ function majBandeauMonKop(){
     titreListe.textContent = 'les kops';
     creation.style.display = 'block';
   }
+
+  majLibelleMenuKop();
 }
 
 function echapper(txt){
