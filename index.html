@@ -187,6 +187,23 @@
 
   main{ flex:1; padding:24px 20px 24px 20px; max-width:520px; width:100%; margin:0 auto; }
 
+  /* Le petit menu du pseudo, en haut à droite. Une seule entrée aujourd'hui,
+     mais c'est là que vivront les réglages du compte. */
+  .who{ cursor:pointer; }
+  .menu-compte{
+    position:absolute; top:100%; right:12px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; box-shadow:0 10px 20px rgba(0,0,0,.35);
+    overflow:hidden; z-index:60; min-width:170px;
+  }
+  .menu-compte button{
+    display:block; width:100%; text-align:left;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-dim); font-family:inherit; font-size:15px;
+    padding:14px 18px;
+  }
+  .menu-compte button:hover{ background:var(--surface-raised, rgba(255,255,255,.06)); }
+
   .dropdown-menu{
     position:absolute;
     top:100%;
@@ -1627,7 +1644,11 @@
       <svg class="mark" viewBox="0 0 99 111" aria-hidden="true"><g transform="translate(5.5,5.5)"><polygon points="44,0 88,25 88,75 44,100 0,75 0,25" fill="none" stroke="#e8b923" stroke-width="10" stroke-linejoin="round"/><circle cx="26" cy="30" r="9.5" fill="#f5f5f7"/><circle cx="62" cy="30" r="9.5" fill="#f5f5f7"/><circle cx="26" cy="57" r="9.5" fill="#f5f5f7"/><circle cx="62" cy="57" r="9.5" fill="#f5f5f7"/><circle cx="44" cy="82" r="9.5" fill="#f5f5f7"/></g></svg>
       <span class="display"><span class="you">You</span><span class="prono">Prono</span></span>
     </div>
-    <span class="who" id="who-am-i"></span>
+    <span class="who" id="who-am-i" onclick="toggleMenuCompte()"></span>
+
+    <div class="menu-compte" id="menu-compte" style="display:none;">
+      <button onclick="navFromMenu('logout')">Se déconnecter</button>
+    </div>
 
     <div class="dropdown-menu" id="dropdown-menu" style="display:none;">
       <button data-view="home" onclick="navFromMenu('home')">Prochain match</button>
@@ -1639,7 +1660,6 @@
       <button data-view="badges" onclick="navFromMenu('badges')">Mes badges</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
       <button data-view="faq" onclick="navFromMenu('faq')">FAQ</button>
-      <button class="menu-logout" onclick="navFromMenu('logout')">Se déconnecter</button>
     </div>
   </header>
 
@@ -4615,10 +4635,24 @@ function switchView(name){
 function toggleMenu(){
   const menu = document.getElementById('dropdown-menu');
   menu.style.display = (menu.style.display === 'none') ? 'block' : 'none';
+  fermerMenuCompte();
+}
+
+function toggleMenuCompte(){
+  const menu = document.getElementById('menu-compte');
+  if(!menu) return;
+  menu.style.display = (menu.style.display === 'none') ? 'block' : 'none';
+  document.getElementById('dropdown-menu').style.display = 'none';
+}
+
+function fermerMenuCompte(){
+  const menu = document.getElementById('menu-compte');
+  if(menu){ menu.style.display = 'none'; }
 }
 
 function closeMenu(){
   document.getElementById('dropdown-menu').style.display = 'none';
+  fermerMenuCompte();
 }
 
 // Un menu ouvert se ferme dès qu'on clique ailleurs. Deux exceptions : le clic
