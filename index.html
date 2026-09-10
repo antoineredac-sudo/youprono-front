@@ -1113,19 +1113,49 @@
     margin:20px 0 24px 0;
   }
   .badge-grid svg{ width:100%; height:auto; display:block; }
+  /* La vitrine : cadre doré fin, fond plus sombre que le reste du site, et deux
+     halos qui tombent du haut comme des projecteurs d'exposition. */
   .trophy-case{
     position:relative;
     overflow:hidden;
-    background:var(--surface);
-    border:1px solid var(--border);
+    background:#02102f;
+    border:1px solid var(--gold);
     border-radius:12px;
-    padding:22px 16px 16px 16px;
+    padding:20px 12px 14px;
     margin:20px 0;
   }
+  .trophy-case::before{
+    content:''; position:absolute; top:0; left:8%; right:8%; height:150px;
+    background:var(--gold); opacity:.05;
+    clip-path:polygon(22% 0, 78% 0, 100% 100%, 0 100%);
+    pointer-events:none;
+  }
+
+  .buste{ flex:1 1 0; min-width:0; text-align:center; }
+  .buste svg{ width:100%; max-width:60px; }
+  .buste-nom{ color:var(--text); font-size:10px; margin-top:2px; }
+  .buste-sous{ color:#5c6da8; font-size:11px; font-weight:700; }
+  .buste-sous.gagne{ color:var(--gold); }
+
+  .colonne{ text-align:center; width:88px; flex:0 0 auto; }
+  .colonne-objet{ height:76px; display:flex; align-items:flex-end; justify-content:center; }
+  .colonne-objet svg{ width:60px; }
+  .colonne-fut{
+    width:22px; height:46px; margin:0 auto;
+    background:#0a1c48; border:1px solid #2f4a86; border-bottom:none;
+  }
+  .colonne-socle{
+    width:44px; height:9px; margin:0 auto;
+    background:#132a5e; border:1px solid #2f4a86; border-radius:2px;
+  }
+  .colonne-legende{ color:#9fb0d8; font-size:11px; margin-top:7px; }
+  .colonne.active .colonne-fut{ border-color:var(--gold); }
+  .colonne.active .colonne-socle{ border-color:var(--gold); }
+  .colonne.active .colonne-legende{ color:var(--gold); font-weight:700; }
   .trophy-shelf{
     display:flex;
     justify-content:space-between;
-    gap:6px;
+    gap:2px;
   }
   .trophy-slot{ flex:1; text-align:center; }
   .trophy-medal{
@@ -1160,14 +1190,17 @@
     font-size:22px;
     font-weight:600;
   }
+  /* Les colonnes défilent horizontalement : un joueur peut en aligner dix sans
+     que la vitrine s'étire en hauteur. */
   .trophy-cups{
     display:flex;
-    flex-wrap:wrap;
     align-items:flex-end;
-    justify-content:center;
-    gap:14px;
-    padding:14px 0 4px 0;
+    gap:10px;
+    padding:14px 2px 4px;
+    overflow-x:auto;
+    scrollbar-width:none;
   }
+  .trophy-cups::-webkit-scrollbar{ display:none; }
   .trophy-cup-slot{ text-align:center; }
   .trophy-cup-slot .trophy-label{ margin-top:4px; }
   .trophy-label{
@@ -1176,9 +1209,10 @@
     color:var(--text-dim);
   }
   .trophy-ledge{
-    height:9px;
-    border-radius:3px;
-    background:#1D2B63;
+    height:2px;
+    border-radius:2px;
+    background:var(--gold);
+    opacity:.45;
     margin-top:14px;
   }
   .trophy-cup-row{
@@ -6145,36 +6179,65 @@ function navFromMenu(name){
 // les groupes du joueur et renvoie les médailles, le total et l'état de la coupe.
 // Les seuils vivent côté serveur — ne jamais les recopier ici, ils divergeraient.
 const METAUX = [
-  { cle:'bronze',  nom:'Bronze'  },
-  { cle:'argent',  nom:'Argent'  },
-  { cle:'or',      nom:'Or'      },
-  { cle:'platine', nom:'Platine' },
-  { cle:'diamant', nom:'Diamant' }
+  { cle:'bronze',  nom:'Bronze',  teinte:'#B87333', bord:'#8C5626', encre:'#4a2a12', seuil:15, forme:'disque' },
+  { cle:'argent',  nom:'Argent',  teinte:'#C9CDD4', bord:'#9BA1AA', encre:'#3c4149', seuil:22, forme:'disque' },
+  { cle:'or',      nom:'Or',      teinte:'#E8B923', bord:'#C79A2E', encre:'#6E5210', seuil:29, forme:'disque' },
+  { cle:'platine', nom:'Platine', teinte:'#8FA6C4', bord:'#6E86A6', encre:'#22364d', seuil:36, forme:'hexagone' },
+  { cle:'diamant', nom:'Diamant', teinte:'#9BE7F0', bord:'#63BCC9', encre:'#14464e', seuil:43, forme:'losange' }
 ];
 
-function hexagoneSVG(gagne, nb){
-  const trait = gagne ? 'none' : '#6b7dc4';
-  const fond  = gagne ? '#E6EEF2' : '#0b2265';
-  const tirets = gagne ? '' : ' stroke-dasharray="5 5"';
-  const chiffre = gagne
-    ? '<text x="33" y="39" text-anchor="middle" fill="#3A4A54" class="trophy-hex-nb">' + nb + '</text>'
+// Un buste porte la médaille, comme dans une vitrine de bijoutier : le ruban en
+// V, puis le métal. Le buste vide garde le nom et le seuil à atteindre — le
+// joueur voit ce qui l'attend et ce que ça coûte.
+function busteMedaille(m, nb){
+  const gagnee = nb > 0;
+  const teinte = gagnee ? m.teinte : m.teinte;
+  const opac   = gagnee ? '1' : '0.26';
+  const trait  = gagnee ? '1.8' : '1.6';
+
+  let forme;
+  if(m.forme === 'hexagone'){
+    forme = '<polygon points="30,15 42,22 42,36 30,43 18,36 18,22" fill="' + teinte + '" fill-opacity="' + opac
+          + '" stroke="' + teinte + '" stroke-width="' + trait + '"/>';
+  }else if(m.forme === 'losange'){
+    forme = '<polygon points="30,14 43,29 30,44 17,29" fill="' + teinte + '" fill-opacity="' + opac
+          + '" stroke="' + teinte + '" stroke-width="' + trait + '"/>';
+  }else{
+    forme = '<circle cx="30" cy="29" r="13" fill="' + teinte + '" fill-opacity="' + opac
+          + '" stroke="' + teinte + '" stroke-width="' + trait + '"/>';
+  }
+
+  const chiffre = gagnee
+    ? '<text x="30" y="34" text-anchor="middle" fill="' + m.encre + '" font-size="15" font-weight="700">' + nb + '</text>'
     : '';
-  return '<svg class="trophy-hex" viewBox="0 0 66 62" aria-hidden="true">'
-       + '<polygon points="33,2 62,17 62,45 33,60 4,45 4,17" fill="' + fond + '" stroke="'
-       + trait + '" stroke-width="2"' + tirets + '/>' + chiffre + '</svg>';
+
+  return '<div class="buste">'
+       + '<svg viewBox="0 0 60 96" aria-hidden="true">'
+       + '<path d="M12 62 C12 38 20 22 30 22 C40 22 48 38 48 62 Z" fill="#0a1c48"'
+       + (gagnee ? ' stroke="var(--gold)" stroke-width="1.4"' : ' stroke="#2f4a86" stroke-width="1.2"') + '/>'
+       + '<ellipse cx="30" cy="63" rx="19" ry="4" fill="#0a1c48"'
+       + (gagnee ? ' stroke="var(--gold)" stroke-width="1.4"' : ' stroke="#2f4a86" stroke-width="1.2"') + '/>'
+       + '<path d="M21 26 L30 44 L39 26" fill="none" stroke="' + m.bord + '" stroke-width="2" opacity="'
+       + (gagnee ? '1' : '.5') + '"/>'
+       + forme + chiffre
+       + '</svg>'
+       + '<div class="buste-nom">' + m.nom + '</div>'
+       + '<div class="buste-sous' + (gagnee ? ' gagne' : '') + '">'
+       + (gagnee ? (nb > 1 ? nb + ' gagnées' : '1 gagnée') : m.seuil + ' pts') + '</div>'
+       + '</div>';
 }
 
-function gemmeSVG(gagne, nb){
-  const trait = gagne ? 'none' : '#6b7dc4';
-  const fond  = gagne ? '#6FD3E8' : '#0b2265';
-  const tirets = gagne ? '' : ' stroke-dasharray="5 5"';
-  const chiffre = gagne
-    ? '<text x="35" y="34" text-anchor="middle" fill="#0B3A45" class="trophy-gem-nb">' + nb + '</text>'
-    : '';
-  return '<svg class="trophy-gem" viewBox="0 0 70 62" aria-hidden="true">'
-       + '<polygon points="14,4 56,4 66,22 35,58 4,22" fill="' + fond + '" stroke="'
-       + trait + '" stroke-width="2"' + tirets + '/>' + chiffre + '</svg>';
+// Une colonne par coupe : les pleines, celle en cours, et une en pointillé qui
+// dit qu'il y en aura d'autres.
+function colonneCoupe(contenu, legende, active){
+  return '<div class="colonne' + (active ? ' active' : '') + '">'
+       + '<div class="colonne-objet">' + contenu + '</div>'
+       + '<div class="colonne-fut"></div>'
+       + '<div class="colonne-socle"></div>'
+       + '<div class="colonne-legende">' + legende + '</div></div>';
 }
+
+
 
 function coupeSVG(pleine, hauteur){
   // hauteur : 0 à 1, la part du bol déjà remplie. Ignorée si la coupe est pleine.
@@ -6296,26 +6359,22 @@ async function goToTrophies(){
   const compte = d.medalCounts || [0,0,0,0,0];
 
   shelf.innerHTML = METAUX.map(function(m, i){
-    const nb = compte[i] || 0;
-    let visuel;
-    if(i === 3){ visuel = hexagoneSVG(nb > 0, nb); }
-    else if(i === 4){ visuel = gemmeSVG(nb > 0, nb); }
-    else if(nb > 0){ visuel = '<div class="trophy-medal gagnee ' + m.cle + '">' + nb + '</div>'; }
-    else { visuel = '<div class="trophy-medal ghost"></div>'; }
-    return '<div class="trophy-slot">' + visuel
-         + '<div class="trophy-label">' + m.nom + '</div></div>';
+    return busteMedaille(m, compte[i] || 0);
   }).join('');
 
   const pleines = d.cupsCompleted || 0;
   const reste = d.cupProgress || 0;
   const cible = d.cupTarget || 12;
+
   let html = '';
   for(let i = 0; i < pleines; i++){
-    html += '<div class="trophy-cup-slot">' + coupeSVG(true, 1)
-          + '<div class="trophy-label">Coupe ' + (i + 1) + '</div></div>';
+    html += colonneCoupe(coupeSVG(true, 1), 'gagnée', false);
   }
-  html += '<div class="trophy-cup-slot">' + coupeSVG(false, reste / cible)
-        + '<div class="trophy-label">' + reste + ' / ' + cible + '</div></div>';
+  html += colonneCoupe(coupeSVG(false, reste / cible), reste + ' / ' + cible, true);
+
+  // Une colonne vide de plus : elle dit qu'une coupe pleine laisse la place à
+  // la suivante, sans qu'on ait à l'écrire.
+  html += colonneCoupe(coupeSVG(false, 0), 'à venir', false);
   cups.innerHTML = html;
 }
 
