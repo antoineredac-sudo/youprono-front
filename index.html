@@ -2709,14 +2709,20 @@ let homeRefreshInterval = null;
 // s'ouvre d'elle-même : le joueur n'a rien à rafraîchir.
 function scheduleHomeRefresh(){
   if(homeRefreshInterval){ clearInterval(homeRefreshInterval); homeRefreshInterval = null; }
-  if(homeMode !== 'live' && homeMode !== 'pending') return;
+
+  // La surveillance tourne en permanence, et pas seulement en LIVE. Sans ça, une
+  // page ouverte avant le coup d'envoi et jamais quittée ne s'apercevait ni du
+  // début du match ni de la saisie des statistiques : son joueur devait
+  // rafraîchir pour voir sa note.
+  const cadence = (homeMode === 'live' || homeMode === 'pending') ? 120000 : 180000;
 
   homeRefreshInterval = setInterval(async () => {
     if(document.hidden) return;
     const avant = homeMode;
     await loadHomeMatch();
     if(avant !== 'normal' && homeMode === 'normal'){ checkMatchNotification(); }
-  }, 120000);
+    else { checkMatchNotification(); }
+  }, cadence);
 }
 
 // Le jeu installé sur l'écran d'accueil n'a ni barre d'adresse ni geste de
