@@ -1316,6 +1316,15 @@
   .dash-history-label{ color:var(--text-dim); font-size:13px; margin-bottom:10px; }
   .courbe{ width:100%; margin-top:10px; display:block; }
   .hexagone{ width:100%; max-width:280px; margin:6px auto 0; display:block; }
+  .hexagone-mini{ width:100%; display:block; }
+  .silhouettes{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .silhouette{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:8px 4px 8px; text-align:center;
+  }
+  .silhouette.moi{ border-color:var(--gold); }
+  .silhouette-nom{ color:var(--text); font-size:12px; font-weight:600; }
+  .silhouette-note{ color:var(--gold); font-size:15px; font-weight:800; font-family:'Oswald',sans-serif; }
   .jauge-lig{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
   .jauge-lig:last-child{ border-bottom:none; }
   .jauge-nom{ color:var(--text-dim); font-size:12px; width:82px; flex:0 0 auto; text-align:left; }
@@ -3404,6 +3413,30 @@ function renderSalon(){
         });
         html += `</div>`;
       }
+
+      // --- Les silhouettes du groupe ---
+      // Une forme par membre noté, deux par ligne. Le tableau des pronostics
+      // garde les chiffres bruts ; ceci montre où chacun a été juste.
+      const notés = d.members.filter(m => m.noteTotal !== null && m.noteTotal !== undefined);
+      if(notés.length){
+        html += `<div class="salon-legende">les silhouettes du groupe</div><div class="silhouettes">`;
+        notés.forEach(m => {
+          const notes = {
+            'Composition': m.noteComposition || 0,
+            'Score':       m.noteScore || 0,
+            'Possession':  m.notePossession || 0,
+            'Tirs':        m.noteShots || 0,
+            'Fautes':      m.noteFouls || 0,
+            'Centres':     m.noteCrosses || 0
+          };
+          html += `<div class="silhouette${m.isMe ? ' moi' : ''}">
+                     ${hexagoneCompact(notes)}
+                     <div class="silhouette-nom">${m.isMe ? 'toi' : echapper(m.displayName)}</div>
+                     <div class="silhouette-note">${fmtNote(m.noteTotal)}</div>
+                   </div>`;
+        });
+        html += `</div>`;
+      }
     }
   }
 
@@ -4474,6 +4507,34 @@ function hexagoneHtml(notes){
   ];
   etiquettes.forEach(e => {
     svg += '<text x="' + e[1] + '" y="' + e[2] + '" text-anchor="middle" fill="var(--text-dim)" font-size="9">' + e[0] + '</text>';
+  });
+
+  return svg + '</svg>';
+}
+
+// La version compacte, pour les silhouettes du groupe. Trait plus épais et
+// étiquettes réduites : à 150 pixels de large, un contour fin disparaît.
+function hexagoneCompact(notes){
+  const R = 62, cx = 100, cy = 100;
+  const pt = (i, r) => {
+    const a = (-90 + i * 60) * Math.PI / 180;
+    return [(cx + r * Math.cos(a)).toFixed(1), (cy + r * Math.sin(a)).toFixed(1)];
+  };
+  const rayon = n => R * Math.max(0, Math.min(100, notes[n] || 0)) / 100;
+
+  let svg = '<svg class="hexagone-mini" viewBox="0 0 200 200" aria-hidden="true">';
+  svg += '<polygon points="' + AXES_HEXAGONE.map((n, i) => pt(i, R).join(',')).join(' ')
+       + '" fill="none" stroke="var(--border)" stroke-width="1.5"/>';
+  svg += '<polygon points="' + AXES_HEXAGONE.map((n, i) => pt(i, R * 0.6).join(',')).join(' ')
+       + '" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 4"/>';
+  svg += '<polygon points="' + AXES_HEXAGONE.map((n, i) => pt(i, rayon(n)).join(',')).join(' ')
+       + '" fill="var(--gold)" fill-opacity="0.22" stroke="var(--gold)" stroke-width="3" stroke-linejoin="round"/>';
+
+  // Les étiquettes, aux six coins. Abrégées pour tenir à cette taille.
+  const etq = [['COMPO',100,16],['SCORE',176,58],['POSS.',176,152],
+               ['TIRS',100,194],['FAUT.',24,152],['CENT.',24,58]];
+  etq.forEach(e => {
+    svg += '<text x="' + e[1] + '" y="' + e[2] + '" text-anchor="middle" fill="var(--text-dim)" font-size="12">' + e[0] + '</text>';
   });
 
   return svg + '</svg>';
