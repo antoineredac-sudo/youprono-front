@@ -1359,6 +1359,13 @@
     font-size:14px; line-height:1.5; color:var(--text);
   }
   .evenement:last-child{ margin-bottom:0; }
+  .invite-apres-note{
+    border:1px solid var(--gold); border-radius:10px;
+    padding:15px; margin-top:10px; text-align:center;
+  }
+  .invite-apres-texte{
+    color:var(--text); font-size:14px; line-height:1.55; margin-bottom:13px;
+  }
   .evenement-lien{ cursor:pointer; }
   .evenement-lien b{ color:var(--gold); font-weight:600; white-space:nowrap; }
   .verdict{
@@ -3730,6 +3737,16 @@ function messagesDuMatch(d, matchId){
   return msg.slice(0, EVENEMENTS_MAX);
 }
 
+// Le joueur sans aucun groupe vient de recevoir sa note et n'a personne à qui
+// la comparer. C'est le meilleur moment pour lui proposer d'inviter ses amis.
+function blocInviteSansGroupe(){
+  return '<div class="invite-apres-note">'
+       + '<div class="invite-apres-texte">YouProno est un jeu entre experts du PSG et surtout entre amis.</div>'
+       + '<button class="cta-whatsapp wa-btn" onclick="inviteFromGroupsScreen()">'
+       + '<svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01c-1.52 0-3.01-.41-4.31-1.18l-.31-.18-3.2.84.85-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.23-8.23 8.23"/></svg>'
+       + '<span>INVITE-LES SUR WHATSAPP</span></button></div>';
+}
+
 async function afficherEvenementsDuMatch(matchId){
   const bloc = document.getElementById('results-evenements');
   if(!bloc) return;
@@ -3743,9 +3760,11 @@ async function afficherEvenementsDuMatch(matchId){
     if(!json.success || !json.data) return;
 
     const msg = messagesDuMatch(json.data, matchId);
-    if(!msg.length) return;
+    const sansGroupe = !(json.data.podiums || []).length;
+    if(!msg.length && !sansGroupe) return;
 
-    bloc.innerHTML = msg.map(function(m){ return '<div class="evenement">' + m + '</div>'; }).join('');
+    bloc.innerHTML = msg.map(function(m){ return '<div class="evenement">' + m + '</div>'; }).join('')
+                   + (sansGroupe ? blocInviteSansGroupe() : '');
     bloc.style.display = 'block';
   }catch(e){ /* un message manquant ne doit jamais masquer la note */ }
 }
@@ -5702,7 +5721,10 @@ async function checkMatchNotification(){
     try{
       const evJson = await fetch(`${API_BASE}/Group/MatchEvents/${teamId}/${last.matchId}/${userId}`)
         .then(r => r.json());
-      if(evJson.success && evJson.data){ evenements = messagesDuMatch(evJson.data, last.matchId); }
+      if(evJson.success && evJson.data){
+        evenements = messagesDuMatch(evJson.data, last.matchId);
+        if(!(evJson.data.podiums || []).length){ evenements.push('__invite__'); }
+      }
     }catch(e){ /* la notification s'ouvre quand même */ }
 
     showMatchNotification(lastStats, fresh, seenKey, last.matchId, evenements);
@@ -5718,7 +5740,10 @@ function showMatchNotification(stats, fresh, seenKey, matchId, evenements){
 
   const ev = document.getElementById('notif-evenements');
   const msg = evenements || [];
-  ev.innerHTML = msg.map(function(m){ return '<div class="evenement">' + m + '</div>'; }).join('');
+  ev.innerHTML = msg.map(function(m){
+    return (m === '__invite__') ? blocInviteSansGroupe()
+                                : '<div class="evenement">' + m + '</div>';
+  }).join('');
 
   const line = document.getElementById('notif-line');
   const row  = document.getElementById('notif-badges');
