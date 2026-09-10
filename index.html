@@ -11,7 +11,7 @@
 <meta property="og:site_name" content="YouProno">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:url" content="https://youprono.fr/">
-<meta name="theme-color" content="#25408f">
+<meta name="theme-color" content="#0b2265">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,10 +29,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#25408f;
-    --surface:#2d4a9e;
-    --surface-raised:#3554ab;
-    --border:#4361b8;
+    /* Le marine du blason du PSG, plus profond que le bleu d'origine (#25408f).
+       Le doré et le rouge y gagnent en éclat sans être retouchés. */
+    --bg:#0b2265;
+    --surface:#14306f;
+    --surface-raised:#1c3d82;
+    --border:#26478e;
     --red:#da1f3d;
     --red-dim:#a8172f;
     --gold:#e8b923;
@@ -1331,7 +1333,7 @@
   .rdv-texte{ color:var(--text); font-size:13px; line-height:1.5; margin-top:3px; }
   /* --- Le terrain du récapitulatif --- */
   .terrain{
-    position:relative; background:#152a63; border:1px solid #35529f;
+    position:relative; background:#061a4f; border:1px solid #1c3d82;
     border-radius:8px; padding:16px 4px 18px; overflow:hidden; margin-top:8px;
   }
   .terrain-ligne-mediane{ position:absolute; top:0; left:0; right:0; height:1px; background:rgba(255,255,255,.14); }
@@ -1352,7 +1354,7 @@
   .terrain-joueur{ text-align:center; flex:1 1 0; min-width:0; padding:0 2px; }
   .terrain-pastille{
     width:32px; height:32px; border-radius:50%; margin:0 auto;
-    background:var(--gold); color:#152a63;
+    background:var(--gold); color:#061a4f;
     font-size:12px; font-weight:700; line-height:32px;
   }
   .terrain-nom{
@@ -1584,7 +1586,7 @@
 .kop-intertitre{ color:#c2cae8; font-size:11px; margin:18px 0 6px; }
 .kop-note{ color:#c2cae8; font-size:12px; line-height:1.5; margin:0 0 10px; }
 .kop-carte-mienne{
-  background:#3554ab; border:1px solid #e8b923; border-radius:8px;
+  background:var(--surface-raised); border:1px solid #e8b923; border-radius:8px;
   padding:13px; cursor:pointer;
   display:flex; justify-content:space-between; align-items:center; gap:8px;
 }
@@ -5850,7 +5852,7 @@ const METAUX = [
 
 function hexagoneSVG(gagne, nb){
   const trait = gagne ? 'none' : '#6b7dc4';
-  const fond  = gagne ? '#E6EEF2' : '#25408f';
+  const fond  = gagne ? '#E6EEF2' : '#0b2265';
   const tirets = gagne ? '' : ' stroke-dasharray="5 5"';
   const chiffre = gagne
     ? '<text x="33" y="39" text-anchor="middle" fill="#3A4A54" class="trophy-hex-nb">' + nb + '</text>'
@@ -5862,7 +5864,7 @@ function hexagoneSVG(gagne, nb){
 
 function gemmeSVG(gagne, nb){
   const trait = gagne ? 'none' : '#6b7dc4';
-  const fond  = gagne ? '#6FD3E8' : '#25408f';
+  const fond  = gagne ? '#6FD3E8' : '#0b2265';
   const tirets = gagne ? '' : ' stroke-dasharray="5 5"';
   const chiffre = gagne
     ? '<text x="35" y="34" text-anchor="middle" fill="#0B3A45" class="trophy-gem-nb">' + nb + '</text>'
@@ -5889,7 +5891,7 @@ function coupeSVG(pleine, hauteur){
     + '<defs><clipPath id="' + id + '"><rect x="0" y="' + haut + '" width="76" height="' + (56 - haut) + '"/></clipPath></defs>'
     + '<path d="M8 8 C-4 13 -4 33 12 39" fill="none" stroke="#6b7dc4" stroke-width="3" stroke-dasharray="5 5"/>'
     + '<path d="M68 8 C80 13 80 33 64 39" fill="none" stroke="#6b7dc4" stroke-width="3" stroke-dasharray="5 5"/>'
-    + '<polygon points="8,3 68,3 55,55 21,55" fill="#25408f" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/>'
+    + '<polygon points="8,3 68,3 55,55 21,55" fill="#0b2265" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/>'
     + '<polygon points="8,3 68,3 55,55 21,55" fill="' + or + '" clip-path="url(#' + id + ')"/>'
     + '<rect x="30" y="55" width="16" height="20" fill="none" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/>'
     + '<rect x="12" y="75" width="52" height="10" rx="2" fill="none" stroke="#6b7dc4" stroke-width="2" stroke-dasharray="5 5"/></svg>';
