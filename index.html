@@ -868,6 +868,10 @@
   .salon-annonce.dore{ border-color:var(--gold); }
   .salon-annonce b{ color:var(--gold); display:block; margin-bottom:3px; font-weight:600; }
 
+  .ranking-note{
+    color:var(--text-dim); font-size:12px; line-height:1.6;
+    text-align:center; margin:14px 4px 0;
+  }
   .mvt{ font-size:12px; margin-right:8px; }
   .mvt.monte{ color:#4caf7d; }
   .mvt.descend{ color:#e0665a; }
@@ -4534,12 +4538,23 @@ async function openGroupDetail(groupId){
       championEl.style.display = 'none';
     }
 
+    // Le mouvement depuis le match précédent, entre le pseudo et les points.
+    const fleche = (r) => {
+      const avant = r.rankBefore || 0;
+      if(!avant) return '<span class="mvt stable">–</span>';
+      if(avant > r.rank) return `<span class="mvt monte">▲${avant - r.rank}</span>`;
+      if(avant < r.rank) return `<span class="mvt descend">▼${r.rank - avant}</span>`;
+      return '<span class="mvt stable">–</span>';
+    };
+
     rankingEl.innerHTML = g.ranking.map(r => `
       <div class="ranking-row">
         <span class="ranking-rank ${r.rank === 1 ? 'top' : ''}">${r.rank}</span>
         <span class="ranking-name">${r.displayName}</span>
+        ${fleche(r)}
         <span class="ranking-score">${fmtNum(r.totalScore)}</span>
-      </div>`).join('');
+      </div>`).join('')
+      + '<p class="ranking-note">En cas d\'égalité, le joueur ayant le meilleur coef expert sur les matchs du groupe passe devant.</p>';
   }catch(e){
     rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce groupe.</div>';
   }
