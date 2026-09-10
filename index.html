@@ -2706,12 +2706,36 @@ function scheduleHomeRefresh(){
   }, 120000);
 }
 
+// Le jeu installé sur l'écran d'accueil n'a ni barre d'adresse ni geste de
+// rafraîchissement : il faut donc se rafraîchir tout seul au retour.
+//   Moins d'une minute d'absence : rien, on n'interrompt pas.
+//   Jusqu'à trente minutes : on recharge les données de l'accueil.
+//   Au-delà : on recharge la page entière, ce qui récupère aussi une nouvelle
+//   version du jeu si elle a été déployée entre-temps.
+let quitteA = null;
+const RELIRE_APRES_MS = 60 * 1000;
+const RECHARGER_APRES_MS = 30 * 60 * 1000;
+
 document.addEventListener('visibilitychange', async () => {
-  if(document.hidden) return;
-  if(homeMode !== 'live' && homeMode !== 'pending') return;
+  if(document.hidden){ quitteA = Date.now(); return; }
+
+  const absence = quitteA ? (Date.now() - quitteA) : 0;
+  quitteA = null;
+
+  if(absence > RECHARGER_APRES_MS){
+    location.reload();
+    return;
+  }
+
+  // En direct ou juste après un match, on rafraîchit même une absence courte :
+  // c'est le moment où la note peut tomber d'une minute à l'autre.
+  const enAttente = (homeMode === 'live' || homeMode === 'pending');
+  if(!enAttente && absence < RELIRE_APRES_MS) return;
+
   const avant = homeMode;
   await loadHomeMatch();
   if(avant !== 'normal' && homeMode === 'normal'){ checkMatchNotification(); }
+  else { checkMatchNotification(); }
 });
 
 function isMatchPlayed(m){
