@@ -5767,10 +5767,10 @@ const BADGES = [
   { v:'10/11',  l:['compo'],       cat:'composition', min:90.9, n:2 },
   { v:'11/11',  l:['compo'],       cat:'composition', min:99.9, n:3 },
   { v:'100',    l:['score'],       cat:'score',       min:99.9, n:3 },
-  { v:'80',     l:['au match'],    cat:'total',       min:80,   n:1 },
-  { v:'85',     l:['au match'],    cat:'total',       min:85,   n:2 },
-  { v:'90',     l:['au match'],    cat:'total',       min:90,   n:3 },
-  { v:'95',     l:['au match'],    cat:'total',       min:95,   n:3 },
+  { v:'80',     l:['note match'],  cat:'total',       min:80,   n:1 },
+  { v:'85',     l:['note match'],  cat:'total',       min:85,   n:2 },
+  { v:'90',     l:['note match'],  cat:'total',       min:90,   n:3 },
+  { v:'95',     l:['note match'],  cat:'total',       min:95,   n:3 },
   { v:'90',     l:['possession'],  cat:'possession',  min:90,   n:1 },
   { v:'90',     l:['tirs'],        cat:'shots',       min:90,   n:1 },
   { v:'90',     l:['fautes'],      cat:'fouls',       min:90,   n:1 },
@@ -5786,10 +5786,28 @@ const BADGES = [
   { v:'1er',    l:['prono'],       cat:'serie', n:1 },
   { v:'5',      l:['pronos', "d'affilée"], cat:'serie', n:2 },
   { v:'10',     l:['pronos', "d'affilée"], cat:'serie', n:3 },
-  { v:'3 × 80', l:['au match', "d'affilée"], cat:'serie', small:true, n:3 }
+  // Le seul badge où le libellé passe SOUS le chiffre : « 3 × 80 » se suffit
+  // en tête, et les deux lignes deviennent une explication.
+  { v:'3 × 80', l:['note match', "d'affilée"], cat:'serie', small:true, n:3, sousChiffre:true }
 ];
 
-// Une teinte par niveau : le fond de l'hexagone, son contour, et l'encre du texte.
+// Le pictogramme porté par chaque famille de badge. « total » et « serie » n'ont
+// pas de catégorie de pronostic : l'étoile dit la note globale, le calendrier
+// la régularité.
+const PICTO_BADGE = {
+  composition: 'Composition', score: 'Score', possession: 'Possession',
+  shots: 'Tirs', fouls: 'Fautes', centres: 'Centres'
+};
+const PICTO_ETOILE = '<path d="M12 2.5l1.7 3.6 3.9.5-2.8 2.7.7 3.9-3.5-1.9-3.5 1.9.7-3.9-2.8-2.7 3.9-.5z"/>';
+const PICTO_SERIE  = '<rect x="3" y="4.5" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><path d="M8.5 14.5l2.2 2.2 4.3-4.3"/>';
+
+function traceBadge(b){
+  if(b.cat === 'total') return PICTO_ETOILE;
+  if(b.cat === 'serie') return PICTO_SERIE;
+  return PICTOS[PICTO_BADGE[b.cat]] || PICTO_ETOILE;
+}
+
+// Une teinte par niveau : le fond de l'écusson, son contour, et l'encre du texte.
 const NIVEAUX_BADGE = {
   1: { fill:'#6EC1B4', stroke:'#4EA396', ink:'#0E3F39' },
   2: { fill:'#E8622D', stroke:'#C24E20', ink:'#4A1A08' },
@@ -5838,20 +5856,31 @@ function badgeSvg(b, unlocked){
   const stroke = unlocked ? ton.stroke : '#6b7dc4';
   const dash   = unlocked ? '' : ' stroke-dasharray="5 5"';
   const ink    = unlocked ? ton.ink    : '#8b99d0';
-  const vSize  = b.small ? 17 : 20;
-  let lines;
-  if(b.l.length === 1){
-    lines = `<text x="46" y="50" text-anchor="middle" fill="${ink}" font-size="${vSize}" font-weight="600">${b.v}</text>`
-          + `<text x="46" y="69" text-anchor="middle" fill="${ink}" font-size="12">${b.l[0]}</text>`;
-  } else {
-    lines = `<text x="46" y="44" text-anchor="middle" fill="${ink}" font-size="${vSize}" font-weight="600">${b.v}</text>`
-          + `<text x="46" y="63" text-anchor="middle" fill="${ink}" font-size="12">${b.l[0]}</text>`
-          + `<text x="46" y="79" text-anchor="middle" fill="${ink}" font-size="12">${b.l[1]}</text>`;
+
+  const T = (y, txt, taille, gras) =>
+    `<text x="38" y="${y}" text-anchor="middle" fill="${ink}" font-size="${taille}"`
+    + (gras ? ' font-weight="700"' : '') + `>${txt}</text>`;
+
+  const ICONE = (y, ech) =>
+    `<g transform="translate(${(38 - 12 * ech).toFixed(1)},${y}) scale(${ech})" fill="none" `
+    + `stroke="${ink}" stroke-width="${(2 / ech).toFixed(2)}">${traceBadge(b)}</g>`;
+
+  let corps;
+  if(b.sousChiffre){
+    // L'exception : la valeur en tête, le libellé en explication dessous.
+    corps = T(42, b.v, 19, true) + T(56, b.l[0], 10) + T(67, b.l[1] || '', 10) + ICONE(71, 0.55);
+  }else if(b.l.length === 1){
+    corps = T(38, b.l[0], 10) + T(60, b.v, b.small ? 17 : 20, true) + ICONE(64, 0.75);
+  }else{
+    corps = T(34, b.l[0], 10) + T(46, b.l[1], 10) + T(66, b.v, 19, true) + ICONE(70, 0.6);
   }
-  return `<svg viewBox="0 0 92 104" aria-hidden="true">`
-       + `<polygon points="46,2 90,27 90,77 46,102 2,77 2,27" fill="${fill}" stroke="${stroke}" stroke-width="2"${dash}/>`
-       + lines + `</svg>`;
+
+  return `<svg viewBox="0 0 76 100" aria-hidden="true">`
+       + `<path d="M38 6 70 19v28c0 20-13 35-32 43C19 84 6 67 6 47V19z" `
+       + `fill="${fill}" stroke="${stroke}" stroke-width="2"${dash}/>`
+       + corps + `</svg>`;
 }
+
 
 
 // --- Les badges de série ---
