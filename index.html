@@ -4486,7 +4486,9 @@ async function loadGroupCalendar(seasonLength, played){
       // La date de fin remonte dans la ligne de saison : elle reste visible
       // même quand l'onglet Calendrier est fermé.
       const finCourt = fin.toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
-      seasonEl.textContent = groupSeasonBaseLabel + ' · fin le ' + finCourt;
+      // La date de fin est déjà dans l'onglet Calendrier : la répéter ici
+      // alourdissait la ligne pour rien.
+      seasonEl.textContent = groupSeasonBaseLabel;
     }
 
     block.style.display = 'block';
