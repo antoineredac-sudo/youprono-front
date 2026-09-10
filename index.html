@@ -793,6 +793,7 @@
   .compo-wrong{ text-decoration:line-through; color:var(--text-dim); }
   /* La composition officielle, celle du coach : doré, comme les notes. */
   .compo-name.compo-reel{ color:#e8b923; }
+  .compo-name.compo-reel.compo-manque{ color:var(--text); font-weight:700; }
 
   /* --- Classement entre amis : la place au général, en pastille --- */
   .ami-pastille{
@@ -1594,6 +1595,7 @@
 }
 .kop-compo-nom.or{ color:#e8b923; }
 .kop-compo-nom.rate{ text-decoration:line-through; color:#c2cae8; }
+.kop-compo-nom.manque{ color:#ffffff; font-weight:700; }
 .kop-compo-part{ font-size:11px; color:#c2cae8; }
 </style>
 </head>
@@ -2987,11 +2989,14 @@ function renderCompoNote(prediction){
     return p ? nomJoueurAffiche(p.firstName, p.lastName) : '—';
   };
 
-  const tonHtml = predictedIds.map(id =>
-    `<span class="compo-name ${realIds.has(id) ? '' : 'compo-wrong'}">${nomDe(id)}</span>`).join('');
+  const tonHtml = trierParPoste(predictedIds.map(id => squadData.find(sp => sp.id === id) || { id }))
+    .map(p => `<span class="compo-name ${realIds.has(p.id) ? '' : 'compo-wrong'}">${nomDe(p.id)}</span>`).join('');
 
-  const reelHtml = officialCompoPlayers.map(p =>
-    `<span class="compo-name compo-reel">${nomJoueurAffiche(p.firstName, p.lastName)}</span>`).join('');
+  // Les titulaires que le joueur n'avait pas vus ressortent en blanc et en gras :
+  // c'est ce qu'il regarde en premier, et c'est là qu'il a perdu des points.
+  const monOnze = new Set(predictedIds);
+  const reelHtml = trierParPoste(officialCompoPlayers).map(p =>
+    `<span class="compo-name compo-reel${monOnze.has(p.id) ? '' : ' compo-manque'}">${nomJoueurAffiche(p.firstName, p.lastName)}</span>`).join('');
 
   // La composition d'abord : c'est la seule catégorie déjà tranchée, et la seule
   // qu'on peut lire nom par nom.
@@ -3392,7 +3397,8 @@ function renderSalon(){
     if(ouvert){
       html += `<div class="salon-bloc-corps"><table>
         <tr><th>Joueur</th><th class="droite">Nb de fois choisis</th></tr>`;
-      m.picks.forEach(p => {
+      trierParPoste(m.picks.map(p => Object.assign({}, p, { id: p.personId || p.playerId || p.id })))
+        .forEach(p => {
         let cls = '';
         if(d.state !== 'closed'){
           if(!p.found) cls = 'salon-rate';
@@ -3899,15 +3905,18 @@ function renderResults(prediction, stats, matchDetail){
   const realTeamPlayers = (psgIsHome ? matchDetail.homeTeam.players : matchDetail.awayTeam.players) || [];
   const realIds = new Set(realTeamPlayers.map(p => p.id));
 
-  const predictedNamesHtml = prediction.players.map(id => {
-    const p = squadData.find(sp => sp.id === id);
-    const name = p ? nomJoueurAffiche(p.firstName, p.lastName) : id.slice(0,8) + '…';
-    const correct = realIds.has(id);
-    return `<span class="compo-name ${correct ? '' : 'compo-wrong'}">${name}</span>`;
-  }).join('');
+  const monOnzeIds = new Set(prediction.players);
 
-  const realNamesHtml = realTeamPlayers.map(p =>
-    `<span class="compo-name compo-reel">${nomJoueurAffiche(p.firstName, p.lastName)}</span>`).join('');
+  const predictedNamesHtml = trierParPoste(
+      prediction.players.map(id => squadData.find(sp => sp.id === id) || { id }))
+    .map(p => {
+      const fiche = squadData.find(sp => sp.id === p.id);
+      const name = fiche ? nomJoueurAffiche(fiche.firstName, fiche.lastName) : String(p.id).slice(0,8) + '…';
+      return `<span class="compo-name ${realIds.has(p.id) ? '' : 'compo-wrong'}">${name}</span>`;
+    }).join('');
+
+  const realNamesHtml = trierParPoste(realTeamPlayers).map(p =>
+    `<span class="compo-name compo-reel${monOnzeIds.has(p.id) ? '' : ' compo-manque'}">${nomJoueurAffiche(p.firstName, p.lastName)}</span>`).join('');
 
   const compoAccuracy = stats.result.team.composition?.formula || 0;
   html += `
@@ -5263,7 +5272,9 @@ function afficherCompositionsDuKop(k){
   const compoConnue = onzeCoach.length > 0;
 
   let g = '<div class="kop-compo-entete">Le kop</div>';
-  onzeKop.forEach(function(j){
+  trierParPoste(onzeKop.map(function(j){
+    return Object.assign({}, j, { id: j.personId || j.playerId || j.id });
+  })).forEach(function(j){
     const rate = compoConnue && !j.found;
     g += '<div class="kop-compo-nom' + (rate ? ' rate' : '') + '">' +
          echapper(nomDeJoueur(j)) +
@@ -5275,8 +5286,13 @@ function afficherCompositionsDuKop(k){
   if(!compoConnue){
     d += '<div class="kop-compo-part" style="padding-top:5px;">Pas encore annoncée.</div>';
   }else{
-    onzeCoach.forEach(function(j){
-      d += '<div class="kop-compo-nom or">' + echapper(nomDeJoueur(j)) + '</div>';
+    const onzeKopIds = new Set(onzeKop.map(function(x){ return x.personId || x.playerId || x.id; }));
+    trierParPoste(onzeCoach.map(function(j){
+      return Object.assign({}, j, { id: j.personId || j.playerId || j.id });
+    })).forEach(function(j){
+      const manque = !onzeKopIds.has(j.id);
+      d += '<div class="kop-compo-nom' + (manque ? ' manque' : ' or') + '">'
+         + echapper(nomDeJoueur(j)) + '</div>';
     });
   }
   droite.innerHTML = d;
@@ -6422,6 +6438,25 @@ function fmtNote(n){
 // Le rang vient du serveur ; un joueur sans rang se met en fin de ligne,
 // départagé par son numéro de maillot.
 const TERRAIN_LIGNES = ['Attaquant', 'Milieu', 'Défenseur', 'Gardien'];
+
+// Range une liste de joueurs du gardien aux attaquants, et de gauche à droite
+// dans chaque ligne. Le poste vient de l'effectif, jamais deviné.
+const ORDRE_POSTES = ['Gardien', 'Défenseur', 'Milieu', 'Attaquant'];
+
+function rangDuJoueur(p){
+  if(!p) return [9, 99, ''];
+  const fiche = squadData.find(sp => sp.id === p.id) || p;
+  const ligne = ORDRE_POSTES.indexOf((fiche.position || '').trim());
+  const rang = fiche.positionOrder > 0 ? fiche.positionOrder : 99;
+  return [ligne < 0 ? 8 : ligne, rang, fiche.shirtNumber || 0];
+}
+
+function trierParPoste(joueurs){
+  return joueurs.slice().sort((a, b) => {
+    const ra = rangDuJoueur(a), rb = rangDuJoueur(b);
+    return (ra[0] - rb[0]) || (ra[1] - rb[1]) || (ra[2] - rb[2]);
+  });
+}
 
 function terrainHtml(ids){
   const joueurs = ids.map(id => squadData.find(sp => sp.id === id)).filter(Boolean);
