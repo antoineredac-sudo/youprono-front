@@ -875,7 +875,6 @@
   .mvt{ font-size:12px; margin-right:8px; }
   .mvt.monte{ color:#4caf7d; }
   .mvt.descend{ color:#e0665a; }
-  .mvt.stable{ color:var(--text-dim); }
   .salon-legende{ color:var(--text-dim); font-size:11px; margin-bottom:6px; }
 
   .salon-liste{
@@ -1252,6 +1251,7 @@
   }
   .group-deadline strong{ color:var(--gold); }
 
+  .rt-mvt{ width:30px; text-align:right; flex:0 0 auto; }
   .ranking-row{
     display:flex;
     align-items:center;
@@ -3342,7 +3342,7 @@ function renderSalon(){
         cumul.forEach(m => {
           const moi = m.isMe ? ' salon-moi' : '';
           const avant = m.cycleRankBefore || 0;
-          let mvt = '<span class="mvt stable">–</span>';
+          let mvt = '';
           if(avant > 0 && avant > m.cycleRank){ mvt = `<span class="mvt monte">▲${avant - m.cycleRank}</span>`; }
           else if(avant > 0 && avant < m.cycleRank){ mvt = `<span class="mvt descend">▼${m.cycleRank - avant}</span>`; }
 
@@ -4346,10 +4346,20 @@ async function loadRanking(tab){
 
     loadingEl.style.display = 'none';
 
+    // Le mouvement depuis le dernier match noté. Rien pour celui qui n'a pas
+    // bougé : un tiret devant un nombre se lit comme un signe moins.
+    const fleche = (u) => {
+      const avant = u.rankBefore || 0;
+      if(avant > u.rank) return `<span class="mvt monte">▲${avant - u.rank}</span>`;
+      if(avant > 0 && avant < u.rank) return `<span class="mvt descend">▼${u.rank - avant}</span>`;
+      return '';
+    };
+
     document.getElementById('ranking-table').innerHTML = liste.map((u, i) => `
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
         <span class="rt-rank">#${u.rank}</span>
         <span class="rt-name">${u.userName}</span>
+        <span class="rt-mvt">${fleche(u)}</span>
         <span class="rt-games">${u.games}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`).join('');
@@ -4562,10 +4572,10 @@ async function openGroupDetail(groupId){
     // Le mouvement depuis le match précédent, entre le pseudo et les points.
     const fleche = (r) => {
       const avant = r.rankBefore || 0;
-      if(!avant) return '<span class="mvt stable">–</span>';
+      if(!avant) return '';
       if(avant > r.rank) return `<span class="mvt monte">▲${avant - r.rank}</span>`;
       if(avant < r.rank) return `<span class="mvt descend">▼${r.rank - avant}</span>`;
-      return '<span class="mvt stable">–</span>';
+      return '';
     };
 
     rankingEl.innerHTML = g.ranking.map(r => `
