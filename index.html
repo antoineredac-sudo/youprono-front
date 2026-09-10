@@ -1324,6 +1324,14 @@
   .jauge-val{ color:var(--text); font-size:13px; font-weight:700; width:44px; text-align:right; flex:0 0 auto; }
   .jauge-lig .picto{ color:var(--gold); flex:0 0 auto; }
   .courbe-legende{ color:var(--text-dim); font-size:11px; text-align:center; margin-top:2px; }
+  .tuiles{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:10px; }
+  .tuile{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:12px 8px; text-align:center;
+  }
+  .tuile .picto{ color:var(--gold); width:19px; height:19px; }
+  .tuile-val{ color:var(--text); font-size:19px; font-weight:800; margin-top:5px; font-family:'Oswald',sans-serif; }
+  .tuile-lab{ color:var(--text-dim); font-size:10px; margin-top:2px; }
   /* Le repère d'avancement du tunnel : six écrans, et on sait toujours où on en est. */
   .install-invite{
     border:1px solid var(--gold); border-radius:10px;
@@ -2300,6 +2308,8 @@
           <div class="profil-carte-matchs" id="profil-matchs"></div>
           <div id="profil-courbe"></div>
         </div>
+
+        <div class="tuiles" id="profil-tuiles"></div>
 
         <div class="ranking-tabs" style="margin-top:14px;">
           <button class="ranking-tab active" id="profil-tab-final" onclick="switchProfilTab('final')">coefficient expert</button>
@@ -4311,8 +4321,34 @@ function switchProfilTab(tab){
   profilTab = tab;
   document.getElementById('profil-tab-final').classList.toggle('active', tab === 'final');
   document.getElementById('profil-tab-record').classList.toggle('active', tab === 'record');
-  document.getElementById('profil-label').textContent = (tab === 'final') ? 'coef expert' : 'note record';
+  const nomOnglet = (tab === 'final') ? 'Coef expert' : 'Note record';
+  document.getElementById('profil-label').innerHTML = picto(nomOnglet) + ' ' + nomOnglet.toLowerCase();
   chargerVoisinage(tab);
+}
+
+async function majTuilesProfil(complet, moi){
+  const cible = document.getElementById('profil-tuiles');
+  if(!cible) return;
+
+  const rang = (moi >= 0) ? complet[moi].rank : 0;
+  const joues = (moi >= 0) ? complet[moi].games : 0;
+
+  let record = null;
+  try{
+    const recs = await ensureRanking('record');
+    const ligne = recs.find(u => u.id === getUserId());
+    if(ligne) record = ligne.score;
+  }catch(e){}
+
+  const tuile = (nom, valeur, libelle) =>
+    '<div class="tuile">' + picto(nom)
+    + '<div class="tuile-val">' + valeur + '</div>'
+    + '<div class="tuile-lab">' + libelle + '</div></div>';
+
+  cible.innerHTML =
+      tuile('Coef expert', rang > 0 ? (rang + 'ᵉ') : '–', 'au classement')
+    + tuile('Note record', (record !== null) ? fmtNote(record) : '–', 'record')
+    + tuile('Matchs joués', joues || '–', joues > 1 ? 'matchs joués' : 'match joué');
 }
 
 async function chargerVoisinage(tab){
@@ -4340,15 +4376,27 @@ async function chargerVoisinage(tab){
     }
 
     const largeurBarre = barreSelonLeMeilleur(complet);
+    const fleche = (u) => {
+      const avant = u.rankBefore || 0;
+      if(avant > u.rank) return `<span class="mvt monte">▲${avant - u.rank}</span>`;
+      if(avant > 0 && avant < u.rank) return `<span class="mvt descend">▼${u.rank - avant}</span>`;
+      return '';
+    };
 
     cible.innerHTML = voisins.map(u => `
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
         <span class="rt-rank">#${u.rank}</span>
         <span class="rt-name">${u.userName}</span>
+        <span class="rt-mvt">${fleche(u)}</span>
         <span class="rt-games">${u.games}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`).join('');
+
+    // Les trois tuiles : le rang, le record, la présence. Le rang vient du
+    // classement qu'on vient de charger ; le record du second classement, qu'on
+    // demande en arrière-plan pour ne pas retarder l'affichage.
+    majTuilesProfil(complet, moi);
   }catch(e){
     cible.innerHTML = '<div class="placeholder">Impossible de charger le classement.</div>';
   }
@@ -4389,8 +4437,8 @@ async function ensureRanking(tab){
 // partant de zéro, toutes les barres seraient pleines à 90 % et ne diraient
 // plus rien : c'est l'écart entre les joueurs qui intéresse, pas leur note.
 // La saison en une courbe : une note par match, la moyenne en pointillé et le
-// record marqué d'une étoile. Elle ne prend son sens qu'à partir du quatrième
-// match ; en dessous, on ne l'affiche pas — deux points ne font pas une forme.
+// record marqué d'une étoile. Elle s'affiche dès deux matchs — un segment, puis
+// une vraie forme au fil de la saison, sans qu'on ait à y revenir.
 // Les six catégories sur un hexagone — six axes, comme le logo. Une forme se
 // retient là où six nombres alignés ne se retiennent pas.
 const AXES_HEXAGONE = ['Composition', 'Score', 'Possession', 'Tirs', 'Fautes', 'Centres'];
@@ -4449,7 +4497,7 @@ function courbeDesNotes(history){
     .slice()
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  if(pts.length < 3) return '';
+  if(pts.length < 2) return '';
 
   const L = 300, H = 110, marge = 26;
   const notes = pts.map(p => p.score);
