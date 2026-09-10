@@ -3716,7 +3716,7 @@ function messagesDuMatch(d, matchId){
       texte = p.rank + 'ᵉ sur ' + p.memberCount + ' dans le groupe ' + g + ' sur ce match.';
     }
 
-    msg.push('<span class="evenement-lien" onclick="goToSalon(\'' + p.groupId
+    msg.push('<span class="evenement-lien" onclick="ouvrirSalonDepuisMessage(\'' + p.groupId
            + '\',\'' + matchId + '\')">' + texte + ' <b>Voir →</b></span>');
   });
 
@@ -5775,6 +5775,19 @@ function showMatchNotification(stats, fresh, seenKey, matchId, evenements){
 
 // Les deux boutons ferment l'annonce et l'archivent. Le joueur choisit
 // seulement où il atterrit : le détail de son match, ou sa collection.
+// Le lien « Voir » d'un message peut être cliqué depuis la notification, où il
+// faut d'abord refermer la fenêtre — sinon le salon s'ouvre derrière elle et
+// rien ne semble se passer. Depuis l'écran des résultats, il n'y a rien à
+// fermer et la fonction se contente de naviguer.
+function ouvrirSalonDepuisMessage(groupId, matchId){
+  const overlay = document.getElementById('notif-overlay');
+  if(overlay && overlay.style.display !== 'none'){
+    overlay.style.display = 'none';
+    try{ if(notifSeenKey) localStorage.setItem(notifSeenKey, notifMatchId); }catch(e){}
+  }
+  goToSalon(groupId, matchId);
+}
+
 function closeMatchNotification(destination){
   document.getElementById('notif-overlay').style.display = 'none';
   try{ if(notifSeenKey) localStorage.setItem(notifSeenKey, notifMatchId); }catch(e){}
