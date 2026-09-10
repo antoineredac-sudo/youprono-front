@@ -4379,7 +4379,7 @@ async function majTuilesProfil(complet, moi){
     + '<div class="tuile-lab">' + libelle + '</div></div>';
 
   cible.innerHTML =
-      tuile('Coef expert', rang > 0 ? (rang + 'ᵉ') : '–', 'au classement')
+      tuile('Coef expert', rang > 0 ? (rang + 'ᵉ') : '–', 'au classement coef expert')
     + tuile('Note record', (record !== null) ? fmtNote(record) : '–', 'record')
     + tuile('Matchs joués', joues || '–', joues > 1 ? 'matchs joués' : 'match joué');
 }
