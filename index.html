@@ -2677,8 +2677,10 @@ function restoreRoute(brut){
     else if(nom === 'badges'){ goToBadges(); }
     else if(nom === 'myprono'){ goToMyProno(); }
     else if(nom === 'compo'){ goToCompoNote(); }
-    else if(nom === 'trophies' || nom === 'faq'
-         || nom === 'group-join'){ switchView(nom); }
+    // Les trophées ont leur fonction d'ouverture, comme les autres écrans :
+    // les afficher sans elle laissait une vitrine vide au rafraîchissement.
+    else if(nom === 'trophies'){ goToTrophies(); }
+    else if(nom === 'faq' || nom === 'group-join'){ switchView(nom); }
   }catch(e){ /* adresse inconnue : on reste sur l'accueil */ }
 }
 
