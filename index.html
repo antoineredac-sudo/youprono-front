@@ -6324,58 +6324,62 @@ function verdictHtml(m, d){
   return html;
 }
 
-async function goToTrophies(){
-  switchView('trophies');
+// La vitrine se dessine AVANT d'interroger le serveur, avec des compteurs à
+// zéro. Les données ne font que l'enrichir. Sans ça, un serveur lent ou une
+// réponse inattendue laissait un cadre vide — ce qui est arrivé.
+function dessinerVitrine(compte, pleines, reste, cible){
   const shelf = document.getElementById('trophy-shelf');
   const cups  = document.getElementById('trophy-cups');
   if(!shelf || !cups) return;
 
-  shelf.innerHTML = '<div class="placeholder">Chargement de ta vitrine…</div>';
-  cups.innerHTML = '';
+  shelf.innerHTML = METAUX.map(function(m, i){
+    return busteMedaille(m, (compte && compte[i]) || 0);
+  }).join('');
 
+  let html = '';
+  for(let i = 0; i < (pleines || 0); i++){
+    html += colonneCoupe(coupeSVG(true, 1), 'gagnée', false);
+  }
+  html += colonneCoupe(coupeSVG(false, (reste || 0) / (cible || 12)),
+                       (reste || 0) + ' / ' + (cible || 12), true);
+
+  // Une colonne de plus : elle dit qu'une coupe pleine laisse la place à la
+  // suivante, sans qu'on ait à l'écrire.
+  html += colonneCoupe(coupeSVG(false, 0), 'à venir', false);
+  cups.innerHTML = html;
+}
+
+async function goToTrophies(){
+  switchView('trophies');
+
+  const verdict = document.getElementById('trophy-verdict');
+  if(verdict) verdict.style.display = 'none';
+
+  // 1. La vitrine vide, tout de suite.
+  dessinerVitrine([0,0,0,0,0], 0, 0, 12);
+
+  // 2. Les données, si elles arrivent.
   let d = null;
   try{
     const res = await fetch(`${API_BASE}/Group/Trophies/${getUserId()}`);
     const json = await res.json();
     if(json.success && json.data){ d = json.data; }
   }catch(e){ d = null; }
+  if(!d) return;
 
-  if(!d){
-    shelf.innerHTML = '<div class="placeholder">Impossible de charger ta vitrine.</div>';
-    return;
-  }
+  try{
+    dessinerVitrine(d.medalCounts, d.cupsCompleted, d.cupProgress, d.cupTarget);
+  }catch(e){ /* la vitrine vide reste affichée */ }
 
   // Le dernier cycle achevé, tous groupes confondus : le serveur les renvoie
   // du plus récent au plus ancien.
-  const verdict = document.getElementById('trophy-verdict');
-  const dernier = (d.medals && d.medals.length) ? d.medals[0] : null;
-  if(dernier){
-    verdict.innerHTML = verdictHtml(dernier, d);
-    verdict.style.display = 'block';
-  }else{
-    verdict.style.display = 'none';
-  }
-
-  const compte = d.medalCounts || [0,0,0,0,0];
-
-  shelf.innerHTML = METAUX.map(function(m, i){
-    return busteMedaille(m, compte[i] || 0);
-  }).join('');
-
-  const pleines = d.cupsCompleted || 0;
-  const reste = d.cupProgress || 0;
-  const cible = d.cupTarget || 12;
-
-  let html = '';
-  for(let i = 0; i < pleines; i++){
-    html += colonneCoupe(coupeSVG(true, 1), 'gagnée', false);
-  }
-  html += colonneCoupe(coupeSVG(false, reste / cible), reste + ' / ' + cible, true);
-
-  // Une colonne vide de plus : elle dit qu'une coupe pleine laisse la place à
-  // la suivante, sans qu'on ait à l'écrire.
-  html += colonneCoupe(coupeSVG(false, 0), 'à venir', false);
-  cups.innerHTML = html;
+  try{
+    const dernier = (d.medals && d.medals.length) ? d.medals[0] : null;
+    if(dernier && verdict){
+      verdict.innerHTML = verdictHtml(dernier, d);
+      verdict.style.display = 'block';
+    }
+  }catch(e){ /* un verdict illisible ne doit pas vider la vitrine */ }
 }
 
 // ===== INVITATION PAR LIEN =====
