@@ -1263,6 +1263,8 @@
   }
   .group-deadline strong{ color:var(--gold); }
 
+  .picto{ width:18px; height:18px; vertical-align:-4px; }
+  .picto-titre{ width:22px; height:22px; vertical-align:-4px; margin-right:4px; opacity:.85; }
   .rt-mvt{ width:30px; text-align:right; flex:0 0 auto; }
   .ranking-row{
     display:flex;
@@ -1312,6 +1314,16 @@
   }
 
   .dash-history-label{ color:var(--text-dim); font-size:13px; margin-bottom:10px; }
+  .courbe{ width:100%; margin-top:10px; display:block; }
+  .hexagone{ width:100%; max-width:280px; margin:6px auto 0; display:block; }
+  .jauge-lig{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+  .jauge-lig:last-child{ border-bottom:none; }
+  .jauge-nom{ color:var(--text-dim); font-size:12px; width:82px; flex:0 0 auto; text-align:left; }
+  .jauge-piste{ flex:1; height:7px; background:var(--bg); border-radius:4px; overflow:hidden; }
+  .jauge-part{ height:7px; border-radius:4px; display:block; }
+  .jauge-val{ color:var(--text); font-size:13px; font-weight:700; width:44px; text-align:right; flex:0 0 auto; }
+  .jauge-lig .picto{ color:var(--gold); flex:0 0 auto; }
+  .courbe-legende{ color:var(--text-dim); font-size:11px; text-align:center; margin-top:2px; }
   /* Le repère d'avancement du tunnel : six écrans, et on sait toujours où on en est. */
   .install-invite{
     border:1px solid var(--gold); border-radius:10px;
@@ -1475,16 +1487,26 @@
   .ranking-me-rank{ color:var(--text-dim); font-size:13px; margin-top:4px; }
 
   .ranking-table-row{
+    position:relative;
     display:flex;
     align-items:center;
     gap:10px;
     padding:10px 12px;
     border-radius:8px;
-    background:var(--surface);
+    background:var(--bg);
     border:1px solid var(--border);
     margin-bottom:6px;
     font-size:13px;
+    overflow:hidden;
   }
+  /* La barre dit l'écart avec le premier : le classement se lit sans comparer
+     les nombres deux à deux. */
+  .rt-barre{
+    position:absolute; top:0; bottom:0; left:0;
+    background:var(--surface);
+  }
+  .ranking-table-row > span:not(.rt-barre){ position:relative; }
+  .ranking-table-row.me .rt-barre{ background:var(--surface-raised); }
   .ranking-table-row.me{ border-color:var(--red); }
   .rt-rank{ width:26px; color:var(--text-dim); font-family:'Oswald',sans-serif; }
   .rt-name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -1742,7 +1764,7 @@
     </section>
     <section id="view-play" class="view" style="display:none;">
       <div class="etape">Étape 1/6</div>
-      <h2 class="play-title">DEVINE LES 11 TITULAIRES</h2>
+      <h2 class="play-title"><svg class="picto picto-titre" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="6" cy="5.5" r="1.6"/><circle cx="12" cy="5.5" r="1.6"/><circle cx="18" cy="5.5" r="1.6"/><circle cx="8" cy="12" r="1.6"/><circle cx="16" cy="12" r="1.6"/><circle cx="5" cy="18.5" r="1.6"/><circle cx="12" cy="18.5" r="1.6"/><circle cx="19" cy="18.5" r="1.6"/></svg> DEVINE LES 11 TITULAIRES</h2>
       <span class="back-link" id="play-back-link" onclick="leaveComposition()">← Retour à l'accueil</span>
 
       <div class="squad-count" id="squad-count">0 / 11 joueurs sélectionnés</div>
@@ -1753,7 +1775,7 @@
     </section>
     <section id="view-possession" class="view" style="display:none;">
       <div class="etape">Étape 2/6</div>
-      <h2 class="play-title">POSSESSION</h2>
+      <h2 class="play-title"><svg class="picto picto-titre" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5 A8.5 8.5 0 0 1 20 15 L12 12 Z" fill="currentColor" stroke="none"/></svg> POSSESSION</h2>
       <span class="back-link" onclick="switchView('play'); renderSquad();">← Retour</span>
 
       <div class="possession-teams">
@@ -1775,7 +1797,7 @@
     </section>
     <section id="view-shots" class="view" style="display:none;">
       <div class="etape">Étape 3/6</div>
-      <h2 class="play-title">TIRS</h2>
+      <h2 class="play-title"><svg class="picto picto-titre" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="15" cy="12" r="5.5"/><line x1="2" y1="7.5" x2="6.5" y2="7.5"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="2" y1="16.5" x2="6.5" y2="16.5"/></svg> TIRS</h2>
       <span class="back-link" onclick="enterPossessionScreen()">← Retour</span>
 
       <div class="stat-row">
@@ -1808,7 +1830,7 @@
     </section>
     <section id="view-fouls" class="view" style="display:none;">
       <div class="etape">Étape 4/6</div>
-      <h2 class="play-title">FAUTES</h2>
+      <h2 class="play-title"><svg class="picto picto-titre" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3.5 10.5h9a4.5 4.5 0 1 1 0 9h-4.5a4.5 4.5 0 0 1-4.5-4.5z"/><path d="M6 10.5l1.5-3.5"/></svg> FAUTES</h2>
       <span class="back-link" onclick="enterShotsScreen()">← Retour</span>
 
       <div class="ring-pair">
@@ -1849,7 +1871,7 @@
     </section>
     <section id="view-crosses" class="view" style="display:none;">
       <div class="etape">Étape 5/6</div>
-      <h2 class="play-title">CENTRES</h2>
+      <h2 class="play-title"><svg class="picto picto-titre" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2.5 15.5v-5h4.5l3.5 3h5.5a2.5 2.5 0 0 1 2.5 2.5v1.5H4a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="19.5" cy="8" r="3"/></svg> CENTRES</h2>
       <span class="back-link" onclick="enterFoulsScreen()">← Retour</span>
 
       <div class="column-pair">
@@ -1880,7 +1902,7 @@
     </section>
     <section id="view-score" class="view" style="display:none;">
       <div class="etape">Étape 6/6</div>
-      <h2 class="play-title">SCORE</h2>
+      <h2 class="play-title"><svg class="picto picto-titre" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="11" rx="1.5"/><line x1="12" y1="4.5" x2="12" y2="15.5"/><line x1="12" y1="15.5" x2="12" y2="19"/><line x1="7" y1="19.5" x2="17" y2="19.5"/></svg> SCORE</h2>
       <span class="back-link" onclick="enterCrossesScreen()">← Retour</span>
 
       <div class="scoreboard">
@@ -2023,6 +2045,7 @@
         <div class="results-total-card">
           <div class="results-total-label">Ta note sur ce match</div>
           <div class="results-total-value" id="results-total-value">0</div>
+          <div id="results-hexagone"></div>
           <div class="results-rank" id="results-rank"></div>
         </div>
 
@@ -2275,6 +2298,7 @@
           <div class="profil-carte-label" id="profil-label">coef expert</div>
           <div class="profil-carte-note" id="profil-note">–</div>
           <div class="profil-carte-matchs" id="profil-matchs"></div>
+          <div id="profil-courbe"></div>
         </div>
 
         <div class="ranking-tabs" style="margin-top:14px;">
@@ -3033,7 +3057,7 @@ function renderCompoNote(prediction){
   let html = `
     <div class="result-category">
       <div class="result-cat-head">
-        <span class="result-cat-name">Composition</span>
+        <span class="result-cat-name">${picto('Composition')} Composition</span>
         <span class="result-cat-points">${fmtNote(note)}/100</span>
       </div>
       <div class="compo-compare">
@@ -3063,7 +3087,7 @@ function renderCompoNote(prediction){
       html += `
         <div class="result-category">
           <div class="result-cat-head">
-            <span class="result-cat-name">${cat.label}</span>
+            <span class="result-cat-name">${picto(cat.label)} ${cat.label}</span>
           </div>
           <div class="result-cat-row">
             <span>PSG</span>
@@ -3682,7 +3706,7 @@ function renderMyProno(match, prediction){
     html += `
       <div class="result-category">
         <div class="result-cat-head">
-          <span class="result-cat-name">${cat.label}</span>
+          <span class="result-cat-name">${picto(cat.label)} ${cat.label}</span>
         </div>
         <div class="result-cat-row">
           <span class="valeur-psg">PSG</span>
@@ -3924,13 +3948,25 @@ function renderResults(prediction, stats, matchDetail){
     { key:'score', label:'Score', unit:'' }
   ];
 
+  // L'hexagone reprend les six notes de catégorie, composition comprise.
+  const notesHexa = {
+    'Composition': (stats.result.team.composition && stats.result.team.composition.formula) || 0,
+    'Score':       (stats.result.team.score && stats.result.team.score.formula) || 0,
+    'Possession':  (stats.result.team.possession && stats.result.team.possession.formula) || 0,
+    'Tirs':        (stats.result.team.shots && stats.result.team.shots.formula) || 0,
+    'Fautes':      (stats.result.team.fouls && stats.result.team.fouls.formula) || 0,
+    'Centres':     (stats.result.team.crosses && stats.result.team.crosses.formula) || 0
+  };
+  const hexa = document.getElementById('results-hexagone');
+  if(hexa){ hexa.innerHTML = hexagoneHtml(notesHexa) + jaugesHtml(notesHexa); }
+
   let html = '';
   categories.forEach(cat=>{
     const accuracy = stats.result.team[cat.key]?.formula || 0;
     html += `
       <div class="result-category">
         <div class="result-cat-head">
-          <span class="result-cat-name">${cat.label}</span>
+          <span class="result-cat-name">${picto(cat.label)} ${cat.label}</span>
           <span class="result-cat-points">${fmtNum(accuracy)}/100</span>
         </div>
         <div class="result-cat-row">
@@ -4303,8 +4339,11 @@ async function chargerVoisinage(tab){
       return;
     }
 
+    const largeurBarre = barreSelonLeMeilleur(complet);
+
     cible.innerHTML = voisins.map(u => `
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
+        <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
         <span class="rt-rank">#${u.rank}</span>
         <span class="rt-name">${u.userName}</span>
         <span class="rt-games">${u.games}</span>
@@ -4346,6 +4385,117 @@ async function ensureRanking(tab){
   return rankingCache[tab];
 }
 
+// L'échelle des barres part de la moitié du meilleur score. Sur une échelle
+// partant de zéro, toutes les barres seraient pleines à 90 % et ne diraient
+// plus rien : c'est l'écart entre les joueurs qui intéresse, pas leur note.
+// La saison en une courbe : une note par match, la moyenne en pointillé et le
+// record marqué d'une étoile. Elle ne prend son sens qu'à partir du quatrième
+// match ; en dessous, on ne l'affiche pas — deux points ne font pas une forme.
+// Les six catégories sur un hexagone — six axes, comme le logo. Une forme se
+// retient là où six nombres alignés ne se retiennent pas.
+const AXES_HEXAGONE = ['Composition', 'Score', 'Possession', 'Tirs', 'Fautes', 'Centres'];
+
+function hexagoneHtml(notes){
+  const R = 70, cx = 100, cy = 100;
+  const pt = (i, r) => {
+    const a = (-90 + i * 60) * Math.PI / 180;
+    return [(cx + r * Math.cos(a)).toFixed(1), (cy + r * Math.sin(a)).toFixed(1)];
+  };
+  const rayon = n => R * Math.max(0, Math.min(100, notes[n] || 0)) / 100;
+  const grille = AXES_HEXAGONE.map((n, i) => pt(i, R).join(',')).join(' ');
+  const forme = AXES_HEXAGONE.map((n, i) => pt(i, rayon(n)).join(',')).join(' ');
+
+  let svg = '<svg class="hexagone" viewBox="0 0 200 200" aria-hidden="true">';
+  svg += '<polygon points="' + grille + '" fill="none" stroke="var(--border)" stroke-width="1"/>';
+  svg += '<polygon points="' + AXES_HEXAGONE.map((n, i) => pt(i, R * 0.6).join(',')).join(' ')
+       + '" fill="none" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>';
+  AXES_HEXAGONE.forEach((n, i) => {
+    const p = pt(i, R);
+    svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + p[0] + '" y2="' + p[1] + '" stroke="var(--border)" stroke-width="1"/>';
+  });
+  svg += '<polygon points="' + forme + '" fill="var(--gold)" fill-opacity="0.20" '
+       + 'stroke="var(--gold)" stroke-width="2" stroke-linejoin="round"/>';
+  AXES_HEXAGONE.forEach((n, i) => {
+    const p = pt(i, rayon(n));
+    svg += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.6" fill="var(--gold)"/>';
+  });
+
+  const etiquettes = [
+    ['COMPO', 100, 20], ['SCORE', 178, 62], ['POSS.', 174, 148],
+    ['TIRS', 100, 188], ['FAUTES', 24, 148], ['CENTRES', 24, 62]
+  ];
+  etiquettes.forEach(e => {
+    svg += '<text x="' + e[1] + '" y="' + e[2] + '" text-anchor="middle" fill="var(--text-dim)" font-size="9">' + e[0] + '</text>';
+  });
+
+  return svg + '</svg>';
+}
+
+// Les six notes en jauges : la couleur dit la performance sans qu'on lise.
+function jaugesHtml(notes){
+  return AXES_HEXAGONE.map(function(n){
+    const v = Math.max(0, Math.min(100, notes[n] || 0));
+    const couleur = (v >= 85) ? '#4caf7d' : (v >= 70 ? 'var(--gold)' : '#e0665a');
+    return '<div class="jauge-lig">' + picto(n)
+         + '<span class="jauge-nom">' + n + '</span>'
+         + '<span class="jauge-piste"><span class="jauge-part" style="width:' + v.toFixed(1) + '%;background:' + couleur + '"></span></span>'
+         + '<span class="jauge-val">' + fmtNote(v) + '</span></div>';
+  }).join('');
+}
+
+function courbeDesNotes(history){
+  const pts = (history || [])
+    .filter(h => h.score)
+    .slice()
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if(pts.length < 3) return '';
+
+  const L = 300, H = 110, marge = 26;
+  const notes = pts.map(p => p.score);
+  const haut = Math.max.apply(null, notes);
+  const bas = Math.min.apply(null, notes);
+  const etendue = Math.max(6, haut - bas);
+  const moyenne = notes.reduce((a, b) => a + b, 0) / notes.length;
+
+  const x = i => marge + (pts.length === 1 ? (L - 2*marge)/2 : i * (L - 2*marge) / (pts.length - 1));
+  const y = v => 18 + (1 - (v - (bas - etendue*0.2)) / (etendue*1.4)) * 56;
+
+  const iRecord = notes.indexOf(haut);
+  const ligne = pts.map((p, i) => x(i).toFixed(1) + ',' + y(p.score).toFixed(1)).join(' ');
+
+  let svg = '<svg class="courbe" viewBox="0 0 ' + L + ' ' + H + '" aria-hidden="true">';
+  svg += '<line x1="10" y1="' + y(moyenne).toFixed(1) + '" x2="' + (L-10) + '" y2="' + y(moyenne).toFixed(1)
+       + '" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="4 4"/>';
+  svg += '<polyline points="' + ligne + '" fill="none" stroke="var(--gold)" stroke-width="2.5" '
+       + 'stroke-linejoin="round" stroke-linecap="round"/>';
+
+  pts.forEach((p, i) => {
+    const cx = x(i).toFixed(1), cy = y(p.score).toFixed(1);
+    if(i === iRecord){
+      svg += '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="var(--text)"/>';
+      svg += '<path transform="translate(' + (cx - 12) + ',' + (cy - 30) + ')" fill="var(--gold)" '
+           + 'd="M12 2l1.5 3.1 3.4.5-2.5 2.4.6 3.4-3-1.6-3 1.6.6-3.4-2.5-2.4 3.4-.5z"/>';
+    }else{
+      svg += '<circle cx="' + cx + '" cy="' + cy + '" r="3.5" fill="var(--gold)"/>';
+    }
+    svg += '<text x="' + cx + '" y="' + (H - 8) + '" text-anchor="middle" fill="var(--text-dim)" '
+         + 'font-size="9">' + echapper(p.court || '') + '</text>';
+  });
+
+  return svg + '</svg><div class="courbe-legende">le pointillé marque ta moyenne, l\'étoile ton record</div>';
+}
+
+function barreSelonLeMeilleur(liste){
+  const meilleur = (liste && liste.length) ? liste[0].score : 0;
+  const plancher = meilleur / 2;
+  return function(score){
+    if(meilleur <= 0) return 0;
+    const part = (score - plancher) / (meilleur - plancher);
+    return Math.max(6, Math.min(100, part * 100)).toFixed(1);
+  };
+}
+
 async function loadRanking(tab){
   const loadingEl = document.getElementById('ranking-loading');
   loadingEl.style.display = 'block';
@@ -4357,13 +4507,17 @@ async function loadRanking(tab){
     const userId = getUserId();
 
     const me = complet.find(u => u.id === userId);
-    document.getElementById('ranking-me-label').textContent = tab === 'final' ? 'coef expert' : 'note record';
+    const nomOnglet = (tab === 'final') ? 'Coef expert' : 'Note record';
+    document.getElementById('ranking-me-label').innerHTML =
+      picto(nomOnglet) + ' ' + nomOnglet.toLowerCase();
     document.getElementById('ranking-me-score').textContent = me ? fmtNote(me.score) : '–';
     document.getElementById('ranking-me-rank').textContent = me ? ('#' + me.rank + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '')) : '';
 
     const liste = complet;
 
     loadingEl.style.display = 'none';
+
+    const largeurBarre = barreSelonLeMeilleur(liste);
 
     // Le mouvement depuis le dernier match noté. Rien pour celui qui n'a pas
     // bougé : un tiret devant un nombre se lit comme un signe moins.
@@ -4376,6 +4530,7 @@ async function loadRanking(tab){
 
     document.getElementById('ranking-table').innerHTML = liste.map((u, i) => `
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
+        <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
         <span class="rt-rank">#${u.rank}</span>
         <span class="rt-name">${u.userName}</span>
         <span class="rt-mvt">${fleche(u)}</span>
@@ -4670,6 +4825,15 @@ async function loadDashboard(){
         if(m.id && opp && opp !== 'Adversaire') opponentByMatch[m.id] = opp;
       });
     }catch(e){}
+
+    // Trois lettres d'adversaire sous chaque point de la courbe : « c'est
+    // contre Brest que j'avais explosé » se retient, pas une date.
+    const pourCourbe = history.map(h => {
+      const rawOpp = (h.opponent === undefined || h.opponent === null) ? '' : String(h.opponent).trim();
+      const opponent = opponentByMatch[h.matchId] || ((rawOpp && rawOpp !== 'null') ? rawOpp : '');
+      return { score: h.score, date: h.date, court: opponent.slice(0, 3).toUpperCase() };
+    });
+    document.getElementById('profil-courbe').innerHTML = courbeDesNotes(pourCourbe);
 
     if(history.length === 0){
       historyEl.innerHTML = '<div class="placeholder">Aucun match pronostiqué pour l\'instant.</div>';
@@ -6527,6 +6691,27 @@ function fmtNote(n){
 // Le rang vient du serveur ; un joueur sans rang se met en fin de ligne,
 // départagé par son numéro de maillot.
 const TERRAIN_LIGNES = ['Attaquant', 'Milieu', 'Défenseur', 'Gardien'];
+
+// ===== LES PICTOGRAMMES =====
+// Dessinés dans le fichier, jamais chargés depuis un serveur : ils restent nets
+// à toutes les tailles et prennent la couleur du texte qui les entoure.
+const PICTOS = {
+  'Composition': '<circle cx="6" cy="5.5" r="1.6"/><circle cx="12" cy="5.5" r="1.6"/><circle cx="18" cy="5.5" r="1.6"/><circle cx="8" cy="12" r="1.6"/><circle cx="16" cy="12" r="1.6"/><circle cx="5" cy="18.5" r="1.6"/><circle cx="12" cy="18.5" r="1.6"/><circle cx="19" cy="18.5" r="1.6"/>',
+  'Score':       '<rect x="2.5" y="4.5" width="19" height="11" rx="1.5"/><line x1="12" y1="4.5" x2="12" y2="15.5"/><line x1="12" y1="15.5" x2="12" y2="19"/><line x1="7" y1="19.5" x2="17" y2="19.5"/>',
+  'Possession':  '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5 A8.5 8.5 0 0 1 20 15 L12 12 Z" fill="currentColor" stroke="none"/>',
+  'Tirs':        '<circle cx="15" cy="12" r="5.5"/><line x1="2" y1="7.5" x2="6.5" y2="7.5"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="2" y1="16.5" x2="6.5" y2="16.5"/>',
+  'Fautes':      '<path d="M3.5 10.5h9a4.5 4.5 0 1 1 0 9h-4.5a4.5 4.5 0 0 1-4.5-4.5z"/><path d="M6 10.5l1.5-3.5"/>',
+  'Centres':     '<path d="M2.5 15.5v-5h4.5l3.5 3h5.5a2.5 2.5 0 0 1 2.5 2.5v1.5H4a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="19.5" cy="8" r="3"/>',
+  'Coef expert': '<rect x="3" y="13" width="3.6" height="7" rx="1"/><rect x="10.2" y="9" width="3.6" height="11" rx="1"/><rect x="17.4" y="11" width="3.6" height="9" rx="1"/><line x1="2" y1="7" x2="22" y2="7" stroke-dasharray="2.5 2.5"/>',
+  'Note record': '<rect x="3" y="15" width="3.6" height="5" rx="1"/><rect x="10.2" y="7.5" width="3.6" height="12.5" rx="1"/><rect x="17.4" y="14" width="3.6" height="6" rx="1"/><path d="M12 2l1.3 2.7 2.9.4-2.1 2 .5 2.9-2.6-1.4-2.6 1.4.5-2.9-2.1-2 2.9-.4z" fill="currentColor" stroke="none"/>',
+  'Matchs joués':'<rect x="3" y="4.5" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2.5" x2="8" y2="6"/><line x1="16" y1="2.5" x2="16" y2="6"/><path d="M8.5 14.5l2.2 2.2 4.3-4.3"/>'
+};
+
+function picto(nom, classe){
+  if(!PICTOS[nom]) return '';
+  return '<svg class="picto ' + (classe || '') + '" viewBox="0 0 24 24" fill="none" '
+       + 'stroke="currentColor" stroke-width="1.7" aria-hidden="true">' + PICTOS[nom] + '</svg>';
+}
 
 // Range une liste de joueurs du gardien aux attaquants, et de gauche à droite
 // dans chaque ligne. Le poste vient de l'effectif, jamais deviné.
