@@ -5142,7 +5142,7 @@ async function openGroupDetail(groupId){
         ${fleche(r)}
         <span class="ranking-score">${fmtNum(r.totalScore)}</span>
       </div>`).join('')
-      + '<p class="ranking-note">En cas d\'égalité, le joueur ayant le meilleur coef expert sur les matchs du groupe passe devant.</p>';
+      + '<p class="ranking-note">À égalité, c\'est le coef expert du groupe qui départage.</p>';
   }catch(e){
     rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce groupe.</div>';
   }
