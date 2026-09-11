@@ -2423,18 +2423,18 @@
       <div class="faq-list">
         <div class="faq-item">
           <div class="faq-q">Quel est le but du jeu YOUPRONO ?</div>
-          <p class="faq-a">Ton défi est de deviner la composition et le déroulement du prochain match du PSG jusqu'à 24h avant le coup d'envoi - et cela lors de tous les matchs du PSG, quelle que soit la compétition officielle dans laquelle le club est engagé.</p>
+          <p class="faq-a">Ton défi est de deviner la composition et le déroulement du prochain match du PSG jusqu'à 2 heures avant le coup d'envoi - et cela lors de tous les matchs du PSG, quelle que soit la compétition officielle dans laquelle le club est engagé.</p>
         </div>
 
         <div class="faq-item">
           <div class="faq-q">Quelles sont les règles du jeu YOUPRONO ?</div>
-          <p class="faq-a">Les règles sont simples : tu dois répondre à 6 questions 24h avant coup d'envoi du prochain match du PSG. Il y a 6 questions que nous préférons appeler des prédictions.</p>
+          <p class="faq-a">Les règles sont simples : tu dois répondre à 6 questions 2 heures avant coup d'envoi du prochain match du PSG. Il y a 6 questions que nous préférons appeler des prédictions.</p>
           <p class="faq-a">1) Quelle sera la composition des 11 titulaires ?<br>2) Quelle sera la possession de balle du PSG ?<br>3) Combien de tirs vont être effectués par chacune des 2 équipes ?<br>4) Combien de centres vont être effectués par chacune des 2 équipes ?<br>5) Combien de fautes vont être effectuées par chacune des 2 équipes ?<br>6) Quel sera le score final de la rencontre ?</p>
         </div>
 
         <div class="faq-item">
           <div class="faq-q">Est-il possible de modifier les prédictions ?</div>
-          <p class="faq-a">Oui sur ton profil, tu peux les modifier jusqu'à 24h avant le coup d'envoi du match. Une fois le compte à rebours terminé, toute modification devient impossible.</p>
+          <p class="faq-a">Oui sur ton profil, tu peux les modifier jusqu'à 2 heures avant le coup d'envoi du match. Une fois le compte à rebours terminé, toute modification devient impossible.</p>
         </div>
 
         <div class="faq-item">
@@ -2729,6 +2729,10 @@ let countdownInterval = null;
 //      d'envoi, plutôt que de laisser un compte à rebours figé à zéro.
 const COMPO_AVANT_MS = 45*60*1000;
 
+// Les pronostics ferment deux heures avant le coup d'envoi. Le serveur porte la
+// même valeur, ClotureAvantHeures dans GroupService.cs : les changer ensemble.
+const CLOTURE_AVANT_MS = 2*60*60*1000;
+
 function cibleDuCompteARebours(){
   const now = new Date();
 
@@ -2918,9 +2922,9 @@ async function loadHomeMatch(){
         (match.competition && match.competition.name) ? match.competition.name : 'Prochain match du PSG';
       document.getElementById('match-date').textContent = "Coup d'envoi : " + formatMatchDate(matchKickoff);
 
-      predictionsDeadline = new Date(matchKickoff.getTime() - 24*60*60*1000);
+      predictionsDeadline = new Date(matchKickoff.getTime() - CLOTURE_AVANT_MS);
       document.getElementById('deadline-note').textContent =
-        "Les pronostics ferment toujours 24h avant le coup d'envoi, soit le " + formatMatchDate(predictionsDeadline) + '.';
+        "Les pronos ferment 2 heures avant le coup d'envoi, soit le " + formatMatchDate(predictionsDeadline) + '.';
 
       if(countdownInterval) clearInterval(countdownInterval);
       updateCountdown();
@@ -2966,7 +2970,7 @@ async function loadHomeMatch(){
         const d = new Date(m.dateTime);
         const dateLabel = d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
         // L'heure du coup d'envoi : elle indique aussi au joueur quand ses pronos
-        // fermeront, puisque la clôture tombe 24h avant.
+        // fermeront, puisque la clôture tombe deux heures avant.
         const timeLabel = d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
         return `
           <div class="calendar-row">
@@ -3190,11 +3194,11 @@ function salonMatchVise(courant, precedent){
   const maintenant = Date.now();
 
   if(courant){
-    const cloture = new Date(courant.dateTime).getTime() - 86400000;
+    const cloture = new Date(courant.dateTime).getTime() - CLOTURE_AVANT_MS;
     if(maintenant >= cloture) return courant;
   }
   if(precedent){
-    const cloture = new Date(precedent.dateTime).getTime() - 86400000;
+    const cloture = new Date(precedent.dateTime).getTime() - CLOTURE_AVANT_MS;
     if(maintenant >= cloture) return precedent;
   }
   return null;
@@ -3347,7 +3351,7 @@ async function goToSalon(groupId, matchId){
     document.getElementById('salon-loading').style.display = 'none';
     document.getElementById('salon-empty').style.display = 'block';
     document.getElementById('salon-empty').textContent =
-      "Le salon ouvre à la clôture des pronostics, 24 h avant le coup d'envoi.";
+      "Le salon ouvre à la clôture des pronos, 2 heures avant le coup d'envoi.";
   }
 }
 
@@ -3680,7 +3684,7 @@ async function findMyPronoMatch(){
   const upcoming = (calJson && calJson.success && calJson.data && calJson.data.page) ? calJson.data.page : [];
   if(upcoming.length){
     const next = upcoming[0];
-    const closesAt = new Date(new Date(next.dateTime).getTime() - 24*60*60*1000);
+    const closesAt = new Date(new Date(next.dateTime).getTime() - CLOTURE_AVANT_MS);
     if(new Date() >= closesAt) candidates.push(next);
     else nextStillOpen = next;
   }
@@ -7012,7 +7016,7 @@ function renderRecap(){
 
 async function submitPrediction(){
   if(predictionsDeadline && new Date() >= predictionsDeadline){
-    alert("Les pronostics sont fermés pour ce match : le délai de 24h avant le coup d'envoi est passé.");
+    alert("Trop tard, les pronos de ce match sont fermés depuis 2 heures avant le coup d'envoi.");
     switchView('home');
     return;
   }
