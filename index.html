@@ -1815,6 +1815,7 @@
       <button data-view="badges" onclick="navFromMenu('badges')">Mes badges</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
       <button data-view="faq" onclick="navFromMenu('faq')">FAQ</button>
+      <button data-view="legal" onclick="navFromMenu('legal')">Mentions légales</button>
     </div>
   </header>
 
@@ -2556,6 +2557,77 @@
           <p class="faq-a">Un groupe est composé de 2 à 10 joueurs. Ici pas de moyenne : chacun cumule des points en fonction de sa note globale match après match pendant une période de 5 matchs. Plus vous êtes nombreux dans le groupe, plus vous êtes récompensés par des médailles ou des trophées.</p>
         </div>
       </div>
+    </section>
+
+    <!-- Mentions légales et politique de confidentialité. Obligatoires depuis que
+         le jeu collecte des adresses e-mail. -->
+    <section id="view-legal" class="view" style="display:none;">
+      <h2 class="play-title">Mentions légales</h2>
+      <span class="back-link" onclick="switchView('home')">← Retour</span>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q">L'éditeur du site</div>
+          <p class="faq-a">YouProno est édité par Antoine Mollard, à titre non professionnel.</p>
+          <p class="faq-a">Contact : contact@youprono.fr</p>
+          <p class="faq-a">Conformément à l'article 6 III-2 de la loi du 21 juin 2004 pour la confiance dans l'économie numérique, l'éditeur, personne physique éditant ce site à titre non professionnel, a communiqué son identité complète à son hébergeur, qui la tient à disposition des autorités judiciaires.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">L'hébergeur</div>
+          <p class="faq-a">Le site et son serveur sont hébergés par Render Services, Inc., 525 Brannan Street, Suite 300, San Francisco, CA 94107, États-Unis. render.com</p>
+          <p class="faq-a">Le nom de domaine youprono.fr est enregistré chez OVH SAS, 2 rue Kellermann, 59100 Roubaix, France. ovhcloud.com</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Le jeu</div>
+          <p class="faq-a">YouProno est un jeu gratuit. Il n'y a ni mise, ni gain, ni publicité. Les classements, les badges et les trophées n'ont aucune valeur marchande.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">La propriété du site</div>
+          <p class="faq-a">Les textes, le logo, les pictogrammes et l'ensemble des éléments du jeu appartiennent à son éditeur. Toute reproduction sans autorisation est interdite.</p>
+          <p class="faq-a">Le Paris Saint-Germain n'est pas associé à YouProno. Les noms des clubs et des joueurs sont cités à titre d'information sportive.</p>
+        </div>
+      </div>
+
+      <h2 class="play-title" style="margin-top:26px;">Politique de confidentialité</h2>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q">Ce que le jeu collecte</div>
+          <p class="faq-a">Ton pseudo, ton mot de passe et ton adresse e-mail, donnés à l'inscription. Ton mot de passe est chiffré : personne ne peut le lire, pas même l'éditeur.</p>
+          <p class="faq-a">Tes pronostics et les notes qu'ils obtiennent, qui sont la matière même du jeu.</p>
+          <p class="faq-a">Rien d'autre. Le jeu ne pose aucun traceur publicitaire et ne mesure pas ton audience.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">À quoi sert ton adresse e-mail</div>
+          <p class="faq-a">À te renvoyer ton pseudo et un lien de réinitialisation si tu perds ton mot de passe.</p>
+          <p class="faq-a">À t'avertir avant un match si tu l'as demandé. Tu peux revenir sur ce choix à tout moment.</p>
+          <p class="faq-a">Ton adresse n'est ni vendue, ni échangée, ni communiquée à qui que ce soit.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Qui voit quoi</div>
+          <p class="faq-a">Les autres joueurs voient ton pseudo, tes pronostics une fois la clôture passée, et tes notes. C'est le principe du jeu.</p>
+          <p class="faq-a">Ton adresse e-mail n'est jamais visible par les autres joueurs.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Où sont tes données</div>
+          <p class="faq-a">Dans une base de données hébergée par Render, aux États-Unis. Elles y sont conservées tant que ton compte existe.</p>
+          <p class="faq-a">L'envoi des courriels passe par Brevo, société française, qui n'utilise ton adresse que pour expédier les messages du jeu.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Supprimer ton compte</div>
+          <p class="faq-a">Écris « je souhaite supprimer mon compte » à contact@youprono.fr, depuis l'adresse de ton compte. Ton compte et tes pronostics sont effacés.</p>
+          <p class="faq-a">Tu peux aussi demander à voir les données que le jeu détient sur toi, ou à les faire corriger, à la même adresse.</p>
+        </div>
+      </div>
+
+      <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
   </main>
 
@@ -6442,6 +6514,7 @@ function navFromMenu(name){
   else if(name === 'badges'){ goToBadges(); }
   else if(name === 'profile'){ goToProfile(); }
   else if(name === 'faq'){ switchView('faq'); }
+  else if(name === 'legal'){ switchView('legal'); }
   else if(name === 'logout'){ logout(); }
 }
 
