@@ -1325,6 +1325,20 @@
     width:24px;
   }
   .ranking-rank.top{ color:var(--gold); }
+
+  /* Le joueur sorti du classement faute d'avoir joué la moitié des matchs.
+     Il reste visible, en bas de liste, mais sans rang et en retrait. */
+  .ranking-table-row.sorti{ opacity:.45; }
+  .ranking-table-row.sorti .rt-score{ color:var(--text-dim); }
+  .rt-rank-vide{ color:var(--text-dim); }
+  .ranking-sortis-titre{
+    color:var(--text-dim); font-size:12px; text-align:center;
+    margin:18px 0 8px;
+  }
+  .ranking-seuil-note{
+    color:var(--gold); font-size:13px; line-height:1.5;
+    text-align:center; margin:0 4px 16px;
+  }
   .ranking-name{ flex:1; font-size:15px; }
   .ranking-score{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--gold); }
 
@@ -2432,6 +2446,8 @@
         <div class="ranking-me-value" id="ranking-me-score">–</div>
         <div class="ranking-me-rank" id="ranking-me-rank"></div>
       </div>
+
+      <p class="ranking-seuil-note" id="ranking-seuil-note" style="display:none;"></p>
 
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div id="ranking-table"></div>
@@ -4894,7 +4910,23 @@ async function loadRanking(tab){
     document.getElementById('ranking-me-label').innerHTML =
       picto(nomOnglet) + ' ' + nomOnglet.toLowerCase();
     document.getElementById('ranking-me-score').textContent = me ? fmtNote(me.score) : '–';
-    document.getElementById('ranking-me-rank').textContent = me ? ('#' + me.rank + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '')) : '';
+    const rangTexte = !me ? ''
+      : (me.ranked === false)
+        ? 'non classé · ' + me.games + ' match' + (me.games > 1 ? 's' : '')
+        : '#' + me.rank + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '');
+    document.getElementById('ranking-me-rank').textContent = rangTexte;
+
+    // Le message à celui qui vient de sortir : sans lui, sa disparition du
+    // classement passerait pour un bug.
+    const noteSeuil = document.getElementById('ranking-seuil-note');
+    if(noteSeuil){
+      if(me && me.ranked === false){
+        noteSeuil.textContent = "Tu sors du classement : il faut avoir joué la moitié des matchs pour y figurer.";
+        noteSeuil.style.display = 'block';
+      }else{
+        noteSeuil.style.display = 'none';
+      }
+    }
 
     const liste = complet;
 
@@ -4911,15 +4943,25 @@ async function loadRanking(tab){
       return '';
     };
 
-    document.getElementById('ranking-table').innerHTML = liste.map((u, i) => `
-      <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
+    const ligne = (u) => `
+      <div class="ranking-table-row ${u.id === userId ? 'me' : ''} ${u.ranked === false ? 'sorti' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
-        <span class="rt-rank">#${u.rank}</span>
+        <span class="rt-rank ${u.ranked === false ? 'rt-rank-vide' : ''}">${u.ranked === false ? '–' : '#' + u.rank}</span>
         <span class="rt-name">${u.userName}</span>
-        <span class="rt-mvt">${fleche(u)}</span>
+        <span class="rt-mvt">${u.ranked === false ? '' : fleche(u)}</span>
         <span class="rt-games">${u.games}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
-      </div>`).join('');
+      </div>`;
+
+    const classes = liste.filter(u => u.ranked !== false);
+    const sortis = liste.filter(u => u.ranked === false);
+
+    document.getElementById('ranking-table').innerHTML =
+      classes.map(ligne).join('')
+      + (sortis.length
+          ? '<p class="ranking-sortis-titre">Moins de la moitié des matchs joués</p>'
+            + sortis.map(ligne).join('')
+          : '');
 
     // On se place au milieu de l'écran : ceux qui font mieux au-dessus, ceux qui
     // font moins bien en dessous, et le pouce décide de la suite.
