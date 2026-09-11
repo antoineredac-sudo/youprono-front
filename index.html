@@ -68,6 +68,11 @@
       var(--bg);
   }
   .auth-box{ width:100%; max-width:380px; }
+  .lien-oubli{
+    color:var(--text-dim); font-size:13px; text-align:center;
+    margin:16px 0 0; cursor:pointer; text-decoration:underline;
+  }
+  .oubli-texte{ color:var(--text-dim); font-size:14px; line-height:1.6; margin:0 0 18px; }
   .brand{
     text-align:center;
     margin-bottom:40px;
@@ -1700,6 +1705,49 @@
 <body>
 
 <!-- ===== ÉCRAN AUTH ===== -->
+<!-- Mot de passe ou pseudo oublié : on demande l'adresse, le serveur envoie le
+     pseudo et un lien de réinitialisation. -->
+<section id="screen-oubli" class="screen">
+  <div class="auth-box">
+    <div class="brand">
+      <h1><span class="you">Mot de passe</span></h1>
+      <p>ou pseudo oublié</p>
+    </div>
+    <div id="oubli-formulaire">
+      <p class="oubli-texte">Donne l'adresse e-mail de ton compte. On t'envoie ton pseudo et un lien pour choisir un nouveau mot de passe.</p>
+      <label>Adresse e-mail</label>
+      <input type="email" id="oubli-email" placeholder="ton@email.fr" autocomplete="email">
+      <div class="field-error" id="oubli-error"></div>
+      <button class="primary" id="oubli-submit" onclick="envoyerOubli()">Envoyer</button>
+    </div>
+    <div id="oubli-envoye" style="display:none;">
+      <p class="oubli-texte">Si cette adresse correspond à un compte, le message part tout de suite. Pense à regarder tes indésirables.</p>
+    </div>
+    <p class="lien-oubli" onclick="fermerOubli()">← Retour à la connexion</p>
+  </div>
+</section>
+
+<!-- Le nouveau mot de passe, atteint par le lien du courriel. -->
+<section id="screen-reset" class="screen">
+  <div class="auth-box">
+    <div class="brand">
+      <h1><span class="you">Nouveau</span><span class="prono"> mot de passe</span></h1>
+    </div>
+    <div id="reset-formulaire">
+      <label>Ton nouveau mot de passe</label>
+      <input type="password" id="reset-pwd" placeholder="au moins 4 caractères" autocomplete="new-password">
+      <label>Répète-le</label>
+      <input type="password" id="reset-pwd2" placeholder="le même" autocomplete="new-password">
+      <div class="field-error" id="reset-error"></div>
+      <button class="primary" id="reset-submit" onclick="envoyerReset()">Valider</button>
+    </div>
+    <div id="reset-ok" style="display:none;">
+      <p class="oubli-texte">C'est fait. Tu peux te connecter avec ton nouveau mot de passe.</p>
+      <button class="primary" onclick="fermerOubli()">Aller à la connexion</button>
+    </div>
+  </div>
+</section>
+
 <section id="screen-auth" class="screen active">
   <div class="auth-box">
     <div class="brand">
@@ -1738,6 +1786,7 @@
       <div class="field-error" id="auth-error"></div>
 
       <button class="primary" id="auth-submit" onclick="submitAuth()">Se connecter</button>
+      <p class="lien-oubli" onclick="ouvrirOubli()">Mot de passe ou pseudo oublié ?</p>
     </div>
   </div>
 </section>
@@ -5124,6 +5173,110 @@ async function loadDashboard(){
   }
 }
 
+// ===== PSEUDO OU MOT DE PASSE OUBLIÉ =====
+function montrerEcran(id){
+  ['screen-auth', 'screen-oubli', 'screen-reset'].forEach(function(n){
+    const el = document.getElementById(n);
+    if(el) el.classList.toggle('active', n === id);
+  });
+}
+
+function ouvrirOubli(){
+  document.getElementById('oubli-formulaire').style.display = 'block';
+  document.getElementById('oubli-envoye').style.display = 'none';
+  document.getElementById('oubli-email').value = '';
+  document.getElementById('oubli-error').classList.remove('show');
+  montrerEcran('screen-oubli');
+}
+
+function fermerOubli(){
+  try{ history.replaceState(null, '', location.pathname); }catch(e){}
+  montrerEcran('screen-auth');
+}
+
+async function envoyerOubli(){
+  const champ = document.getElementById('oubli-email');
+  const err = document.getElementById('oubli-error');
+  const btn = document.getElementById('oubli-submit');
+  const adresse = champ.value.trim();
+
+  if(!adresse || adresse.indexOf('@') === -1 || adresse.indexOf('.') === -1){
+    err.textContent = 'Entre une adresse e-mail valide.';
+    err.classList.add('show');
+    return;
+  }
+  err.classList.remove('show');
+  btn.disabled = true;
+  btn.textContent = 'Envoi…';
+
+  try{
+    await fetch(`${API_BASE}/User/Forgot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: adresse })
+    });
+  }catch(e){ /* le message affiché reste le même : on ne dit jamais qui est inscrit */ }
+
+  btn.disabled = false;
+  btn.textContent = 'Envoyer';
+  document.getElementById('oubli-formulaire').style.display = 'none';
+  document.getElementById('oubli-envoye').style.display = 'block';
+}
+
+// Le lien du courriel amène ici, avec le jeton dans l'adresse.
+let jetonReset = null;
+
+function ouvrirReset(jeton){
+  jetonReset = jeton;
+  document.getElementById('reset-formulaire').style.display = 'block';
+  document.getElementById('reset-ok').style.display = 'none';
+  document.getElementById('reset-pwd').value = '';
+  document.getElementById('reset-pwd2').value = '';
+  document.getElementById('reset-error').classList.remove('show');
+  montrerEcran('screen-reset');
+}
+
+async function envoyerReset(){
+  const a = document.getElementById('reset-pwd').value;
+  const b = document.getElementById('reset-pwd2').value;
+  const err = document.getElementById('reset-error');
+  const btn = document.getElementById('reset-submit');
+
+  if(a.length < 4){
+    err.textContent = 'Quatre caractères au minimum.';
+    err.classList.add('show'); return;
+  }
+  if(a !== b){
+    err.textContent = 'Les deux mots de passe ne sont pas identiques.';
+    err.classList.add('show'); return;
+  }
+  err.classList.remove('show');
+  btn.disabled = true;
+  btn.textContent = 'Validation…';
+
+  try{
+    const res = await fetch(`${API_BASE}/User/Reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: jetonReset, password: a })
+    });
+    const json = await res.json();
+    if(json.success){
+      document.getElementById('reset-formulaire').style.display = 'none';
+      document.getElementById('reset-ok').style.display = 'block';
+    }else{
+      err.textContent = "Ce lien a expiré ou a déjà servi. Redemande-en un.";
+      err.classList.add('show');
+    }
+  }catch(e){
+    err.textContent = "Impossible de joindre le serveur. Réessaie dans un instant.";
+    err.classList.add('show');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Valider';
+}
+
 function logout(){
   localStorage.removeItem(LS_AUTH);
   try{ history.replaceState(null, '', location.pathname); }catch(e){}
@@ -6683,7 +6836,18 @@ async function rejoindreGroupeDAmis(code){
 }
 
 // --- Démarrage : si déjà connecté, on saute directement dans l'app ---
-if(getAuth()){ enterApp(true); }
+// Le lien du courriel ouvre l'écran du nouveau mot de passe, même si le joueur
+// est déjà connecté sur cet appareil : c'est le seul cas où l'adresse commande
+// avant la session.
+(function(){
+  let h = '';
+  try{ h = (location.hash || '').replace(/^#/, ''); }catch(e){}
+  if(h.indexOf('reset/') === 0){
+    ouvrirReset(h.slice(6));
+    return;
+  }
+  if(getAuth()){ enterApp(true); }
+})();
 
 // ===== ÉCRAN DE COMPOSITION =====
 let currentMatch = null;
