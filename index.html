@@ -3080,14 +3080,18 @@ function scheduleHomeRefresh(){
   // page ouverte avant le coup d'envoi et jamais quittée ne s'apercevait ni du
   // début du match ni de la saisie des statistiques : son joueur devait
   // rafraîchir pour voir sa note.
-  const cadence = (homeMode === 'live' || homeMode === 'pending') ? 120000 : 180000;
+  // Deux minutes les soirs de match, cinq le reste du temps : hors match, il ne
+  // se passe rien qu'on ait besoin de voir arriver à la minute près.
+  const cadence = (homeMode === 'live' || homeMode === 'pending') ? 120000 : 300000;
 
   homeRefreshInterval = setInterval(async () => {
     if(document.hidden) return;
     const avant = homeMode;
     await loadHomeMatch();
-    if(avant !== 'normal' && homeMode === 'normal'){ checkMatchNotification(); }
-    else { checkMatchNotification(); }
+    // La notification ne se vérifie que si l'état du match a bougé. Sans ce
+    // garde-fou, deux requêtes partaient toutes les trois minutes pour
+    // relire un historique qui n'avait pas changé depuis des jours.
+    if(avant !== homeMode){ checkMatchNotification(); }
   }, cadence);
 }
 
@@ -3119,8 +3123,9 @@ document.addEventListener('visibilitychange', async () => {
 
   const avant = homeMode;
   await loadHomeMatch();
-  if(avant !== 'normal' && homeMode === 'normal'){ checkMatchNotification(); }
-  else { checkMatchNotification(); }
+  // Au retour sur l'onglet, on vérifie si l'état a changé — et aussi après une
+  // absence prolongée, où la note a pu tomber pendant qu'on n'était pas là.
+  if(avant !== homeMode || absence >= RELIRE_APRES_MS){ checkMatchNotification(); }
 });
 
 function isMatchPlayed(m){
