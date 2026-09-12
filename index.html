@@ -3286,42 +3286,142 @@ async function checkExistingPrediction(){
 
 // ===== LES MAILLOTS DE L'AFFICHE =====
 // La base ne contient pas les couleurs des clubs : elles vivent ici. Chaque
-// entrée donne la couleur du maillot puis celle de la bande centrale. Une équipe
-// absente de la table reçoit un maillot neutre plutôt qu'une fausse couleur —
-// il suffit d'ajouter une ligne quand un nouvel adversaire arrive au calendrier.
-const COULEURS_CLUBS = {
-  'paris saint-germain':   ['#0b2265', '#da1f3d'],
-  'stade brestois 29':     ['#c8102e', '#ffffff'],
-  'olympique de marseille':['#f0f4f8', '#2faee0'],
-  'le mans fc':            ['#f2c200', '#c8102e'],
-  'manchester city':       ['#6cabdd', '#ffffff'],
-  'rc strasbourg':         ['#0a4a9e', '#ffffff'],
-  'fc barcelone':          ['#1d3a72', '#a50044'],
-  'fc barcelona':          ['#1d3a72', '#a50044'],
-  'olympique lyonnais':    ['#f0f4f8', '#c8102e'],
-  'as monaco':             ['#c8102e', '#ffffff'],
-  'slovan bratislava':     ['#f0f4f8', '#1a4fa0'],
-  'sk slovan bratislava':  ['#f0f4f8', '#1a4fa0']
+// entrée donne un motif et une ou deux couleurs. Toujours le maillot DOMICILE,
+// celui auquel on identifie un club — le maillot extérieur change chaque saison
+// et personne ne sait lequel sera porté ce soir-là.
+//
+// Ce sont les couleurs historiques, pas celles de la saison : elles ne bougent
+// pas d'une année sur l'autre, et la table n'a donc pas à être entretenue.
+// Un club absent reçoit un maillot gris : il suffit d'ajouter sa ligne.
+//
+// Motifs : uni · bande (verticale centrale) · rayures · horizontales ·
+//          echarpe (diagonale) · moitie · manches
+const CLUBS_MAILLOT = {
+  // --- Ligue 1 ---
+  'paris saint-germain':    ['bande', '#0b2265', '#da1f3d', 8],
+  'olympique de marseille': ['uni',   '#f2f6fa'],
+  'as monaco':              ['echarpe', '#c8102e', '#ffffff'],
+  'olympique lyonnais':     ['bande', '#f2f6fa', '#c8102e', 5],
+  'losc lille':             ['moitie', '#f2f6fa', '#c8102e'],
+  'stade rennais':          ['rayures', '#c8102e', '#1a1a1a', 3],
+  'ogc nice':               ['rayures', '#c8102e', '#1a1a1a', 3],
+  'rc lens':                ['rayures', '#f4d40b', '#c8102e', 3],
+  'stade brestois 29':      ['uni',   '#c8102e'],
+  'rc strasbourg':          ['bande', '#0a4a9e', '#ffffff', 5],
+  'toulouse fc':            ['uni',   '#5b2a86'],
+  'montpellier hsc':        ['moitie', '#0a4a9e', '#f2a900'],
+  'fc nantes':              ['uni',   '#f4d40b'],
+  'aj auxerre':             ['uni',   '#f2f6fa'],
+  'angers sco':             ['uni',   '#1a1a1a'],
+  'le havre ac':            ['bande', '#0a3a6e', '#8fbfe8', 8],
+  'fc metz':                ['uni',   '#7a0c1f'],
+  'as saint-étienne':       ['uni',   '#009639'],
+  'le mans fc':             ['manches', '#f2c200', '#c8102e'],
+  'fc lorient':             ['uni',   '#f2820a'],
+  'paris fc':               ['uni',   '#0a2f6e'],
+  'stade de reims':         ['rayures', '#f2f6fa', '#c8102e', 3],
+
+  // --- Ligue des champions et grands clubs européens ---
+  'fc barcelone':           ['rayures', '#1d3a72', '#a50044', 3],
+  'fc barcelona':           ['rayures', '#1d3a72', '#a50044', 3],
+  'real madrid':            ['uni',   '#f4f6f8'],
+  'atlético madrid':        ['rayures', '#f2f6fa', '#c8102e', 3],
+  'atletico madrid':        ['rayures', '#f2f6fa', '#c8102e', 3],
+  'manchester city':        ['uni',   '#6cabdd'],
+  'liverpool fc':           ['uni',   '#c8102e'],
+  'arsenal fc':             ['manches', '#c8102e', '#f2f6fa'],
+  'chelsea fc':             ['uni',   '#034694'],
+  'tottenham hotspur':      ['uni',   '#f2f6fa'],
+  'manchester united':      ['uni',   '#c8102e'],
+  'aston villa':            ['bande', '#7a003c', '#8fbfe8', 12],
+  'newcastle united':       ['rayures', '#1a1a1a', '#f2f6fa', 3],
+  'bayern munich':          ['uni',   '#c8102e'],
+  'borussia dortmund':      ['horizontales', '#f4d40b', '#1a1a1a'],
+  'bayer leverkusen':       ['uni',   '#c8102e'],
+  'rb leipzig':             ['uni',   '#f2f6fa'],
+  'vfb stuttgart':          ['uni',   '#f2f6fa'],
+  'inter milan':            ['rayures', '#1a1a1a', '#0a3ea8', 3],
+  'ac milan':               ['rayures', '#1a1a1a', '#c8102e', 3],
+  'juventus':               ['rayures', '#f2f6fa', '#1a1a1a', 3],
+  'ssc naples':             ['uni',   '#12a0dc'],
+  'ssc napoli':             ['uni',   '#12a0dc'],
+  'atalanta bergame':       ['rayures', '#1a1a1a', '#1a6bd6', 3],
+  'as rome':                ['uni',   '#8a1538'],
+  'benfica':                ['uni',   '#c8102e'],
+  'fc porto':               ['rayures', '#f2f6fa', '#0a4a9e', 3],
+  'sporting portugal':      ['horizontales', '#009639', '#f2f6fa'],
+  'ajax amsterdam':         ['bande', '#f2f6fa', '#c8102e', 14],
+  'psv eindhoven':          ['bande', '#c8102e', '#f2f6fa', 12],
+  'feyenoord':              ['moitie', '#c8102e', '#f2f6fa'],
+  'club bruges':            ['rayures', '#1a2a6e', '#1a1a1a', 3],
+  'rb salzbourg':           ['uni',   '#c8102e'],
+  'celtic glasgow':         ['horizontales', '#f2f6fa', '#009639'],
+  'galatasaray':            ['horizontales', '#a50044', '#f2c200'],
+  'shakhtar donetsk':       ['rayures', '#f2820a', '#1a1a1a', 3],
+  'olympiakos':             ['rayures', '#c8102e', '#f2f6fa', 3],
+  'dinamo zagreb':          ['uni',   '#0a4a9e'],
+  'slovan bratislava':      ['uni',   '#f2f6fa'],
+  'sk slovan bratislava':   ['uni',   '#f2f6fa'],
+  'sparta prague':          ['uni',   '#8a1538'],
+  'young boys':             ['uni',   '#f4d40b'],
+  'bodø/glimt':             ['uni',   '#f4d40b'],
+  'sturm graz':             ['uni',   '#1a1a1a'],
+  'union saint-gilloise':   ['uni',   '#f4d40b'],
+  'girona fc':              ['rayures', '#c8102e', '#f2f6fa', 3],
+  'villarreal':             ['uni',   '#f4d40b'],
+  'athletic bilbao':        ['rayures', '#c8102e', '#f2f6fa', 3],
+  'séville fc':             ['uni',   '#f2f6fa'],
+  'real sociedad':          ['rayures', '#f2f6fa', '#0a4a9e', 3]
 };
 
-const MAILLOT_NEUTRE = ['#2c3e63', '#7f8db5'];
+const MAILLOT_INCONNU = ['uni', '#2c3e63'];
 
-function couleursDuClub(nom){
+function motifDuClub(nom){
   const clef = (nom || '').trim().toLowerCase();
-  if(COULEURS_CLUBS[clef]) return COULEURS_CLUBS[clef];
-  // Un nom peut arriver sous une forme voisine : on cherche l'entrée contenue.
-  const trouve = Object.keys(COULEURS_CLUBS).find(function(k){
-    return clef.indexOf(k) !== -1 || k.indexOf(clef) !== -1;
+  if(CLUBS_MAILLOT[clef]) return CLUBS_MAILLOT[clef];
+  // Un nom peut arriver sous une forme voisine — « FC Barcelone » contre
+  // « Barcelone ». On cherche alors l'entrée qui contient ou est contenue.
+  const trouve = Object.keys(CLUBS_MAILLOT).find(function(k){
+    return clef.length > 3 && (clef.indexOf(k) !== -1 || k.indexOf(clef) !== -1);
   });
-  return trouve ? COULEURS_CLUBS[trouve] : MAILLOT_NEUTRE;
+  return trouve ? CLUBS_MAILLOT[trouve] : MAILLOT_INCONNU;
 }
 
+// Le dessin. Le corps du maillot sert de masque : tous les motifs sont découpés
+// dedans, donc aucun ne déborde.
+const MAILLOT_CORPS = 'M14 14 L24 8 h12 l10 6 6 8-8 6v22a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4V34l-8-6z';
+let maillotNumero = 0;
+
 function maillotHtml(nomClub){
-  const c = couleursDuClub(nomClub);
+  const m = motifDuClub(nomClub);
+  const motif = m[0], c1 = m[1], c2 = m[2], ep = m[3] || 7;
+  const id = 'mcp' + (++maillotNumero);
+  let dedans = '';
+
+  if(motif === 'bande'){
+    dedans = '<path d="M30 4v58" stroke="' + c2 + '" stroke-width="' + ep + '"/>';
+  }else if(motif === 'rayures'){
+    for(let i = 0; i < 5; i++){
+      dedans += '<rect x="' + (4 + i * 11) + '" y="0" width="5.5" height="64" fill="' + c2 + '"/>';
+    }
+  }else if(motif === 'horizontales'){
+    for(let i = 0; i < 4; i++){
+      dedans += '<rect x="0" y="' + (8 + i * 13) + '" width="60" height="7" fill="' + c2 + '"/>';
+    }
+  }else if(motif === 'echarpe'){
+    dedans = '<path d="M-6 46 L66 6" stroke="' + c2 + '" stroke-width="11"/>';
+  }else if(motif === 'moitie'){
+    dedans = '<rect x="30" y="0" width="30" height="64" fill="' + c2 + '"/>';
+  }else if(motif === 'manches'){
+    dedans = '<path d="M14 14 L8 28l8 6V14z" fill="' + c2 + '"/>'
+           + '<path d="M46 14l6 14-8 6V14z" fill="' + c2 + '"/>';
+  }
+
   return '<svg class="maillot" viewBox="0 0 60 64" aria-hidden="true">'
-       + '<path d="M14 14 L24 8 h12 l10 6 6 8-8 6v22a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4V34l-8-6z" '
-       + 'fill="' + c[0] + '" stroke="rgba(255,255,255,.32)" stroke-width="1.5"/>'
-       + '<path d="M30 12v46" stroke="' + c[1] + '" stroke-width="7" stroke-opacity=".95"/>'
+       + '<defs><clipPath id="' + id + '"><path d="' + MAILLOT_CORPS + '"/></clipPath></defs>'
+       + '<path d="' + MAILLOT_CORPS + '" fill="' + c1 + '"/>'
+       + '<g clip-path="url(#' + id + ')">' + dedans + '</g>'
+       + '<path d="' + MAILLOT_CORPS + '" fill="none" stroke="rgba(255,255,255,.34)" stroke-width="1.5"/>'
        + '</svg>';
 }
 
