@@ -6464,8 +6464,8 @@ function afficherRecordDuGroupe(g){
   bloc.style.display = 'block';
 
   document.getElementById('group-record-nom').textContent = r.displayName;
-  document.getElementById('group-record-match').textContent =
-    (r.matchLabel || '') + (r.matchDate ? ' · ' + formatMatchDate(new Date(r.matchDate)) : '');
+  // L'adversaire seul : la date et le nom du PSG n'apprennent rien de plus.
+  document.getElementById('group-record-match').textContent = r.opponentName || '';
 
   // Le serveur nomme la note de la catégorie « score » score6, pour ne pas la
   // confondre avec la note du match.
