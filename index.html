@@ -1762,6 +1762,18 @@
   </div>
 </section>
 
+<!-- Le désabonnement des rappels avant match, atteint par le lien du courriel.
+     Un clic suffit : rien à saisir, aucune confirmation à donner. -->
+<section id="screen-stop" class="screen">
+  <div class="auth-box">
+    <div class="brand">
+      <h1><span class="you">Rappels</span><span class="prono"> avant match</span></h1>
+    </div>
+    <p class="oubli-texte" id="stop-message">Un instant…</p>
+    <button class="primary" onclick="fermerOubli()">Aller au jeu</button>
+  </div>
+</section>
+
 <section id="screen-auth" class="screen active">
   <div class="auth-box">
     <div class="brand">
@@ -5287,9 +5299,27 @@ async function loadDashboard(){
   }
 }
 
+// ===== SE DÉSABONNER DES RAPPELS AVANT MATCH =====
+// Le lien du courriel arrive ici. On décoche la case tout de suite : demander
+// une confirmation à quelqu'un qui vient de cliquer sur « ne plus recevoir »
+// serait une façon polie de ne pas l'écouter.
+async function ouvrirDesabonnement(userId){
+  montrerEcran('screen-stop');
+  const el = document.getElementById('stop-message');
+  try{
+    const res = await fetch(`${API_BASE}/User/Unsubscribe/${userId}`, { method: 'POST' });
+    const json = await res.json();
+    el.textContent = json.success
+      ? "C'est fait. Tu ne recevras plus de rappel avant match. Le jeu, lui, ne bouge pas."
+      : "On n'a pas réussi à te désabonner. Réponds STOP à ce message et on s'en occupe à la main.";
+  }catch(e){
+    el.textContent = "On n'a pas réussi à te désabonner. Réponds STOP à ce message et on s'en occupe à la main.";
+  }
+}
+
 // ===== PSEUDO OU MOT DE PASSE OUBLIÉ =====
 function montrerEcran(id){
-  ['screen-auth', 'screen-oubli', 'screen-reset'].forEach(function(n){
+  ['screen-auth', 'screen-oubli', 'screen-reset', 'screen-stop'].forEach(function(n){
     const el = document.getElementById(n);
     if(el) el.classList.toggle('active', n === id);
   });
@@ -6959,6 +6989,10 @@ async function rejoindreGroupeDAmis(code){
   try{ h = (location.hash || '').replace(/^#/, ''); }catch(e){}
   if(h.indexOf('reset/') === 0){
     ouvrirReset(h.slice(6));
+    return;
+  }
+  if(h.indexOf('stop/') === 0){
+    ouvrirDesabonnement(h.slice(5));
     return;
   }
   if(getAuth()){ enterApp(true); }
