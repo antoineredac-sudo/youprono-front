@@ -1877,10 +1877,7 @@
           <input type="email" id="auth-email" autocomplete="email" placeholder="ton@adresse.fr">
         </div>
         <div class="mail-note">Ton adresse sert à récupérer ton compte si tu oublies ton pseudo ou ton mot de passe et nous permet de te contacter si tu remportes une dotation. Elle n'est transmise à personne.</div>
-        <label class="mail-case">
-          <input type="checkbox" id="auth-email-optin">
-          <span>Préviens-moi avant chaque match du PSG pour que je n'oublie jamais de pronostiquer.</span>
-        </label>
+        <div class="mail-note">On te préviendra avant chaque match du PSG pour que tu n'oublies jamais de pronostiquer. Tu pourras arrêter les envois en un clic depuis n'importe quel message.</div>
       </div>
 
       <div class="field-error" id="auth-error"></div>
@@ -2398,10 +2395,7 @@
         <label>Adresse e-mail</label>
         <input type="email" id="email-champ" autocomplete="email" placeholder="ton@adresse.fr">
         <div class="mail-note">Elle n'est transmise à personne.</div>
-        <label class="mail-case">
-          <input type="checkbox" id="email-optin">
-          <span>Préviens-moi avant chaque match du PSG pour que je n'oublie jamais de pronostiquer.</span>
-        </label>
+        <div class="mail-note">On te préviendra avant chaque match du PSG pour que tu n'oublies jamais de pronostiquer. Tu pourras arrêter les envois en un clic depuis n'importe quel message.</div>
       </div>
 
       <div class="field-error" id="email-erreur"></div>
@@ -2754,7 +2748,7 @@
         <div class="faq-item">
           <div class="faq-q">À quoi sert ton adresse e-mail</div>
           <p class="faq-a">À te renvoyer ton pseudo et un lien de réinitialisation si tu perds ton mot de passe.</p>
-          <p class="faq-a">À t'avertir avant un match si tu l'as demandé. Tu peux revenir sur ce choix à tout moment.</p>
+          <p class="faq-a">À te rappeler qu'un match du PSG approche, et à t'envoyer ta note le lendemain. Chaque message porte un lien pour ne plus rien recevoir, en un clic.</p>
           <p class="faq-a">Ton adresse n'est ni vendue, ni échangée, ni communiquée à qui que ce soit.</p>
         </div>
 
@@ -2856,7 +2850,9 @@ async function submitAuth(){
   const displayName = document.getElementById('auth-username').value.trim();
   const password = document.getElementById('auth-password').value;
   const email = document.getElementById('auth-email').value.trim();
-  const emailOptIn = document.getElementById('auth-email-optin').checked;
+  // Le rappel avant match n'est plus une option à cocher : c'est une partie
+  // annoncée du jeu, avec un lien de désabonnement dans chaque message.
+  const emailOptIn = true;
   const btn = document.getElementById('auth-submit');
 
   if(!displayName || !password){
@@ -6116,7 +6112,7 @@ async function verifierAdresseEmail(){
 
 async function enregistrerEmail(){
   const email = (document.getElementById('email-champ').value || '').trim();
-  const optIn = document.getElementById('email-optin').checked;
+  const optIn = true;
   const err = document.getElementById('email-erreur');
   err.classList.remove('show');
 
