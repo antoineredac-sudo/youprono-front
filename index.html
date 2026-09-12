@@ -92,14 +92,8 @@
     background:var(--surface); border:1px solid var(--border);
     border-radius:12px; padding:10px 12px; text-align:center; margin-bottom:24px;
   }
-  .bda-affiche{ font-family:'Oswald',sans-serif; font-size:14px; line-height:1.3; }
-  .bda-cd{ display:flex; gap:10px; justify-content:center; margin-top:6px; }
-  .bda-u{ font-family:'Oswald',sans-serif; font-size:17px; color:var(--gold); }
-  .bda-u small{
-    color:var(--text-dim); font-size:10px; margin-left:2px;
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
-  }
-  .bda-note{ color:var(--text-dim); font-size:11px; margin-top:4px; }
+  .bda-label{ color:var(--gold); font-size:12px; margin-bottom:4px; }
+  .bda-affiche{ font-family:'Oswald',sans-serif; font-size:15px; line-height:1.3; }
 
   .tab-switch{
     display:flex;
@@ -1869,9 +1863,8 @@
          qu'il est vivant et donne une échéance. Masqué s'il n'y a pas de match
          à venir, en pleine trêve par exemple. -->
     <div class="bandeau-auth" id="auth-match" style="display:none;">
+      <div class="bda-label">Prochain match</div>
       <div class="bda-affiche" id="auth-match-affiche"></div>
-      <div class="bda-cd" id="auth-match-cd"></div>
-      <div class="bda-note">avant la clôture des pronos</div>
     </div>
 
     <div class="auth-invite" id="auth-invite-banner"></div>
@@ -5736,10 +5729,9 @@ async function loadDashboard(){
 }
 
 // ===== LE PROCHAIN MATCH SUR L'ÉCRAN D'ENTRÉE =====
-// Celui qui découvre le jeu par un lien ne sait pas s'il est vivant. Le prochain
-// match et le temps qu'il reste pour jouer répondent aux deux questions d'un coup.
-let bandeauAuthInterval = null;
-
+// Celui qui découvre le jeu par un lien ne sait pas s'il est vivant. L'affiche du
+// prochain match suffit à le dire. Pas de compte à rebours ici : on annonce la
+// couleur, on ne met pas encore la pression.
 async function chargerBandeauAuth(){
   const bloc = document.getElementById('auth-match');
   if(!bloc) return;
@@ -5759,23 +5751,6 @@ async function chargerBandeauAuth(){
 
     document.getElementById('auth-match-affiche').textContent =
       teamLabel(cible.homeTeam, 'Domicile') + ' — ' + teamLabel(cible.awayTeam, 'Extérieur');
-
-    const cloture = new Date(cible.dateTime).getTime() - CLOTURE_AVANT_MS;
-    const cd = document.getElementById('auth-match-cd');
-
-    const battre = function(){
-      const reste = cloture - Date.now();
-      if(reste <= 0){ bloc.style.display = 'none'; clearInterval(bandeauAuthInterval); return; }
-      const j = Math.floor(reste / 86400000);
-      const h = Math.floor((reste % 86400000) / 3600000);
-      const m = Math.floor((reste % 3600000) / 60000);
-      const u = (v, l) => '<span class="bda-u">' + String(v).padStart(2, '0') + '<small>' + l + '</small></span>';
-      cd.innerHTML = u(j, 'j') + u(h, 'h') + u(m, 'min');
-    };
-
-    battre();
-    if(bandeauAuthInterval) clearInterval(bandeauAuthInterval);
-    bandeauAuthInterval = setInterval(battre, 30000);
     bloc.style.display = 'block';
   }catch(e){ /* sans match, le bandeau reste masqué : l'écran fonctionne sans lui */ }
 }
