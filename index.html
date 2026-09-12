@@ -1721,6 +1721,14 @@
 }
 .x-icon{ width:17px; height:17px; flex:0 0 auto; }
 
+/* --- Le record du groupe --- */
+.rec-card{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:14px 12px 8px; text-align:center;
+}
+.rec-nom{ font-family:'Oswald',sans-serif; font-size:18px; color:var(--text); }
+.rec-sous{ color:var(--text-dim); font-size:11px; margin-top:2px; }
+
 /* --- L'en-tête du kop : hexagone comparé et écarts --- */
 .kop-hero{
   background:var(--surface); border:1px solid var(--border);
@@ -2305,6 +2313,18 @@
 
       <div id="gtab-ranking">
         <div id="group-detail-ranking"></div>
+
+        <!-- Le record du groupe : la meilleure note jamais obtenue par un membre,
+             avec la forme de ce match-là et la note au centre de l'hexagone. -->
+        <div id="group-record-block" style="display:none;">
+          <div class="dash-history-label" style="margin-top:20px;">Record du groupe</div>
+          <div class="rec-card">
+            <div class="rec-nom" id="group-record-nom"></div>
+            <div class="rec-sous" id="group-record-match"></div>
+            <div id="group-record-hexa"></div>
+          </div>
+        </div>
+
         <div id="group-salon-lien"></div>
       </div>
 
@@ -5236,7 +5256,9 @@ async function loadGroupSalonLien(groupId){
     if(!cible) return;
 
     const etat = await salonEtatDuMatch(cible);
-    const libelle = SALON_ETATS[etat].cta;
+    // Sur la page d'un groupe, le lien parle du match, pas du groupe : on est
+    // déjà chez soi, « du groupe » ne dit rien de plus.
+    const libelle = (etat === 'results') ? 'Le dernier match' : SALON_ETATS[etat].cta;
     const dore = (etat !== 'closed') ? ' dore' : '';
     const affiche = teamLabel(cible.homeTeam, 'PSG') + ' / ' + teamLabel(cible.awayTeam, 'Adversaire');
 
@@ -5395,6 +5417,7 @@ async function openGroupDetail(groupId){
     // classement s'affiche sans attendre le calendrier).
     loadGroupCalendar(seasonLength, played);
     loadGroupSalonLien(groupId);
+    afficherRecordDuGroupe(g);
 
     const championEl = document.getElementById('group-detail-champion');
     if(g.championName){
@@ -6389,6 +6412,69 @@ function centrerSurMoi(cible){
   setTimeout(function(){
     try{ maLigne.scrollIntoView({ block:'center', behavior:'auto' }); }catch(e){}
   }, 40);
+}
+
+// L'hexagone du record, avec la note posée au centre sur un disque sombre :
+// sans lui, le chiffre se perdrait dans le remplissage doré.
+function hexagoneAvecNote(notes, note){
+  const R = 70, cx = 100, cy = 100;
+  const pt = (i, r) => {
+    const a = (-90 + i * 60) * Math.PI / 180;
+    return [(cx + r * Math.cos(a)).toFixed(1), (cy + r * Math.sin(a)).toFixed(1)];
+  };
+  const anneau = f => KOP_AXES.map((ax, i) => pt(i, R * f).join(',')).join(' ');
+  const forme = KOP_AXES.map(function(ax, i){
+    const v = Math.max(0, Math.min(105, notes[ax[1]] || 0));
+    return pt(i, R * v / 100).join(',');
+  }).join(' ');
+
+  let svg = '<svg class="hexagone" viewBox="0 0 200 200" aria-hidden="true">';
+  svg += '<polygon points="' + anneau(1) + '" fill="none" stroke="var(--border)" stroke-width="1"/>';
+  svg += '<polygon points="' + anneau(0.6) + '" fill="none" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>';
+  KOP_AXES.forEach(function(ax, i){
+    const p = pt(i, R);
+    svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + p[0] + '" y2="' + p[1] + '" stroke="var(--border)" stroke-width="1"/>';
+  });
+  svg += '<polygon points="' + forme + '" fill="var(--gold)" fill-opacity="0.20" '
+       + 'stroke="var(--gold)" stroke-width="2.5" stroke-linejoin="round"/>';
+  KOP_AXES.forEach(function(ax, i){
+    const v = Math.max(0, Math.min(105, notes[ax[1]] || 0));
+    const p = pt(i, R * v / 100);
+    svg += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.6" fill="var(--gold)"/>';
+  });
+
+  svg += '<circle cx="100" cy="100" r="30" fill="#0b2265" fill-opacity="0.86"/>';
+  svg += '<text x="100" y="103" text-anchor="middle" fill="#e8b923" '
+       + 'font-family="Oswald,sans-serif" font-size="21">' + note + '</text>';
+  svg += '<text x="100" y="116" text-anchor="middle" fill="#c2cae8" font-size="8">record</text>';
+
+  const etq = [['COMPO',100,18],['SCORE',180,60],['POSS.',178,150],
+               ['TIRS',100,192],['FAUTES',22,150],['CENTRES',22,60]];
+  etq.forEach(function(e){
+    svg += '<text x="' + e[1] + '" y="' + e[2] + '" text-anchor="middle" fill="var(--text-dim)" font-size="9">' + e[0] + '</text>';
+  });
+  return svg + '</svg>';
+}
+
+function afficherRecordDuGroupe(g){
+  const bloc = document.getElementById('group-record-block');
+  if(!bloc) return;
+  const r = g.record;
+  if(!r){ bloc.style.display = 'none'; return; }
+  bloc.style.display = 'block';
+
+  document.getElementById('group-record-nom').textContent = r.displayName;
+  document.getElementById('group-record-match').textContent =
+    (r.matchLabel || '') + (r.matchDate ? ' · ' + formatMatchDate(new Date(r.matchDate)) : '');
+
+  // Le serveur nomme la note de la catégorie « score » score6, pour ne pas la
+  // confondre avec la note du match.
+  const notes = {
+    composition: r.composition, score: r.score6, possession: r.possession,
+    shots: r.shots, fouls: r.fouls, crosses: r.crosses
+  };
+  document.getElementById('group-record-hexa').innerHTML =
+    hexagoneAvecNote(notes, fmtNum(r.score));
 }
 
 function afficherHexagoneDuKop(k){
