@@ -1732,6 +1732,9 @@
 .ec-d.plus{ color:#4caf7d; }
 .ec-d.moins{ color:#e0665a; }
 
+/* Les classements du kop défilent, la ligne du joueur est amenée au milieu. */
+#kop-ranking, #kop-lastmatch{ max-height:296px; overflow-y:auto; }
+
 /* Le onze d'Enrique : pastille blanche pour qui n'était pas dans le onze du kop. */
 .terrain-pastille.blanc{ background:#fff; color:#0b2265; }
 .terrain-part{ color:var(--text-dim); font-size:9px; margin-top:1px; }
@@ -2402,7 +2405,7 @@
 
         <!-- Le onze d'Enrique, doré quand la majorité du kop l'avait. -->
         <div id="kop-compo-block" style="display:none;">
-          <div class="dash-history-label" style="margin-top:20px;" id="kop-compo-titre-bloc">Le onze d'Enrique face au kop</div>
+          <div class="dash-history-label" style="margin-top:20px;" id="kop-compo-titre-bloc">Le onze du kop face à Enrique</div>
           <div class="kop-card">
             <div id="kop-terrain"></div>
             <div class="hx-leg" style="margin-top:10px;" id="kop-terrain-leg">
@@ -6067,7 +6070,10 @@ function afficherKop(k){
   afficherHexagoneDuKop(k);
   afficherClassementDuKop(k);
   afficherDernierMatchDuKop(k);
-  afficherCompositionsDuKop(k);
+
+  // Le terrain a besoin des postes de chaque joueur : sans l'effectif en
+  // mémoire, il ne trouve aucune fiche et ne dessine rien.
+  ensureSquadLoaded().then(function(){ afficherCompositionsDuKop(k); });
 }
 
 function afficherCompositionsDuKop(k){
@@ -6080,15 +6086,14 @@ function afficherCompositionsDuKop(k){
   const onzeKop = (k.prono && k.prono.topEleven) ? k.prono.topEleven : [];
   const total = k.prono ? k.prono.predictionCount : 0;
 
-  // Avant l'annonce du onze officiel, il n'y a rien à confronter : on montre
-  // alors le onze du kop, et la légende le dit.
+  // Rien à montrer tant que personne n'a pronostiqué : le bloc s'efface.
   if(!onzeCoach.length && !onzeKop.length){ bloc.style.display = 'none'; return; }
   bloc.style.display = 'block';
 
   const compoConnue = onzeCoach.length > 0;
   const source = compoConnue ? onzeCoach : onzeKop;
 
-  titre.textContent = compoConnue ? "Le onze d'Enrique face au kop" : 'Le onze du kop';
+  titre.textContent = compoConnue ? "Le onze du kop face à Enrique" : 'Le onze du kop';
   leg.style.display = compoConnue ? 'flex' : 'none';
 
   cible.innerHTML = terrainDuKop(source, total, compoConnue);
@@ -6209,6 +6214,17 @@ function ecartsHtml(moi, kop){
   }).join('');
 }
 
+// Les classements peuvent compter des dizaines de membres. On les rend
+// défilables et on amène la ligne du joueur au milieu, comme le classement
+// général : ceux qui font mieux au-dessus, ceux qui font moins bien en dessous.
+function centrerSurMoi(cible){
+  const maLigne = cible.querySelector('.kop-row.moi');
+  if(!maLigne || !maLigne.scrollIntoView) return;
+  setTimeout(function(){
+    try{ maLigne.scrollIntoView({ block:'center', behavior:'auto' }); }catch(e){}
+  }, 40);
+}
+
 function afficherHexagoneDuKop(k){
   const bloc = document.getElementById('kop-hexa-block');
   if(!k.hexa){ bloc.style.display = 'none'; return; }
@@ -6229,14 +6245,16 @@ function afficherDernierMatchDuKop(k){
   if(!k.lastMatch || !k.lastMatch.length){ bloc.style.display = 'none'; return; }
   bloc.style.display = 'block';
 
-  let html = '';
-  k.lastMatch.slice(0, 10).forEach(function(r){
-    html += '<div class="kop-row' + (r.isMe ? ' moi' : '') + '">' +
-              '<span>' + r.rank + ' · ' + echapper(r.displayName) + '</span>' +
-              '<span class="kop-note">' + Number(r.score).toFixed(3) + '</span>' +
-            '</div>';
-  });
-  cible.innerHTML = html;
+  cible.innerHTML = k.lastMatch.map(function(r){
+    return '<div class="kop-row' + (r.isMe ? ' moi' : '') + '">'
+         + '<span class="kop-rang">' + r.rank + ' · </span>'
+         + '<span class="kop-nom">' + echapper(r.displayName) + '</span>'
+         + '<span class="kop-mvt"></span>'
+         + '<span class="kop-note">' + Number(r.score).toFixed(3) + '</span>'
+         + '</div>';
+  }).join('');
+
+  centrerSurMoi(cible);
 }
 
 // Bloc 3. Deux rangs par ligne : celui du kop en clair, celui du jeu entier en
@@ -6259,7 +6277,7 @@ function afficherClassementDuKop(k){
     return '';
   };
 
-  cible.innerHTML = k.ranking.map(function(r){
+  const html = k.ranking.map(function(r){
     const pastille = r.generalRank
       ? '<span class="kr-pastille">' + ordinal(r.generalRank) + ' au CG</span>'
       : '';
@@ -6271,6 +6289,9 @@ function afficherClassementDuKop(k){
          + '<span class="kop-note">' + Number(r.expertCoef).toFixed(3) + '</span>'
          + '</div>';
   }).join('');
+
+  cible.innerHTML = html;
+  centrerSurMoi(cible);
 }
 
 // Le message ne s'affiche qu'au moment où quelqu'un essaie d'entrer dans un
