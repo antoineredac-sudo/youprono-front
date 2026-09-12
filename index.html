@@ -86,14 +86,9 @@
 
   .accroche{
     color:var(--text); font-size:14px; line-height:1.6;
-    text-align:center; margin:0 2px 16px;
+    text-align:center; margin:0 2px 26px;
   }
-  .bandeau-auth{
-    background:var(--surface); border:1px solid var(--border);
-    border-radius:12px; padding:10px 12px; text-align:center; margin-bottom:24px;
-  }
-  .bda-label{ color:var(--gold); font-size:12px; margin-bottom:4px; }
-  .bda-affiche{ font-family:'Oswald',sans-serif; font-size:15px; line-height:1.3; }
+
 
   .tab-switch{
     display:flex;
@@ -1858,14 +1853,6 @@
     </div>
 
     <p class="accroche">T'es doué pour deviner les compos d'Enrique ? Tu sais anticiper le déroulement des matchs du PSG ? Alors tu as trouvé ton terrain de jeu.</p>
-
-    <!-- Le prochain match, pour qui ne connaît pas encore le jeu : il prouve
-         qu'il est vivant et donne une échéance. Masqué s'il n'y a pas de match
-         à venir, en pleine trêve par exemple. -->
-    <div class="bandeau-auth" id="auth-match" style="display:none;">
-      <div class="bda-label" id="auth-match-label">Prochain match</div>
-      <div class="bda-affiche" id="auth-match-affiche"></div>
-    </div>
 
     <div class="auth-invite" id="auth-invite-banner"></div>
 
@@ -5728,59 +5715,6 @@ async function loadDashboard(){
   }
 }
 
-// ===== LE PROCHAIN MATCH SUR L'ÉCRAN D'ENTRÉE =====
-// Celui qui découvre le jeu par un lien ne sait pas s'il est vivant. L'affiche du
-// prochain match suffit à le dire. Pas de compte à rebours ici : on annonce la
-// couleur, on ne met pas encore la pression.
-async function chargerBandeauAuth(){
-  const bloc = document.getElementById('auth-match');
-  if(!bloc) return;
-
-  try{
-    const teamId = await getPsgTeamId();
-
-    // Même règle que l'accueil : un match reste à l'affiche tant que ses
-    // statistiques ne sont pas saisies. Le serveur range les matchs par date en
-    // heure universelle, donc on compare nous-mêmes à l'heure du téléphone.
-    const [calRes, prevRes] = await Promise.all([
-      fetch(`${API_BASE}/Match/ByTeamId/${teamId}?OnlyNextMatches=true&limit=4`).then(r => r.json()),
-      fetch(`${API_BASE}/Match/Previous/${teamId}`).then(r => r.json())
-    ]);
-
-    const aVenir = (calRes.success && calRes.data && calRes.data.page) ? calRes.data.page : [];
-    const precedent = (prevRes.success && prevRes.data) ? prevRes.data : null;
-
-    const maintenant = Date.now();
-    let cible = null;
-
-    // Le match commencé mais pas encore noté garde la vedette.
-    if(aVenir.length && !isMatchPlayed(aVenir[0])
-       && new Date(aVenir[0].dateTime).getTime() <= maintenant){
-      cible = aVenir[0];
-    }else if(precedent && !isMatchPlayed(precedent)){
-      cible = precedent;
-    }else if(aVenir.length){
-      cible = aVenir[0];
-    }
-
-    if(!cible) return;
-
-    const coupDEnvoi = new Date(cible.dateTime).getTime();
-    const cloture = coupDEnvoi - CLOTURE_AVANT_MS;
-
-    // Trois états : on peut encore jouer, les pronos sont fermés mais le match
-    // n'a pas commencé, le match est en cours.
-    let libelle = 'Prochain match';
-    if(maintenant >= coupDEnvoi){ libelle = 'LIVE'; }
-    else if(maintenant >= cloture){ libelle = 'Avant-match'; }
-
-    document.getElementById('auth-match-label').textContent = libelle;
-    document.getElementById('auth-match-affiche').textContent =
-      teamLabel(cible.homeTeam, 'Domicile') + ' — ' + teamLabel(cible.awayTeam, 'Extérieur');
-    bloc.style.display = 'block';
-  }catch(e){ /* sans match, le bandeau reste masqué : l'écran fonctionne sans lui */ }
-}
-
 // ===== SE DÉSABONNER DES RAPPELS AVANT MATCH =====
 // Le lien du courriel arrive ici. On décoche la case tout de suite : demander
 // une confirmation à quelqu'un qui vient de cliquer sur « ne plus recevoir »
@@ -7641,7 +7575,6 @@ async function rejoindreGroupeDAmis(code){
     return;
   }
   if(getAuth()){ enterApp(true); }
-  else { chargerBandeauAuth(); }
 })();
 
 // ===== ÉCRAN DE COMPOSITION =====
