@@ -2898,8 +2898,12 @@ function restoreRoute(brut){
     // Les trophées ont leur fonction d'ouverture, comme les autres écrans :
     // les afficher sans elle laissait une vitrine vide au rafraîchissement.
     else if(nom === 'trophies'){ goToTrophies(); }
-    else if(nom === 'faq' || nom === 'group-join'){ switchView(nom); }
-  }catch(e){ /* adresse inconnue : on reste sur l'accueil */ }
+    else if(nom === 'faq' || nom === 'group-join' || nom === 'legal'){ switchView(nom); }
+    // L'accueil est une destination comme les autres : sans cette ligne, le
+    // bouton « précédent » qui y ramène ne faisait rien, et le clic suivant
+    // sortait du site.
+    else { switchView('home'); }
+  }catch(e){ switchView('home'); }
 }
 
 let psgTeamIdCache = null;
@@ -5575,23 +5579,56 @@ function logout(){
 // L'écran en cours est écrit dans l'adresse, après un dièse. Un rafraîchissement
 // le relit et rouvre la même page au lieu de renvoyer à l'accueil.
 //
-// On écrit avec replaceState plutôt qu'en changeant l'adresse : aucune entrée
-// n'est ajoutée à l'historique, donc le bouton « précédent » du navigateur se
-// comporte comme avant. Les écrans qui ont besoin d'un identifiant l'ajoutent
-// eux-mêmes après coup, une fois qu'ils le connaissent.
+// Chaque changement d'écran ajoute une entrée dans l'historique du navigateur :
+// le bouton « précédent » revient donc à l'écran d'avant, à l'intérieur du jeu,
+// au lieu de sortir du site. Les écrans qui ont besoin d'un identifiant
+// l'ajoutent eux-mêmes après coup, une fois qu'ils le connaissent.
+//
+// Conséquence assumée : quitter le site demande autant de « précédent » que
+// d'écrans visités. C'est le prix d'une navigation qui reste dans le jeu.
 
 // Le tunnel du pronostic ne se retient pas : un rafraîchissement perd le
 // brouillon en cours, et rouvrir l'écran des tirs sans les choix précédents
 // donnerait un formulaire cassé.
 const ROUTES_VOLATILES = ['play','possession','shots','fouls','crosses','score','recap','confirm'];
 
+// Vrai pendant qu'on rouvre un écran demandé par le bouton « précédent » :
+// sans ce garde-fou, la réouverture ajouterait une entrée à son tour et le
+// retour en arrière deviendrait impossible.
+let enRestauration = false;
+
 function setRoute(){
   const parts = Array.prototype.slice.call(arguments).filter(function(p){ return p; });
   if(!parts.length) return;
+  if(enRestauration) return;
+
+  const cible = '#' + parts.join('/');
   try{
-    history.replaceState(null, '', location.pathname + '#' + parts.join('/'));
+    // Le même écran deux fois de suite n'ajoute rien : sinon un simple
+    // rafraîchissement de page empilerait des doublons.
+    if(location.hash === cible){
+      history.replaceState(null, '', location.pathname + cible);
+    }else{
+      history.pushState(null, '', location.pathname + cible);
+    }
   }catch(e){}
 }
+
+// Le bouton « précédent » du navigateur : on rouvre l'écran désigné par la
+// nouvelle adresse. Sans adresse, c'est l'accueil.
+window.addEventListener('popstate', function(){
+  if(!getAuth()) return;
+  let route = '';
+  try{ route = (location.hash || '').replace(/^#/, ''); }catch(e){}
+
+  enRestauration = true;
+  try{
+    if(route){ restoreRoute(route); }
+    else { switchView('home'); }
+  }finally{
+    enRestauration = false;
+  }
+});
 
 function switchView(name){
   if(ROUTES_VOLATILES.indexOf(name) === -1){ setRoute(name); }
