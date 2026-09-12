@@ -1659,12 +1659,22 @@
   border-radius:10px; padding:10px 12px; margin-bottom:14px;
 }
 .kop-row{
-  display:flex; justify-content:space-between; align-items:center;
+  display:flex; align-items:center; gap:8px;
   padding:9px 0; border-bottom:1px solid rgba(255,255,255,.10); font-size:14px;
 }
 .kop-row:last-child{ border-bottom:none; }
 .kop-row.moi{ font-weight:700; }
 .kop-note{ color:#e8b923; }
+
+/* Le classement du kop : rang, pseudo, pastille du rang général, flèche, note. */
+.kop-rang{ font-family:'Oswald',sans-serif; color:#c2cae8; }
+.kop-nom{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.kr-pastille{
+  font-size:10px; color:#c2cae8; white-space:nowrap;
+  border:1px solid rgba(255,255,255,.2); border-radius:20px; padding:2px 8px;
+}
+.kr-pastille .exp{ font-size:8px; vertical-align:super; }
+.kop-mvt{ margin-left:auto; width:34px; text-align:right; }
 .kop-general{
   display:inline-block; font-size:11px; color:#c2cae8;
   border:1px solid rgba(255,255,255,.2); border-radius:20px;
@@ -1700,6 +1710,32 @@
 .kop-compo-joueur{ display:flex; justify-content:space-between; padding:4px 0; font-size:13px; }
 .kop-compo-joueur.trouve{ color:#e8b923; }
 .kop-compo-titre{ font-size:13px; padding:5px 0 10px; }
+/* --- L'en-tête du kop : hexagone comparé et écarts --- */
+.kop-hero{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:14px 12px 12px; margin-top:14px;
+}
+.kop-hero-label{ color:var(--text-dim); font-size:12px; text-align:center; margin-bottom:2px; }
+.hx-leg{ display:flex; justify-content:center; gap:16px; margin-top:4px; }
+.hx-leg-i{ display:flex; align-items:center; gap:6px; color:var(--text-dim); font-size:11px; }
+.hx-pastille{ width:10px; height:10px; border-radius:2px; display:inline-block; }
+.hx-pastille.or{ background:var(--gold); }
+.hx-pastille.blanc{ background:transparent; border:2px dashed rgba(255,255,255,.75); }
+.hx-pastille.blanc-plein{ background:#fff; }
+.kop-ecarts{ margin-top:12px; padding-top:10px; border-top:1px solid var(--border); }
+.ec-l{ display:flex; align-items:center; gap:8px; padding:3px 0; font-size:12px; }
+.ec-n{ width:76px; color:var(--text-dim); }
+.ec-p{ position:relative; flex:1; height:7px; border-radius:4px; background:var(--surface-raised); }
+.ec-b{ position:absolute; left:0; top:0; bottom:0; border-radius:4px; background:var(--gold); }
+.ec-t{ position:absolute; top:-3px; width:2px; height:13px; background:#fff; opacity:.85; }
+.ec-d{ width:44px; text-align:right; font-family:'Oswald',sans-serif; }
+.ec-d.plus{ color:#4caf7d; }
+.ec-d.moins{ color:#e0665a; }
+
+/* Le onze d'Enrique : pastille blanche pour qui n'était pas dans le onze du kop. */
+.terrain-pastille.blanc{ background:#fff; color:#0b2265; }
+.terrain-part{ color:var(--text-dim); font-size:9px; margin-top:1px; }
+
 .kop-compo-cols{ display:flex; gap:14px; }
 .kop-compo-col{ flex:1 1 0; min-width:0; }
 .kop-compo-entete{
@@ -2203,6 +2239,10 @@
           <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01c-1.52 0-3.01-.41-4.31-1.18l-.31-.18-3.2.84.85-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.23-8.23 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.75.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29"/></svg>
           <span id="group-invite-label">Défie tes amis</span>
         </button>
+        <button class="cta-play-outline" style="margin-top:10px;" id="group-invite-x-btn"
+                onclick="inviteFromGroupsScreenSurX()">
+          <span id="group-invite-x-label">Défie tes amis sur X</span>
+        </button>
       </div>
 
       <div class="group-invite-box">
@@ -2340,25 +2380,34 @@
         <h2 class="play-title" id="kop-name">KOP</h2>
         <div class="group-season-info" id="kop-sub"></div>
 
-        <div class="dash-history-label">Le classement du kop</div>
+        <!-- L'hexagone comparé : ma note en doré plein, la moyenne du kop en
+             blanc pointillé, puis les six écarts détaillés. -->
+        <div class="kop-hero" id="kop-hexa-block" style="display:none;">
+          <div class="kop-hero-label" id="kop-hexa-label"></div>
+          <div id="kop-hexa"></div>
+          <div class="hx-leg">
+            <span class="hx-leg-i"><span class="hx-pastille or"></span>ma note</span>
+            <span class="hx-leg-i"><span class="hx-pastille blanc"></span>moyenne du kop</span>
+          </div>
+          <div class="kop-ecarts" id="kop-ecarts"></div>
+        </div>
+
+        <div class="dash-history-label" style="margin-top:20px;">Le classement du kop</div>
         <div class="kop-card" id="kop-ranking"></div>
 
         <div id="kop-lastmatch-block" style="display:none;">
-          <div class="dash-history-label" style="margin-top:20px;">Les meilleurs du dernier match</div>
+          <div class="dash-history-label" style="margin-top:20px;">Le classement sur le dernier match</div>
           <div class="kop-card" id="kop-lastmatch"></div>
         </div>
 
-        <div id="kop-prono-block" style="display:none;">
-          <div class="dash-history-label" id="kop-prono-title" style="margin-top:20px;">Les pronos du kop</div>
-          <div class="kop-card" id="kop-prono"></div>
-        </div>
-
+        <!-- Le onze d'Enrique, doré quand la majorité du kop l'avait. -->
         <div id="kop-compo-block" style="display:none;">
+          <div class="dash-history-label" style="margin-top:20px;" id="kop-compo-titre-bloc">Le onze d'Enrique face au kop</div>
           <div class="kop-card">
-            <div class="kop-compo-titre">Composition</div>
-            <div class="kop-compo-cols">
-              <div class="kop-compo-col" id="kop-compo-gauche"></div>
-              <div class="kop-compo-col" id="kop-compo-droite"></div>
+            <div id="kop-terrain"></div>
+            <div class="hx-leg" style="margin-top:10px;" id="kop-terrain-leg">
+              <span class="hx-leg-i"><span class="hx-pastille or"></span>le kop l'avait</span>
+              <span class="hx-leg-i"><span class="hx-pastille blanc-plein"></span>le kop l'avait manqué</span>
             </div>
           </div>
         </div>
@@ -4482,6 +4531,24 @@ function messageInvitation(lien, code){
        + `Code si le lien ne fonctionne pas : ${code}`;
 }
 
+// Le message du tweet. Il se termine sur une question pour que le joueur
+// enchaine en tapant les @ de ceux qu'il veut defier : le curseur se place a la
+// fin du texte pre-rempli.
+function messageInvitationX(){
+  return `On va enfin savoir qui est le vrai expert du PSG entre nous. `
+       + `Compo d'Enrique, possession, tirs, fautes, centres, score : on pronostique, `
+       + `et les vraies stats donnent la note. Qui me rejoint ?`;
+}
+
+function ouvrirX(groupe, nouvelOnglet){
+  const lien = siteBaseUrl() + '?groupe=' + encodeURIComponent(groupe.inviteCode);
+  const url = 'https://twitter.com/intent/tweet'
+            + '?text=' + encodeURIComponent(messageInvitationX())
+            + '&url=' + encodeURIComponent(lien);
+  if(nouvelOnglet){ window.open(url, '_blank'); }
+  else { window.location.href = url; }
+}
+
 // nouvelOnglet : vrai quand aucune attente serveur n'a eu lieu depuis le clic.
 // Apres un await, les navigateurs mobiles bloquent window.open, il faut naviguer.
 function ouvrirWhatsApp(groupe, nouvelOnglet){
@@ -4506,6 +4573,7 @@ function verrouille(btnId, labelId, texte){
 // --- Bouton de l'ecran « Mes groupes d'amis » ---
 // Premier groupe : cree sans rien demander. A partir du deuxieme : on demande un nom.
 async function inviteFromGroupsScreen(){
+  canalInvitation = 'whatsapp';
   const relache = verrouille('group-invite-btn', 'group-invite-label', 'Un instant…');
   const crees = await mesGroupesCrees();
   relache();
@@ -4514,6 +4582,28 @@ async function inviteFromGroupsScreen(){
     const g = await creerGroupe(nomDeMonGroupe());
     if(!g){ alert("Impossible de contacter le serveur. Réessaie dans un instant."); return; }
     ouvrirWhatsApp(g, false);
+    return;
+  }
+
+  document.getElementById('group-create-name').value = '';
+  document.getElementById('group-create-error').classList.remove('show');
+  switchView('group-create');
+}
+
+// Le meme parcours que WhatsApp, sur X. Le canal choisi est retenu : l'ecran de
+// nommage, quand il s'ouvre, doit savoir ou envoyer le joueur ensuite.
+let canalInvitation = 'whatsapp';
+
+async function inviteFromGroupsScreenSurX(){
+  canalInvitation = 'x';
+  const relache = verrouille('group-invite-x-btn', 'group-invite-x-label', 'Un instant…');
+  const crees = await mesGroupesCrees();
+  relache();
+
+  if(crees.length === 0){
+    const g = await creerGroupe(nomDeMonGroupe());
+    if(!g){ alert("Impossible de contacter le serveur. Réessaie dans un instant."); return; }
+    ouvrirX(g, false);
     return;
   }
 
@@ -4545,7 +4635,8 @@ async function createNamedGroup(){
     return;
   }
   champ.value = '';
-  ouvrirWhatsApp(g, false);
+  if(canalInvitation === 'x'){ ouvrirX(g, false); }
+  else { ouvrirWhatsApp(g, false); }
 }
 
 // --- Bouton de fin de pronostic ---
@@ -5973,117 +6064,160 @@ function afficherKop(k){
   }
   document.getElementById('kop-code').textContent = k.inviteCode || '';
 
+  afficherHexagoneDuKop(k);
   afficherClassementDuKop(k);
   afficherDernierMatchDuKop(k);
-  afficherPronoDuKop(k);
-}
-
-// Bloc 1. Avant la saisie des statistiques, c'est le prono collectif. Apres,
-// c'est le meme bloc avec la colonne du reel — d'ou le titre qui change.
-function afficherPronoDuKop(k){
-  const bloc = document.getElementById('kop-prono-block');
-  const titre = document.getElementById('kop-prono-title');
-  const cible = document.getElementById('kop-prono');
-
-  if(!k.prono){
-    bloc.style.display = 'none';
-    afficherCompositionsDuKop(k);
-    return;
-  }
-  bloc.style.display = 'block';
-
-  // « Les pronos du kop face à Monaco » : l'adversaire du match affiché. S'il
-  // manque, on retombe sur le titre neutre plutôt que sur « face à undefined ».
-  const reel = k.real;
-  const adversaire = (k.opponentName || '').trim();
-  titre.textContent = adversaire
-    ? ('Les pronos du kop face à ' + adversaire)
-    : 'Les pronos du kop';
-
-  const p = k.prono;
-  let html = '';
-
-  function ligne(libelle, prono, vrai){
-    return '<div class="kop-ligne-stat"><span>' + libelle + '</span>' +
-           '<span class="droite">' + prono +
-           (vrai != null ? ' <span class="kop-note">· ' + vrai + '</span>' : '') +
-           '</span></div>';
-  }
-
-  html += ligne('Score', p.topTeamScore + '-' + p.topOpponentScore +
-                ' (' + p.topScoreCount + '/' + p.predictionCount + ')',
-                reel ? (reel.teamScore + '-' + reel.opponentScore) : null);
-  html += ligne('Possession', p.teamPossession + ' %', reel ? (reel.teamPossession + ' %') : null);
-  html += ligne('Tirs', p.teamShots, reel ? reel.teamShots : null);
-  html += ligne('Fautes', p.teamFouls, reel ? reel.teamFouls : null);
-  html += ligne('Centres', p.teamCrosses, reel ? reel.teamCrosses : null);
-
-  html += '<div class="kop-liste-meta" style="margin-top:10px;">' +
-          p.predictionCount + (p.predictionCount > 1 ? ' membres ont pronostiqué' : ' membre a pronostiqué') +
-          ' ce match</div>';
-
-  cible.innerHTML = html;
-
   afficherCompositionsDuKop(k);
 }
 
-// Certains joueurs sont enregistres avec le meme prenom et nom — « Vitinha
-// Vitinha ». On n'affiche le mot qu'une fois.
-function nomDeJoueur(j){
-  const prenom = (j.firstName || '').trim();
-  const nom = (j.lastName || '').trim();
-  if(!prenom) return nom || '?';
-  if(!nom) return prenom;
-  if(prenom.toLowerCase() === nom.toLowerCase()) return prenom;
-  return prenom + ' ' + nom;
-}
-
-// Deux colonnes, dans un encadré à part : le onze du kop à gauche, celui du
-// coach à droite. Tant que la compo officielle n'est pas saisie, la colonne de
-// droite le dit plutôt que de rester vide.
 function afficherCompositionsDuKop(k){
   const bloc = document.getElementById('kop-compo-block');
-  const gauche = document.getElementById('kop-compo-gauche');
-  const droite = document.getElementById('kop-compo-droite');
+  const cible = document.getElementById('kop-terrain');
+  const leg = document.getElementById('kop-terrain-leg');
+  const titre = document.getElementById('kop-compo-titre-bloc');
 
-  const onzeKop = (k.prono && k.prono.topEleven) ? k.prono.topEleven : [];
   const onzeCoach = k.officialEleven || [];
-
-  if(!onzeKop.length && !onzeCoach.length){ bloc.style.display = 'none'; return; }
-  bloc.style.display = 'block';
-
+  const onzeKop = (k.prono && k.prono.topEleven) ? k.prono.topEleven : [];
   const total = k.prono ? k.prono.predictionCount : 0;
 
-  // Les ratés ne sont barrés qu'une fois le onze officiel connu. Avant, tous
-  // les joueurs sont marqués « non trouvés » par le serveur, faute de rien à
-  // comparer : barrer le kop entier avant l'annonce serait un contresens.
+  // Avant l'annonce du onze officiel, il n'y a rien à confronter : on montre
+  // alors le onze du kop, et la légende le dit.
+  if(!onzeCoach.length && !onzeKop.length){ bloc.style.display = 'none'; return; }
+  bloc.style.display = 'block';
+
   const compoConnue = onzeCoach.length > 0;
+  const source = compoConnue ? onzeCoach : onzeKop;
 
-  let g = '<div class="kop-compo-entete">Le kop</div>';
-  trierParPoste(onzeKop.map(function(j){
+  titre.textContent = compoConnue ? "Le onze d'Enrique face au kop" : 'Le onze du kop';
+  leg.style.display = compoConnue ? 'flex' : 'none';
+
+  cible.innerHTML = terrainDuKop(source, total, compoConnue);
+}
+
+// Le même placement que partout ailleurs — postes et rang latéral — avec une
+// pastille dorée quand la majorité du kop avait choisi le joueur.
+function terrainDuKop(joueurs, total, colorer){
+  const avecId = joueurs.map(function(j){
     return Object.assign({}, j, { id: j.personId || j.playerId || j.id });
-  })).forEach(function(j){
-    const rate = compoConnue && !j.found;
-    g += '<div class="kop-compo-nom' + (rate ? ' rate' : '') + '">' +
-         echapper(nomDeJoueur(j)) +
-         ' <span class="kop-compo-part">' + j.choiceCount + '/' + total + '</span></div>';
   });
-  gauche.innerHTML = g;
+  const fiches = avecId.map(function(j){
+    const sp = squadData.find(function(x){ return x.id === j.id; });
+    return sp ? Object.assign({}, sp, { choiceCount: j.choiceCount || 0 }) : null;
+  }).filter(Boolean);
 
-  let d = '<div class="kop-compo-entete">Enrique</div>';
-  if(!compoConnue){
-    d += '<div class="kop-compo-part" style="padding-top:5px;">Pas encore annoncée.</div>';
-  }else{
-    const onzeKopIds = new Set(onzeKop.map(function(x){ return x.personId || x.playerId || x.id; }));
-    trierParPoste(onzeCoach.map(function(j){
-      return Object.assign({}, j, { id: j.personId || j.playerId || j.id });
-    })).forEach(function(j){
-      const manque = !onzeKopIds.has(j.id);
-      d += '<div class="kop-compo-nom' + (manque ? ' manque' : ' or') + '">'
-         + echapper(nomDeJoueur(j)) + '</div>';
+  if(!fiches.length) return '';
+
+  const parLigne = {};
+  TERRAIN_LIGNES.forEach(function(l){ parLigne[l] = []; });
+  const orphelins = [];
+  fiches.forEach(function(p){
+    const ligne = (p.position || '').trim();
+    if(parLigne[ligne]) parLigne[ligne].push(p);
+    else orphelins.push(p);
+  });
+  orphelins.forEach(function(p){ parLigne['Milieu'].push(p); });
+
+  TERRAIN_LIGNES.forEach(function(l){
+    parLigne[l].sort(function(a, b){
+      const ra = a.positionOrder > 0 ? a.positionOrder : 99;
+      const rb = b.positionOrder > 0 ? b.positionOrder : 99;
+      if(ra !== rb) return ra - rb;
+      return (a.shirtNumber || 0) - (b.shirtNumber || 0);
     });
-  }
-  droite.innerHTML = d;
+  });
+
+  let html = '<div class="terrain">'
+           + '<div class="terrain-ligne-mediane"></div><div class="terrain-rond"></div>'
+           + '<div class="terrain-surface"></div><div class="terrain-six"></div>';
+
+  TERRAIN_LIGNES.forEach(function(ligne){
+    const l = parLigne[ligne];
+    if(!l.length) return;
+    html += '<div class="terrain-ligne">';
+    l.forEach(function(p){
+      // La majorité, c'est plus de la moitié de ceux qui ont pronostiqué.
+      const majorite = total > 0 && (p.choiceCount * 2 > total);
+      const blanc = colorer && !majorite;
+      html += '<div class="terrain-joueur">'
+            + '<div class="terrain-pastille' + (blanc ? ' blanc' : '') + '">'
+            + (p.shirtNumber || '-') + '</div>'
+            + '<div class="terrain-nom">' + nomJoueurAffiche(p.firstName, p.lastName) + '</div>'
+            + (total > 0 ? '<div class="terrain-part">' + p.choiceCount + '/' + total + '</div>' : '')
+            + '</div>';
+    });
+    html += '</div>';
+  });
+
+  return html + '</div>';
+}
+
+// L'hexagone comparé, en tête de page : ma forme en doré, celle du kop en blanc
+// pointillé. Les deux séries viennent du serveur, personne ne les recalcule ici.
+const KOP_AXES = [
+  ['Composition', 'composition'], ['Score', 'score'], ['Possession', 'possession'],
+  ['Tirs', 'shots'], ['Fautes', 'fouls'], ['Centres', 'crosses']
+];
+
+function hexagoneCompare(moi, kop){
+  const R = 70, cx = 100, cy = 100;
+  const pt = (i, r) => {
+    const a = (-90 + i * 60) * Math.PI / 180;
+    return [(cx + r * Math.cos(a)).toFixed(1), (cy + r * Math.sin(a)).toFixed(1)];
+  };
+  const forme = src => KOP_AXES.map(function(ax, i){
+    const v = Math.max(0, Math.min(105, src[ax[1]] || 0));
+    return pt(i, R * v / 100).join(',');
+  }).join(' ');
+  const anneau = f => KOP_AXES.map((ax, i) => pt(i, R * f).join(',')).join(' ');
+
+  let svg = '<svg class="hexagone" viewBox="0 0 200 200" aria-hidden="true">';
+  svg += '<polygon points="' + anneau(1) + '" fill="none" stroke="var(--border)" stroke-width="1"/>';
+  svg += '<polygon points="' + anneau(0.6) + '" fill="none" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>';
+  KOP_AXES.forEach(function(ax, i){
+    const p = pt(i, R);
+    svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + p[0] + '" y2="' + p[1] + '" stroke="var(--border)" stroke-width="1"/>';
+  });
+  svg += '<polygon points="' + forme(kop) + '" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" '
+       + 'stroke-opacity="0.75" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round"/>';
+  svg += '<polygon points="' + forme(moi) + '" fill="var(--gold)" fill-opacity="0.22" '
+       + 'stroke="var(--gold)" stroke-width="2.5" stroke-linejoin="round"/>';
+  KOP_AXES.forEach(function(ax, i){
+    const v = Math.max(0, Math.min(105, moi[ax[1]] || 0));
+    const p = pt(i, R * v / 100);
+    svg += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.6" fill="var(--gold)"/>';
+  });
+  const etq = [['COMPO',100,18],['SCORE',180,60],['POSS.',178,150],
+               ['TIRS',100,192],['FAUTES',22,150],['CENTRES',22,60]];
+  etq.forEach(function(e){
+    svg += '<text x="' + e[1] + '" y="' + e[2] + '" text-anchor="middle" fill="var(--text-dim)" font-size="9">' + e[0] + '</text>';
+  });
+  return svg + '</svg>';
+}
+
+// Une barre par catégorie : la mienne en doré, un trait blanc à la hauteur du kop.
+function ecartsHtml(moi, kop){
+  return KOP_AXES.map(function(ax){
+    const a = Math.max(0, Math.min(100, moi[ax[1]] || 0));
+    const b = Math.max(0, Math.min(100, kop[ax[1]] || 0));
+    const d = (moi[ax[1]] || 0) - (kop[ax[1]] || 0);
+    const cls = d >= 0 ? 'plus' : 'moins';
+    const fl = d >= 0 ? '▲' : '▼';
+    return '<div class="ec-l"><span class="ec-n">' + ax[0] + '</span>'
+         + '<span class="ec-p"><span class="ec-b" style="width:' + a.toFixed(0) + '%"></span>'
+         + '<span class="ec-t" style="left:' + b.toFixed(0) + '%"></span></span>'
+         + '<span class="ec-d ' + cls + '">' + fl + Math.abs(d).toFixed(1) + '</span></div>';
+  }).join('');
+}
+
+function afficherHexagoneDuKop(k){
+  const bloc = document.getElementById('kop-hexa-block');
+  if(!k.hexa){ bloc.style.display = 'none'; return; }
+  bloc.style.display = 'block';
+
+  document.getElementById('kop-hexa-label').textContent =
+    'Face au kop · ' + (k.opponentName || '');
+  document.getElementById('kop-hexa').innerHTML = hexagoneCompare(k.hexa.me, k.hexa.kop);
+  document.getElementById('kop-ecarts').innerHTML = ecartsHtml(k.hexa.me, k.hexa.kop);
 }
 
 // Bloc 2. C'est lui qui apporte le mouvement : le coefficient expert est une
@@ -6114,25 +6248,29 @@ function afficherClassementDuKop(k){
     return;
   }
 
-  let html = '';
-  k.ranking.forEach(function(r){
-    const general = r.generalRank > 0
-      ? '<span class="kop-general">' + r.generalRank + '<sup>e</sup> au jeu</span>'
-      : '';
-    html += '<div class="kop-row' + (r.isMe ? ' moi' : '') + '" ' +
-              (r.isMe ? 'id="kop-row-moi"' : '') + '>' +
-              '<span>' + r.rank + ' · ' + echapper(r.displayName) + '</span>' +
-              '<span class="droite">' + general +
-                '<span class="kop-note">' + Number(r.expertCoef).toFixed(3) + '</span>' +
-              '</span></div>';
-  });
-  cible.innerHTML = html;
+  // « 1er » au masculin, « 2e » ensuite : le « e » ne vaut qu'à partir de deux.
+  const ordinal = n => (n === 1) ? '1<span class="exp">er</span>' : n + '<span class="exp">e</span>';
 
-  // Le classement s'ouvre sur la ligne du joueur, amenee au centre. Un visiteur
-  // non connecte n'a pas de ligne : il voit le haut du classement, ce qui est
-  // le bon comportement pour quelqu'un qui decouvre le kop.
-  const moi = document.getElementById('kop-row-moi');
-  if(moi){ try{ moi.scrollIntoView({ block:'center' }); }catch(e){} }
+  const fleche = r => {
+    const avant = r.rankBefore || 0;
+    if(!avant || !r.rank) return '';
+    if(avant > r.rank) return '<span class="mvt monte">▲' + (avant - r.rank) + '</span>';
+    if(avant < r.rank) return '<span class="mvt descend">▼' + (r.rank - avant) + '</span>';
+    return '';
+  };
+
+  cible.innerHTML = k.ranking.map(function(r){
+    const pastille = r.generalRank
+      ? '<span class="kr-pastille">' + ordinal(r.generalRank) + ' au CG</span>'
+      : '';
+    return '<div class="kop-row' + (r.isMe ? ' moi' : '') + '">'
+         + '<span class="kop-rang">' + r.rank + ' · </span>'
+         + '<span class="kop-nom">' + echapper(r.displayName) + '</span>'
+         + pastille
+         + '<span class="kop-mvt">' + fleche(r) + '</span>'
+         + '<span class="kop-note">' + Number(r.expertCoef).toFixed(3) + '</span>'
+         + '</div>';
+  }).join('');
 }
 
 // Le message ne s'affiche qu'au moment où quelqu'un essaie d'entrer dans un
