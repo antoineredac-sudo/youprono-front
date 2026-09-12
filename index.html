@@ -1863,7 +1863,7 @@
          qu'il est vivant et donne une échéance. Masqué s'il n'y a pas de match
          à venir, en pleine trêve par exemple. -->
     <div class="bandeau-auth" id="auth-match" style="display:none;">
-      <div class="bda-label">Prochain match</div>
+      <div class="bda-label" id="auth-match-label">Prochain match</div>
       <div class="bda-affiche" id="auth-match-affiche"></div>
     </div>
 
@@ -5738,17 +5738,43 @@ async function chargerBandeauAuth(){
 
   try{
     const teamId = await getPsgTeamId();
-    const res = await fetch(`${API_BASE}/Match/ByTeamId/${teamId}?OnlyNextMatches=true&limit=4`);
-    const json = await res.json();
-    const matchs = (json.success && json.data && json.data.page) ? json.data.page : [];
 
-    // Le premier match dont les pronos sont encore ouverts.
+    // Même règle que l'accueil : un match reste à l'affiche tant que ses
+    // statistiques ne sont pas saisies. Le serveur range les matchs par date en
+    // heure universelle, donc on compare nous-mêmes à l'heure du téléphone.
+    const [calRes, prevRes] = await Promise.all([
+      fetch(`${API_BASE}/Match/ByTeamId/${teamId}?OnlyNextMatches=true&limit=4`).then(r => r.json()),
+      fetch(`${API_BASE}/Match/Previous/${teamId}`).then(r => r.json())
+    ]);
+
+    const aVenir = (calRes.success && calRes.data && calRes.data.page) ? calRes.data.page : [];
+    const precedent = (prevRes.success && prevRes.data) ? prevRes.data : null;
+
     const maintenant = Date.now();
-    const cible = matchs.find(function(m){
-      return new Date(m.dateTime).getTime() - CLOTURE_AVANT_MS > maintenant;
-    });
+    let cible = null;
+
+    // Le match commencé mais pas encore noté garde la vedette.
+    if(aVenir.length && !isMatchPlayed(aVenir[0])
+       && new Date(aVenir[0].dateTime).getTime() <= maintenant){
+      cible = aVenir[0];
+    }else if(precedent && !isMatchPlayed(precedent)){
+      cible = precedent;
+    }else if(aVenir.length){
+      cible = aVenir[0];
+    }
+
     if(!cible) return;
 
+    const coupDEnvoi = new Date(cible.dateTime).getTime();
+    const cloture = coupDEnvoi - CLOTURE_AVANT_MS;
+
+    // Trois états : on peut encore jouer, les pronos sont fermés mais le match
+    // n'a pas commencé, le match est en cours.
+    let libelle = 'Prochain match';
+    if(maintenant >= coupDEnvoi){ libelle = 'LIVE'; }
+    else if(maintenant >= cloture){ libelle = 'Avant-match'; }
+
+    document.getElementById('auth-match-label').textContent = libelle;
     document.getElementById('auth-match-affiche').textContent =
       teamLabel(cible.homeTeam, 'Domicile') + ' — ' + teamLabel(cible.awayTeam, 'Extérieur');
     bloc.style.display = 'block';
