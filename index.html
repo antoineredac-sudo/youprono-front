@@ -84,6 +84,23 @@
   .brand h1{ font-size:34px; line-height:1.1; }
   .brand p{ color:var(--gold); font-size:14px; margin-top:8px; }
 
+  .accroche{
+    color:var(--text); font-size:14px; line-height:1.6;
+    text-align:center; margin:0 2px 16px;
+  }
+  .bandeau-auth{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:10px 12px; text-align:center; margin-bottom:24px;
+  }
+  .bda-affiche{ font-family:'Oswald',sans-serif; font-size:14px; line-height:1.3; }
+  .bda-cd{ display:flex; gap:10px; justify-content:center; margin-top:6px; }
+  .bda-u{ font-family:'Oswald',sans-serif; font-size:17px; color:var(--gold); }
+  .bda-u small{
+    color:var(--text-dim); font-size:10px; margin-left:2px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  }
+  .bda-note{ color:var(--text-dim); font-size:11px; margin-top:4px; }
+
   .tab-switch{
     display:flex;
     background:var(--surface);
@@ -1844,6 +1861,17 @@
       <svg class="brand-mark" viewBox="0 0 93.25 105.25" aria-hidden="true"><g transform="translate(3.25,3.25)"><polygon points="44,0 88,25 88,75 44,100 0,75 0,25" fill="none" stroke="#e8b923" stroke-width="4.5" stroke-linejoin="round"/><circle cx="20" cy="22" r="6" fill="#f5f5f7"/><circle cx="44" cy="22" r="6" fill="#f5f5f7"/><circle cx="68" cy="22" r="6" fill="#f5f5f7"/><circle cx="18" cy="45" r="6" fill="#f5f5f7"/><circle cx="44" cy="45" r="6" fill="#f5f5f7"/><circle cx="70" cy="45" r="6" fill="#f5f5f7"/><circle cx="14" cy="68" r="6" fill="#f5f5f7"/><circle cx="34" cy="68" r="6" fill="#f5f5f7"/><circle cx="54" cy="68" r="6" fill="#f5f5f7"/><circle cx="74" cy="68" r="6" fill="#f5f5f7"/><circle cx="44" cy="88" r="6" fill="#f5f5f7"/></g></svg>
       <h1><span class="you">You</span><span class="prono">Prono</span></h1>
       <p>Nous allons enfin savoir qui sont les vrais experts du PSG</p>
+    </div>
+
+    <p class="accroche">T'es doué pour deviner les compos d'Enrique ? Tu sais anticiper le déroulement des matchs du PSG ? Alors tu as trouvé ton terrain de jeu.</p>
+
+    <!-- Le prochain match, pour qui ne connaît pas encore le jeu : il prouve
+         qu'il est vivant et donne une échéance. Masqué s'il n'y a pas de match
+         à venir, en pleine trêve par exemple. -->
+    <div class="bandeau-auth" id="auth-match" style="display:none;">
+      <div class="bda-affiche" id="auth-match-affiche"></div>
+      <div class="bda-cd" id="auth-match-cd"></div>
+      <div class="bda-note">avant la clôture des pronos</div>
     </div>
 
     <div class="auth-invite" id="auth-invite-banner"></div>
@@ -5707,6 +5735,51 @@ async function loadDashboard(){
   }
 }
 
+// ===== LE PROCHAIN MATCH SUR L'ÉCRAN D'ENTRÉE =====
+// Celui qui découvre le jeu par un lien ne sait pas s'il est vivant. Le prochain
+// match et le temps qu'il reste pour jouer répondent aux deux questions d'un coup.
+let bandeauAuthInterval = null;
+
+async function chargerBandeauAuth(){
+  const bloc = document.getElementById('auth-match');
+  if(!bloc) return;
+
+  try{
+    const teamId = await getPsgTeamId();
+    const res = await fetch(`${API_BASE}/Match/ByTeamId/${teamId}?OnlyNextMatches=true&limit=4`);
+    const json = await res.json();
+    const matchs = (json.success && json.data && json.data.page) ? json.data.page : [];
+
+    // Le premier match dont les pronos sont encore ouverts.
+    const maintenant = Date.now();
+    const cible = matchs.find(function(m){
+      return new Date(m.dateTime).getTime() - CLOTURE_AVANT_MS > maintenant;
+    });
+    if(!cible) return;
+
+    document.getElementById('auth-match-affiche').textContent =
+      teamLabel(cible.homeTeam, 'Domicile') + ' — ' + teamLabel(cible.awayTeam, 'Extérieur');
+
+    const cloture = new Date(cible.dateTime).getTime() - CLOTURE_AVANT_MS;
+    const cd = document.getElementById('auth-match-cd');
+
+    const battre = function(){
+      const reste = cloture - Date.now();
+      if(reste <= 0){ bloc.style.display = 'none'; clearInterval(bandeauAuthInterval); return; }
+      const j = Math.floor(reste / 86400000);
+      const h = Math.floor((reste % 86400000) / 3600000);
+      const m = Math.floor((reste % 3600000) / 60000);
+      const u = (v, l) => '<span class="bda-u">' + String(v).padStart(2, '0') + '<small>' + l + '</small></span>';
+      cd.innerHTML = u(j, 'j') + u(h, 'h') + u(m, 'min');
+    };
+
+    battre();
+    if(bandeauAuthInterval) clearInterval(bandeauAuthInterval);
+    bandeauAuthInterval = setInterval(battre, 30000);
+    bloc.style.display = 'block';
+  }catch(e){ /* sans match, le bandeau reste masqué : l'écran fonctionne sans lui */ }
+}
+
 // ===== SE DÉSABONNER DES RAPPELS AVANT MATCH =====
 // Le lien du courriel arrive ici. On décoche la case tout de suite : demander
 // une confirmation à quelqu'un qui vient de cliquer sur « ne plus recevoir »
@@ -7567,6 +7640,7 @@ async function rejoindreGroupeDAmis(code){
     return;
   }
   if(getAuth()){ enterApp(true); }
+  else { chargerBandeauAuth(); }
 })();
 
 // ===== ÉCRAN DE COMPOSITION =====
