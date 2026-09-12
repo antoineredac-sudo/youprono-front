@@ -2248,7 +2248,7 @@
       <div id="groups-list"></div>
 
       <div class="group-invite-box">
-        <p class="groups-pitch">Qui est le vrai expert du PSG parmi tes amis ? Invite-les sur WhatsApp ou sur X. À chaque match un nouveau classement. Tous les 5 matchs, un champion.</p>
+        <p class="groups-pitch">Qui est le vrai expert du PSG parmi tes amis ? Crée un groupe en les invitant sur WhatsApp ou sur X. À chaque match un nouveau classement. Tous les 5 matchs, un champion.</p>
         <button class="cta-whatsapp wa-btn" id="group-invite-btn" onclick="inviteFromGroupsScreen()">
           <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01c-1.52 0-3.01-.41-4.31-1.18l-.31-.18-3.2.84.85-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.23-8.23 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.75.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29"/></svg>
           <span id="group-invite-label">Défie tes amis</span>
@@ -2282,6 +2282,19 @@
     </section>
     <section id="view-group-detail" class="view" style="display:none;">
       <h2 class="play-title" id="group-detail-name">GROUPE</h2>
+      <!-- Seul le créateur du groupe peut le renommer : le lien n'apparaît
+           qu'à lui, et le serveur revérifie de son côté. -->
+      <span class="small-link" id="group-rename-link" style="display:none;margin-top:0;"
+            onclick="ouvrirRenommage()">Renommer le groupe</span>
+
+      <div id="group-rename-bloc" style="display:none;margin-top:10px;">
+        <label>Nouveau nom</label>
+        <input type="text" id="group-rename-input" maxlength="30" placeholder="Le nom de ton groupe">
+        <div class="field-error" id="group-rename-error"></div>
+        <button class="cta-play" id="group-rename-submit" style="margin-top:12px;"
+                onclick="validerRenommage()">Enregistrer</button>
+        <span class="small-link" onclick="fermerRenommage()">Annuler</span>
+      </div>
       <div class="group-season-info" id="group-detail-season"></div>
       <div class="group-champion" id="group-detail-champion" style="display:none;"></div>
 
@@ -2471,7 +2484,7 @@
       </div>
 
       <div class="group-invite-box" style="margin-top:20px;">
-        <p class="confirm-pitch">Qui est le vrai expert du PSG parmi tes amis ? Invite-les sur WhatsApp ou sur X. À chaque match un nouveau classement. Tous les 5 matchs, un champion.</p>
+        <p class="confirm-pitch">Qui est le vrai expert du PSG parmi tes amis ? Crée un groupe en les invitant sur WhatsApp ou sur X. À chaque match un nouveau classement. Tous les 5 matchs, un champion.</p>
         <button class="cta-whatsapp wa-btn" id="confirm-invite-btn" onclick="inviteFromConfirm()">
           <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01c-1.52 0-3.01-.41-4.31-1.18l-.31-.18-3.2.84.85-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.23-8.23 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.75.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29"/></svg>
           <span id="confirm-invite-label">Défie tes amis</span>
@@ -5133,6 +5146,64 @@ async function loadRanking(tab){
   }
 }
 
+// ===== RENOMMER SON GROUPE =====
+// Un groupe créé sous « Les amis de X » finit par prendre une identité. Seul
+// son créateur peut changer le nom ; le code d'invitation, lui, ne bouge pas.
+let groupeAffiche = null;
+
+function ouvrirRenommage(){
+  const bloc = document.getElementById('group-rename-bloc');
+  const champ = document.getElementById('group-rename-input');
+  if(!bloc || !groupeAffiche) return;
+  champ.value = groupeAffiche.name || '';
+  document.getElementById('group-rename-error').classList.remove('show');
+  bloc.style.display = 'block';
+  document.getElementById('group-rename-link').style.display = 'none';
+  champ.focus();
+}
+
+function fermerRenommage(){
+  const bloc = document.getElementById('group-rename-bloc');
+  if(bloc) bloc.style.display = 'none';
+}
+
+async function validerRenommage(){
+  const champ = document.getElementById('group-rename-input');
+  const err = document.getElementById('group-rename-error');
+  const nom = champ.value.trim();
+  err.classList.remove('show');
+
+  if(nom.length < 2){
+    err.textContent = 'Deux caractères au minimum.';
+    err.classList.add('show');
+    return;
+  }
+
+  const relache = verrouille('group-rename-submit', 'group-rename-submit', 'Enregistrement…');
+  try{
+    const res = await fetch(`${API_BASE}/Group/Rename/${groupeAffiche.id}/${getUserId()}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: nom })
+    });
+    const json = await res.json();
+    relache();
+
+    if(!json.success){
+      err.textContent = "Le nom n'a pas pu être changé. Réessaie dans un instant.";
+      err.classList.add('show');
+      return;
+    }
+    // On rouvre l'écran : le nouveau nom doit apparaître partout, pas seulement
+    // dans le titre.
+    openGroupDetail(groupeAffiche.id);
+  }catch(e){
+    relache();
+    err.textContent = "Impossible de contacter le serveur. Réessaie dans un instant.";
+    err.classList.add('show');
+  }
+}
+
 // Bascule entre les deux onglets de l'écran d'un groupe.
 function switchGroupTab(tab){
   const ranking = (tab !== 'calendar');
@@ -5302,6 +5373,15 @@ async function openGroupDetail(groupId){
     currentGroupName = g.name;
     document.getElementById('group-detail-name').textContent = g.name.toUpperCase();
     document.getElementById('group-detail-code').textContent = g.inviteCode;
+
+    // Le renommage n'est proposé qu'au créateur du groupe.
+    groupeAffiche = g;
+    const lienRenommer = document.getElementById('group-rename-link');
+    if(lienRenommer){
+      const jeLaiCree = g.creatorId && getUserId() && String(g.creatorId) === String(getUserId());
+      lienRenommer.style.display = jeLaiCree ? 'block' : 'none';
+    }
+    fermerRenommage();
     const seasonLength = g.seasonLength ?? 5;
     const played = g.matchesPlayed ?? 0;
     const motMatch = played > 1 ? 'matchs joués' : 'match joué';
