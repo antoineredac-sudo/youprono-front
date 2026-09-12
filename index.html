@@ -260,13 +260,19 @@
     font-weight:500;
     margin-bottom:10px;
   }
-  .match-teams{
-    font-family:'Oswald',sans-serif;
-    font-size:22px;
-    font-weight:600;
-    line-height:1.3;
+  /* L'affiche : un maillot aux couleurs de chaque club, puis son nom. Pas
+     d'écusson — le jeu n'en a pas les droits. Les couleurs, elles, sont libres. */
+  .affiche{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    margin:4px 0 2px;
   }
-  .match-teams .vs{ color:var(--text-dim); margin:0 8px; font-weight:400; }
+  .aff-cote{ flex:1 1 0; min-width:0; }
+  .aff-nom{
+    font-family:'Oswald',sans-serif; font-size:15px; font-weight:600;
+    line-height:1.25; margin-top:6px;
+  }
+  .aff-vs{ color:var(--text-dim); font-size:16px; flex:0 0 auto; }
+  .maillot{ width:56px; height:60px; display:block; margin:0 auto; }
   .match-date{
     color:var(--text-dim);
     font-size:14px;
@@ -1922,10 +1928,16 @@
         </div>
 
         <div class="match-competition" id="match-competition"></div>
-        <div class="match-teams">
-          <span id="match-home-name"></span>
-          <span class="vs">—</span>
-          <span id="match-away-name"></span>
+        <div class="affiche">
+          <div class="aff-cote">
+            <div id="match-home-maillot"></div>
+            <div class="aff-nom" id="match-home-name"></div>
+          </div>
+          <div class="aff-vs">—</div>
+          <div class="aff-cote">
+            <div id="match-away-maillot"></div>
+            <div class="aff-nom" id="match-away-name"></div>
+          </div>
         </div>
         <div class="match-date" id="match-date"></div>
 
@@ -3165,6 +3177,8 @@ async function loadHomeMatch(){
     currentMatch = match;
     document.getElementById('match-home-name').textContent = match.homeTeam.name;
     document.getElementById('match-away-name').textContent = match.awayTeam.name;
+    document.getElementById('match-home-maillot').innerHTML = maillotHtml(match.homeTeam.name);
+    document.getElementById('match-away-maillot').innerHTML = maillotHtml(match.awayTeam.name);
 
     matchKickoff = new Date(match.dateTime);
 
@@ -3268,6 +3282,47 @@ async function checkExistingPrediction(){
     hasPredictionForCurrentMatch = false;
   }
   updatePlayButtonLabel();
+}
+
+// ===== LES MAILLOTS DE L'AFFICHE =====
+// La base ne contient pas les couleurs des clubs : elles vivent ici. Chaque
+// entrée donne la couleur du maillot puis celle de la bande centrale. Une équipe
+// absente de la table reçoit un maillot neutre plutôt qu'une fausse couleur —
+// il suffit d'ajouter une ligne quand un nouvel adversaire arrive au calendrier.
+const COULEURS_CLUBS = {
+  'paris saint-germain':   ['#0b2265', '#da1f3d'],
+  'stade brestois 29':     ['#c8102e', '#ffffff'],
+  'olympique de marseille':['#f0f4f8', '#2faee0'],
+  'le mans fc':            ['#f2c200', '#c8102e'],
+  'manchester city':       ['#6cabdd', '#ffffff'],
+  'rc strasbourg':         ['#0a4a9e', '#ffffff'],
+  'fc barcelone':          ['#1d3a72', '#a50044'],
+  'fc barcelona':          ['#1d3a72', '#a50044'],
+  'olympique lyonnais':    ['#f0f4f8', '#c8102e'],
+  'as monaco':             ['#c8102e', '#ffffff'],
+  'slovan bratislava':     ['#f0f4f8', '#1a4fa0'],
+  'sk slovan bratislava':  ['#f0f4f8', '#1a4fa0']
+};
+
+const MAILLOT_NEUTRE = ['#2c3e63', '#7f8db5'];
+
+function couleursDuClub(nom){
+  const clef = (nom || '').trim().toLowerCase();
+  if(COULEURS_CLUBS[clef]) return COULEURS_CLUBS[clef];
+  // Un nom peut arriver sous une forme voisine : on cherche l'entrée contenue.
+  const trouve = Object.keys(COULEURS_CLUBS).find(function(k){
+    return clef.indexOf(k) !== -1 || k.indexOf(clef) !== -1;
+  });
+  return trouve ? COULEURS_CLUBS[trouve] : MAILLOT_NEUTRE;
+}
+
+function maillotHtml(nomClub){
+  const c = couleursDuClub(nomClub);
+  return '<svg class="maillot" viewBox="0 0 60 64" aria-hidden="true">'
+       + '<path d="M14 14 L24 8 h12 l10 6 6 8-8 6v22a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4V34l-8-6z" '
+       + 'fill="' + c[0] + '" stroke="rgba(255,255,255,.32)" stroke-width="1.5"/>'
+       + '<path d="M30 12v46" stroke="' + c[1] + '" stroke-width="7" stroke-opacity=".95"/>'
+       + '</svg>';
 }
 
 // L'effectif du PSG, chargé une seule fois et gardé en mémoire.
