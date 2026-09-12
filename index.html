@@ -1835,8 +1835,8 @@
     <div class="auth-invite" id="auth-invite-banner"></div>
 
     <div class="tab-switch">
-      <button id="tab-login" class="active" onclick="switchAuthTab('login')">Connexion</button>
-      <button id="tab-register" onclick="switchAuthTab('register')">Inscription</button>
+      <button id="tab-login" onclick="switchAuthTab('login')">Connexion</button>
+      <button id="tab-register" class="active" onclick="switchAuthTab('register')">Inscription</button>
     </div>
 
     <div id="auth-form">
@@ -1846,7 +1846,7 @@
       <label>Mot de passe</label>
       <input type="password" id="auth-password" autocomplete="current-password" placeholder="Ton mot de passe">
 
-      <div id="auth-email-bloc" style="display:none;">
+      <div id="auth-email-bloc">
         <label>Adresse e-mail</label>
         <div class="mail-champ">
           <svg class="mail-icone" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 7 12 13l8.5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1861,7 +1861,7 @@
 
       <div class="field-error" id="auth-error"></div>
 
-      <button class="primary" id="auth-submit" onclick="submitAuth()">Se connecter</button>
+      <button class="primary" id="auth-submit" onclick="submitAuth()">Créer mon compte</button>
       <p class="lien-oubli" onclick="ouvrirOubli()">Mot de passe ou pseudo oublié ?</p>
     </div>
   </div>
@@ -2758,7 +2758,10 @@ function nomJoueurAffiche(prenom, nom){
 }
 const LS_AUTH = 'youprono_auth';
 
-let authMode = 'login';
+// L'inscription est l'onglet ouvert par défaut : qui arrive sur cet écran n'a
+// pas de session en cours, et c'est neuf fois sur dix quelqu'un qui découvre le
+// jeu. Ceux qui ont un compte entrent directement, sans passer par ici.
+let authMode = 'register';
 
 function switchAuthTab(mode){
   authMode = mode;
@@ -5477,6 +5480,8 @@ function ouvrirOubli(){
 
 function fermerOubli(){
   try{ history.replaceState(null, '', location.pathname); }catch(e){}
+  // Celui qui sort de ce parcours vient récupérer son compte, pas en créer un.
+  switchAuthTab('login');
   montrerEcran('screen-auth');
 }
 
