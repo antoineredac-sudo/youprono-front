@@ -1669,6 +1669,8 @@
   margin-top:12px; padding-top:12px; border-top:1px solid var(--border);
 }
 .mail-note{ font-size:12px; color:#c2cae8; line-height:1.5; margin-top:6px; }
+/* La regle du pseudo, sous le champ, visible seulement a l'inscription. */
+.pseudo-note{ font-size:12px; color:#c2cae8; line-height:1.5; margin-top:6px; }
 .mail-case{
   display:flex; align-items:flex-start; gap:9px;
   font-size:13px; line-height:1.45; margin-top:12px; cursor:pointer;
@@ -1886,7 +1888,9 @@
 
     <div id="auth-form">
       <label>Pseudo</label>
-      <input type="text" id="auth-username" autocomplete="username" placeholder="Ton pseudo">
+      <input type="text" id="auth-username" autocomplete="username" maxlength="16"
+             placeholder="Ton pseudo" oninput="majCompteurPseudo()">
+      <div class="pseudo-note" id="pseudo-note" style="display:none;">De 2 à 16 caractères. <span id="pseudo-compteur">0/16</span></div>
 
       <label>Mot de passe</label>
       <input type="password" id="auth-password" autocomplete="current-password" placeholder="Ton mot de passe">
@@ -2837,6 +2841,16 @@ const LS_AUTH = 'youprono_auth';
 // jeu. Ceux qui ont un compte entrent directement, sans passer par ici.
 let authMode = 'register';
 
+// Les mêmes bornes que le serveur, PSEUDO_MIN et PSEUDO_MAX dans UserService.
+const PSEUDO_MIN = 2;
+const PSEUDO_MAX = 16;
+
+function majCompteurPseudo(){
+  const champ = document.getElementById('auth-username');
+  const compteur = document.getElementById('pseudo-compteur');
+  if(champ && compteur){ compteur.textContent = champ.value.trim().length + '/' + PSEUDO_MAX; }
+}
+
 function switchAuthTab(mode){
   authMode = mode;
   document.getElementById('tab-login').classList.toggle('active', mode==='login');
@@ -2845,6 +2859,11 @@ function switchAuthTab(mode){
   // L'adresse n'est demandée qu'à l'inscription. La réclamer pour se connecter
   // ferait croire qu'elle remplace le pseudo.
   document.getElementById('auth-email-bloc').style.display = (mode==='register') ? 'block' : 'none';
+  // La règle ne s'affiche qu'à l'inscription : à la connexion, elle laisserait
+  // croire qu'un ancien pseudo trop long ne fonctionne plus.
+  const note = document.getElementById('pseudo-note');
+  if(note){ note.style.display = (mode==='register') ? 'block' : 'none'; }
+  majCompteurPseudo();
   document.getElementById('auth-error').classList.remove('show');
 }
 
@@ -2882,6 +2901,11 @@ async function submitAuth(){
 
   if(!displayName || !password){
     showError('Merci de remplir ton pseudo et ton mot de passe.');
+    return;
+  }
+  if(authMode === 'register'
+     && (displayName.length < PSEUDO_MIN || displayName.length > PSEUDO_MAX)){
+    showError('Ton pseudo doit faire entre ' + PSEUDO_MIN + ' et ' + PSEUDO_MAX + ' caractères.');
     return;
   }
   if(authMode === 'register' && !adressePlausible(email)){
