@@ -1524,6 +1524,12 @@
     color:var(--gold); line-height:1.15; margin-top:4px;
   }
   .profil-carte-matchs{ color:var(--text-dim); font-size:13px; margin-top:6px; }
+  /* La définition de la note, juste sous l'onglet qu'on vient de toucher :
+     on sait ce qu'on regarde avant de regarder la liste. */
+  .profil-def{
+    color:var(--text-dim); font-size:12px; line-height:1.5;
+    text-align:center; margin:0 4px 12px;
+  }
   .profil-tout{
     display:block; text-align:center; cursor:pointer;
     color:var(--text-dim); font-size:13px; padding:12px 0 0;
@@ -2583,6 +2589,8 @@
           <button class="ranking-tab active" id="profil-tab-final" onclick="switchProfilTab('final')">coefficient expert</button>
           <button class="ranking-tab" id="profil-tab-record" onclick="switchProfilTab('record')">note record</button>
         </div>
+
+        <p class="profil-def" id="profil-def"></p>
 
         <div id="profil-voisinage"></div>
         <span class="profil-tout" onclick="goToRanking()">Tout le classement ›</span>
@@ -5038,12 +5046,23 @@ function shareGroupOnWhatsApp(){
 // pas comme un classement. Le tableau complet vit sur sa propre page.
 let profilTab = 'final';
 
+// Les mêmes deux phrases que sur l'écran du classement : une seule définition
+// par note, écrite à un seul endroit du fichier.
+function majDefinitionProfil(tab){
+  const el = document.getElementById('profil-def');
+  if(!el) return;
+  el.textContent = (tab === 'final')
+    ? 'Le Coef Expert est la moyenne de tes résultats obtenus match après match.'
+    : 'La note record est le meilleur résultat que tu as obtenu sur un match.';
+}
+
 function switchProfilTab(tab){
   profilTab = tab;
   document.getElementById('profil-tab-final').classList.toggle('active', tab === 'final');
   document.getElementById('profil-tab-record').classList.toggle('active', tab === 'record');
   const nomOnglet = (tab === 'final') ? 'Coef expert' : 'Note record';
   document.getElementById('profil-label').innerHTML = picto(nomOnglet) + ' ' + nomOnglet.toLowerCase();
+  majDefinitionProfil(tab);
   chargerVoisinage(tab);
 }
 
@@ -5680,6 +5699,7 @@ async function goToProfile(){
   document.getElementById('profil-tab-final').classList.add('active');
   document.getElementById('profil-tab-record').classList.remove('active');
   document.getElementById('profil-label').textContent = 'coef expert';
+  majDefinitionProfil('final');
   await loadDashboard();
   chargerVoisinage('final');
 }
