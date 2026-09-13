@@ -1344,16 +1344,15 @@
   }
   .ranking-rank.top{ color:var(--gold); }
 
-  /* Le joueur sous la barre des 50 % de matchs joués. Il garde sa place et son
-     rang : sa note vaut ce qu'elle vaut. Mais tout est barré et grisé, pour
-     dire que le classement ne le compte pas encore vraiment. */
-  .ranking-table-row.sorti{ opacity:.5; }
+  /* L'assiduité se lit à la couleur du pseudo. Doré pour qui a joué plus de
+     66 % des matchs depuis son inscription, gris pour les autres — sans barre :
+     leur place est réelle, elle n'est simplement pas encore méritée sur la durée. */
+  .rt-name.assidu{ color:var(--gold); font-weight:600; }
+  .ranking-table-row.sorti{ opacity:.62; }
   .ranking-table-row.sorti .rt-rank,
   .ranking-table-row.sorti .rt-name,
   .ranking-table-row.sorti .rt-games,
-  .ranking-table-row.sorti .rt-score{
-    color:var(--text-dim); text-decoration:line-through;
-  }
+  .ranking-table-row.sorti .rt-score{ color:var(--text-dim); }
   .ranking-seuil-note{
     color:var(--gold); font-size:13px; line-height:1.5;
     text-align:center; margin:0 4px 16px;
@@ -1612,7 +1611,7 @@
   .ranking-table-row.me{ border-color:var(--red); }
   .rt-rank{ width:26px; color:var(--text-dim); font-family:'Oswald',sans-serif; }
   .rt-name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .rt-games{ width:36px; text-align:right; color:var(--text-dim); }
+  .rt-games{ width:50px; text-align:right; color:var(--text-dim); font-size:12px; }
   .rt-score{ width:60px; text-align:right; font-family:'Oswald',sans-serif; color:var(--gold); }
 
   /* --- FAQ --- */
@@ -5069,12 +5068,12 @@ async function chargerVoisinage(tab){
     };
 
     cible.innerHTML = voisins.map(u => `
-      <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
+      <div class="ranking-table-row ${u.id === userId ? 'me' : ''} ${u.ranked === false ? 'sorti' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
         <span class="rt-rank">#${u.rank}</span>
-        <span class="rt-name">${u.userName}</span>
+        <span class="rt-name ${u.ranked === false ? '' : 'assidu'}">${u.userName}</span>
         <span class="rt-mvt">${fleche(u)}</span>
-        <span class="rt-games">${u.games}</span>
+        <span class="rt-games">${assiduite(u)}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`).join('');
 
@@ -5247,6 +5246,17 @@ function courbeDesNotes(history){
   return svg + '</svg><div class="courbe-legende">le pointillé marque ta moyenne, l\'étoile ton record</div>';
 }
 
+// « 3/3 » plutôt que « 3 » : le nombre de matchs joués ne dit rien sans le
+// nombre de matchs qu'il y avait à jouer depuis l'inscription du joueur. Si le
+// serveur ne renvoie pas le total, on retombe sur le compte seul.
+function assiduite(u){
+  const total = u.attendanceTotal;
+  const joues = (u.attendancePlayed !== undefined && u.attendancePlayed !== null)
+    ? u.attendancePlayed : u.games;
+  if(total === undefined || total === null || total <= 0) return String(u.games);
+  return joues + '/' + total;
+}
+
 function barreSelonLeMeilleur(liste){
   const meilleur = (liste && liste.length) ? liste[0].score : 0;
   const plancher = meilleur / 2;
@@ -5309,9 +5319,9 @@ async function loadRanking(tab){
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''} ${u.ranked === false ? 'sorti' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
         <span class="rt-rank">#${u.rank}</span>
-        <span class="rt-name">${u.userName}</span>
+        <span class="rt-name ${u.ranked === false ? '' : 'assidu'}">${u.userName}</span>
         <span class="rt-mvt">${fleche(u)}</span>
-        <span class="rt-games">${u.games}</span>
+        <span class="rt-games">${assiduite(u)}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`;
 
