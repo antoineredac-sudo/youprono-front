@@ -1463,6 +1463,11 @@
     color:#dbe3ff; font-size:9px; margin-top:4px; line-height:1.2;
     overflow-wrap:anywhere;
   }
+  /* Sur « Dernier résultat » : le titulaire qu'on avait en doré, celui qu'on
+     avait manqué en blanc, et dessous, en gris barré, celui qu'on avait mis
+     à sa place. */
+  .terrain-nom.or{ color:var(--gold); }
+  .terrain-nom.barre{ color:#8b99d0; text-decoration:line-through; margin-top:2px; }
   /* --- Le verdict de fin de mini-championnat --- */
   /* --- Ce qui s'est passé pour toi sur ce match --- */
   .evenements{ margin-bottom:18px; }
@@ -4591,7 +4596,29 @@ function renderResults(prediction, stats, matchDetail){
   const hexa = document.getElementById('results-hexagone');
   if(hexa){ hexa.innerHTML = hexagoneHtml(notesHexa) + jaugesHtml(notesHexa); }
 
-  let html = '';
+  // « Ton onze face à celui d'Enrique » : le terrain vient en tête, avant la
+  // possession. Il remplace les deux colonnes Toi / Réel.
+  const realTeamPlayers = (psgIsHome ? matchDetail.homeTeam.players : matchDetail.awayTeam.players) || [];
+  const compoAccuracy = stats.result.team.composition?.formula || 0;
+  const terrainFace = terrainFaceAEnrique(realTeamPlayers, prediction.players || []);
+  const trouves = realTeamPlayers.filter(p => (prediction.players || []).indexOf(p.id) !== -1).length;
+
+  let html = `
+    <div class="result-category">
+      <div class="result-cat-head">
+        <span class="result-cat-name">${picto('Composition')} Ton onze face à celui d'Enrique</span>
+        <span class="result-cat-points">${fmtNum(compoAccuracy)}/100</span>
+      </div>
+      <div class="result-cat-row" style="margin-bottom:6px;">
+        <span>${trouves} titulaire${trouves > 1 ? 's' : ''} trouvé${trouves > 1 ? 's' : ''} sur 11</span>
+      </div>
+      ${terrainFace}
+      <div class="hx-leg" style="margin-top:10px;">
+        <span class="hx-leg-i"><span class="hx-pastille or"></span>tu l'avais</span>
+        <span class="hx-leg-i"><span class="hx-pastille blanc-plein"></span>tu l'avais manqué</span>
+      </div>
+    </div>`;
+
   categories.forEach(cat=>{
     const accuracy = stats.result.team[cat.key]?.formula || 0;
     html += `
@@ -4610,41 +4637,6 @@ function renderResults(prediction, stats, matchDetail){
         </div>
       </div>`;
   });
-
-  const realTeamPlayers = (psgIsHome ? matchDetail.homeTeam.players : matchDetail.awayTeam.players) || [];
-  const realIds = new Set(realTeamPlayers.map(p => p.id));
-
-  const monOnzeIds = new Set(prediction.players);
-
-  const predictedNamesHtml = trierParPoste(
-      prediction.players.map(id => squadData.find(sp => sp.id === id) || { id }))
-    .map(p => {
-      const fiche = squadData.find(sp => sp.id === p.id);
-      const name = fiche ? nomJoueurAffiche(fiche.firstName, fiche.lastName) : String(p.id).slice(0,8) + '…';
-      return `<span class="compo-name ${realIds.has(p.id) ? '' : 'compo-wrong'}">${name}</span>`;
-    }).join('');
-
-  const realNamesHtml = trierParPoste(realTeamPlayers).map(p =>
-    `<span class="compo-name compo-reel${monOnzeIds.has(p.id) ? '' : ' compo-manque'}">${nomJoueurAffiche(p.firstName, p.lastName)}</span>`).join('');
-
-  const compoAccuracy = stats.result.team.composition?.formula || 0;
-  html += `
-    <div class="result-category">
-      <div class="result-cat-head">
-        <span class="result-cat-name">Composition</span>
-        <span class="result-cat-points">${fmtNum(compoAccuracy)}/100</span>
-      </div>
-      <div class="compo-compare">
-        <div class="compo-col">
-          <div class="compo-col-label">Toi</div>
-          ${predictedNamesHtml}
-        </div>
-        <div class="compo-col">
-          <div class="compo-col-label">Réel</div>
-          ${realNamesHtml}
-        </div>
-      </div>
-    </div>`;
 
   document.getElementById('results-categories').innerHTML = html;
   renderResultsBadges(stats);
@@ -7992,6 +7984,90 @@ function terrainHtml(ids){
             + '<div class="terrain-pastille">'
             + (p.shirtNumber || '-') + '</div>'
             + '<div class="terrain-nom">' + nomJoueurAffiche(p.firstName, p.lastName) + '</div>'
+            + '</div>';
+    });
+    html += '</div>';
+  });
+
+  return html + '</div>';
+}
+
+// « Ton onze face à celui d'Enrique ». Le onze dessiné est celui du coach,
+// placé comme partout — postes et rang latéral de l'effectif. Un titulaire
+// que le joueur avait est doré ; un titulaire manqué est blanc, et sous lui,
+// en gris barré, le joueur que le pronostic avait mis à sa place.
+//
+// L'appariement : d'abord le même rang dans la même ligne (le latéral droit
+// manqué contre le latéral droit choisi), puis ce qui reste dans la ligne de
+// gauche à droite, et enfin, si une ligne a plus de manqués que de blancs
+// (un 4-4-2 pronostiqué face à un 4-3-3), les orphelins descendent sous les
+// blancs libres des autres lignes.
+function terrainFaceAEnrique(reels, mesIds){
+  const fiche = id => squadData.find(sp => sp.id === id) || null;
+  const monOnze = new Set(mesIds);
+  const reelIds = new Set(reels.map(p => p.id));
+
+  const titulaires = reels.map(p => fiche(p.id) || p).filter(Boolean);
+  if(!titulaires.length) return '';
+
+  const manques = mesIds.filter(id => !reelIds.has(id)).map(fiche).filter(Boolean);
+
+  const ligneDe = p => {
+    const l = (p.position || '').trim();
+    return TERRAIN_LIGNES.indexOf(l) !== -1 ? l : 'Milieu';
+  };
+  const rang = p => (p.positionOrder > 0 ? p.positionOrder : 99);
+  const tri = (a, b) => (rang(a) - rang(b)) || ((a.shirtNumber || 0) - (b.shirtNumber || 0));
+
+  const parLigne = {};
+  const manquesParLigne = {};
+  TERRAIN_LIGNES.forEach(l => { parLigne[l] = []; manquesParLigne[l] = []; });
+  titulaires.forEach(p => parLigne[ligneDe(p)].push(p));
+  manques.forEach(p => manquesParLigne[ligneDe(p)].push(p));
+  TERRAIN_LIGNES.forEach(l => { parLigne[l].sort(tri); manquesParLigne[l].sort(tri); });
+
+  // dessous[id du titulaire blanc] = le joueur barré
+  const dessous = {};
+  const orphelins = [];
+  TERRAIN_LIGNES.forEach(l => {
+    const blancs = parLigne[l].filter(p => !monOnze.has(p.id));
+    const restants = manquesParLigne[l].slice();
+
+    // 1. même rang latéral
+    blancs.forEach(b => {
+      const i = restants.findIndex(m => rang(m) === rang(b) && rang(b) !== 99);
+      if(i !== -1){ dessous[b.id] = restants.splice(i, 1)[0]; }
+    });
+    // 2. le reste de la ligne, de gauche à droite
+    blancs.forEach(b => {
+      if(!dessous[b.id] && restants.length){ dessous[b.id] = restants.shift(); }
+    });
+    restants.forEach(m => orphelins.push(m));
+  });
+  // 3. les orphelins, sous les blancs encore libres
+  TERRAIN_LIGNES.forEach(l => {
+    parLigne[l].forEach(p => {
+      if(!monOnze.has(p.id) && !dessous[p.id] && orphelins.length){ dessous[p.id] = orphelins.shift(); }
+    });
+  });
+
+  let html = '<div class="terrain">'
+           + '<div class="terrain-ligne-mediane"></div><div class="terrain-rond"></div>'
+           + '<div class="terrain-surface"></div><div class="terrain-six"></div>';
+
+  TERRAIN_LIGNES.forEach(ligne => {
+    const l = parLigne[ligne];
+    if(!l.length) return;
+    html += '<div class="terrain-ligne">';
+    l.forEach(p => {
+      const trouve = monOnze.has(p.id);
+      const m = dessous[p.id];
+      html += '<div class="terrain-joueur">'
+            + '<div class="terrain-pastille' + (trouve ? '' : ' blanc') + '">'
+            + (p.shirtNumber || '-') + '</div>'
+            + '<div class="terrain-nom' + (trouve ? ' or' : '') + '">'
+            + nomJoueurAffiche(p.firstName, p.lastName) + '</div>'
+            + (m ? '<div class="terrain-nom barre">' + nomJoueurAffiche(m.firstName, m.lastName) + '</div>' : '')
             + '</div>';
     });
     html += '</div>';
