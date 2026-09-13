@@ -1344,14 +1344,15 @@
   }
   .ranking-rank.top{ color:var(--gold); }
 
-  /* Le joueur sorti du classement faute d'avoir joué la moitié des matchs.
-     Il reste visible, en bas de liste, mais sans rang et en retrait. */
-  .ranking-table-row.sorti{ opacity:.45; }
-  .ranking-table-row.sorti .rt-score{ color:var(--text-dim); }
-  .rt-rank-vide{ color:var(--text-dim); }
-  .ranking-sortis-titre{
-    color:var(--text-dim); font-size:12px; text-align:center;
-    margin:18px 0 8px;
+  /* Le joueur sous la barre des 50 % de matchs joués. Il garde sa place et son
+     rang : sa note vaut ce qu'elle vaut. Mais tout est barré et grisé, pour
+     dire que le classement ne le compte pas encore vraiment. */
+  .ranking-table-row.sorti{ opacity:.5; }
+  .ranking-table-row.sorti .rt-rank,
+  .ranking-table-row.sorti .rt-name,
+  .ranking-table-row.sorti .rt-games,
+  .ranking-table-row.sorti .rt-score{
+    color:var(--text-dim); text-decoration:line-through;
   }
   .ranking-seuil-note{
     color:var(--gold); font-size:13px; line-height:1.5;
@@ -5271,18 +5272,18 @@ async function loadRanking(tab){
     document.getElementById('ranking-me-label').textContent = nomOnglet.toLowerCase();
     document.getElementById('ranking-me-picto').innerHTML = picto(nomOnglet);
     document.getElementById('ranking-me-score').textContent = me ? fmtNote(me.score) : '–';
+    // Il garde son rang même sous le seuil : c'est la ligne du classement qui
+    // dit, en barré, que la place n'est pas encore acquise.
     const rangTexte = !me ? ''
-      : (me.ranked === false)
-        ? 'non classé · ' + me.games + ' match' + (me.games > 1 ? 's' : '')
-        : '#' + me.rank + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '');
+      : '#' + me.rank + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '');
     document.getElementById('ranking-me-rank').textContent = rangTexte;
 
-    // Le message à celui qui vient de sortir : sans lui, sa disparition du
-    // classement passerait pour un bug.
+    // Le message à celui qui est sous la barre : sans lui, sa ligne barrée
+    // passerait pour un bug.
     const noteSeuil = document.getElementById('ranking-seuil-note');
     if(noteSeuil){
       if(me && me.ranked === false){
-        noteSeuil.textContent = "Tu sors du classement : il faut avoir joué la moitié des matchs pour y figurer.";
+        noteSeuil.textContent = "Participe à au moins la moitié des matchs pour apparaître vraiment au classement.";
         noteSeuil.style.display = 'block';
       }else{
         noteSeuil.style.display = 'none';
@@ -5307,22 +5308,16 @@ async function loadRanking(tab){
     const ligne = (u) => `
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''} ${u.ranked === false ? 'sorti' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
-        <span class="rt-rank ${u.ranked === false ? 'rt-rank-vide' : ''}">${u.ranked === false ? '–' : '#' + u.rank}</span>
+        <span class="rt-rank">#${u.rank}</span>
         <span class="rt-name">${u.userName}</span>
-        <span class="rt-mvt">${u.ranked === false ? '' : fleche(u)}</span>
+        <span class="rt-mvt">${fleche(u)}</span>
         <span class="rt-games">${u.games}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`;
 
-    const classes = liste.filter(u => u.ranked !== false);
-    const sortis = liste.filter(u => u.ranked === false);
-
-    document.getElementById('ranking-table').innerHTML =
-      classes.map(ligne).join('')
-      + (sortis.length
-          ? '<p class="ranking-sortis-titre">Moins de la moitié des matchs joués</p>'
-            + sortis.map(ligne).join('')
-          : '');
+    // Une seule liste, dans l'ordre des notes. Ceux qui sont sous le seuil y
+    // restent à leur place, barrés.
+    document.getElementById('ranking-table').innerHTML = liste.map(ligne).join('');
 
     // On se place au milieu de l'écran : ceux qui font mieux au-dessus, ceux qui
     // font moins bien en dessous, et le pouce décide de la suite.
