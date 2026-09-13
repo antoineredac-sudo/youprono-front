@@ -1594,6 +1594,10 @@
     margin:10px 4px 0; padding-top:10px; border-top:1px solid var(--border);
   }
 
+  /* Positionnée pour servir de repère aux lignes qu'elle contient, et pour que
+     le cadrage sur le joueur connecté tombe juste. */
+  #ranking-table{ position:relative; }
+
   .ranking-table-row{
     position:relative;
     display:flex;
@@ -2616,6 +2620,7 @@
 
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div id="ranking-table"></div>
+      <p class="ranking-note" id="ranking-regle" style="display:none;">Un joueur qui participe aux 2/3 des matchs apparaît en doré au classement, la position d'un joueur moins assidu est virtuelle.</p>
     </section>
     <section id="view-trophies" class="view" style="display:none;">
       <h2 class="play-title">MES TROPHÉES</h2>
@@ -5317,11 +5322,42 @@ function barreSelonLeMeilleur(liste){
   };
 }
 
+// Le classement tient dans une fenêtre de neuf lignes — quatre au-dessus de
+// soi, quatre en dessous — et se parcourt au doigt sur téléphone, à la molette
+// sur ordinateur. La hauteur est mesurée sur une vraie ligne plutôt que fixée
+// en dur : elle suit la taille du texte du navigateur.
+const CLASSEMENT_LIGNES_VISIBLES = 9;
+
+function cadrerClassement(boite){
+  if(!boite) return;
+  const lignes = boite.querySelectorAll('.ranking-table-row');
+
+  if(lignes.length <= CLASSEMENT_LIGNES_VISIBLES){
+    boite.style.maxHeight = '';
+    boite.style.overflowY = '';
+    return;
+  }
+
+  // Hauteur d'une ligne, marge comprise. La dernière n'a pas besoin de sa marge.
+  const marge = 6;
+  const hauteur = lignes[0].offsetHeight + marge;
+  boite.style.maxHeight = (hauteur * CLASSEMENT_LIGNES_VISIBLES - marge) + 'px';
+  boite.style.overflowY = 'auto';
+
+  // On amène sa propre ligne au milieu de la fenêtre, sans bouger la page.
+  const maLigne = boite.querySelector('.ranking-table-row.me');
+  if(maLigne){
+    boite.scrollTop = Math.max(0,
+      maLigne.offsetTop - (boite.clientHeight - maLigne.offsetHeight) / 2);
+  }
+}
+
 async function loadRanking(tab){
   const loadingEl = document.getElementById('ranking-loading');
   loadingEl.style.display = 'block';
   loadingEl.textContent = 'Chargement…';
   document.getElementById('ranking-table').innerHTML = '';
+  document.getElementById('ranking-regle').style.display = 'none';
 
   try{
     const complet = await ensureRanking(tab);
@@ -5376,18 +5412,11 @@ async function loadRanking(tab){
     // restent à leur place, barrés.
     // La regle d'assiduite, dite a tout le monde et pas seulement a ceux qui
     // sont dessous : c'est ce qui donne son sens au dore.
-    document.getElementById('ranking-table').innerHTML = liste.map(ligne).join('')
-      + '<p class="ranking-note">Un joueur qui participe aux 2/3 des matchs apparaît '
-      + 'en doré au classement, la position d\'un joueur moins assidu est virtuelle.</p>';
+    const boite = document.getElementById('ranking-table');
+    boite.innerHTML = liste.map(ligne).join('');
+    document.getElementById('ranking-regle').style.display = 'block';
 
-    // On se place au milieu de l'écran : ceux qui font mieux au-dessus, ceux qui
-    // font moins bien en dessous, et le pouce décide de la suite.
-    const maLigne = document.querySelector('#ranking-table .ranking-table-row.me');
-    if(maLigne && maLigne.scrollIntoView){
-      setTimeout(function(){
-        try{ maLigne.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(e){}
-      }, 60);
-    }
+    cadrerClassement(boite);
   }catch(e){
     loadingEl.textContent = 'Impossible de charger le classement.';
   }
