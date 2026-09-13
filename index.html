@@ -5322,11 +5322,11 @@ function barreSelonLeMeilleur(liste){
   };
 }
 
-// Le classement tient dans une fenêtre de neuf lignes — quatre au-dessus de
-// soi, quatre en dessous — et se parcourt au doigt sur téléphone, à la molette
-// sur ordinateur. La hauteur est mesurée sur une vraie ligne plutôt que fixée
-// en dur : elle suit la taille du texte du navigateur.
-const CLASSEMENT_LIGNES_VISIBLES = 9;
+// Le classement tient dans une fenêtre de onze lignes — cinq au-dessus de soi,
+// cinq en dessous — et se parcourt au doigt sur téléphone, à la molette sur
+// ordinateur. La hauteur est mesurée sur une vraie ligne plutôt que fixée en
+// dur : elle suit la taille du texte du navigateur.
+const CLASSEMENT_LIGNES_VISIBLES = 11;
 
 function cadrerClassement(boite){
   if(!boite) return;
