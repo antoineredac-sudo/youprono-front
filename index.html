@@ -5283,7 +5283,7 @@ async function loadRanking(tab){
     const noteSeuil = document.getElementById('ranking-seuil-note');
     if(noteSeuil){
       if(me && me.ranked === false){
-        noteSeuil.textContent = "Participe à au moins la moitié des matchs pour apparaître vraiment au classement.";
+        noteSeuil.textContent = "Participe à plus de 66 % des matchs pour apparaître vraiment au classement.";
         noteSeuil.style.display = 'block';
       }else{
         noteSeuil.style.display = 'none';
@@ -5317,7 +5317,12 @@ async function loadRanking(tab){
 
     // Une seule liste, dans l'ordre des notes. Ceux qui sont sous le seuil y
     // restent à leur place, barrés.
-    document.getElementById('ranking-table').innerHTML = liste.map(ligne).join('');
+    // La regle d'assiduite, dite a tout le monde et pas seulement a ceux qui
+    // sont dessous : c'est ce qui donne son sens au dore.
+    document.getElementById('ranking-table').innerHTML = liste.map(ligne).join('')
+      + '<p class="ranking-note">La fidélité pour un supporter c\'est important. '
+      + 'Ceux qui participent à plus de 66 % des matchs apparaissent en doré au '
+      + 'classement, la position de ceux qui sont moins assidus ne sera que virtuelle.</p>';
 
     // On se place au milieu de l'écran : ceux qui font mieux au-dessus, ceux qui
     // font moins bien en dessous, et le pouce décide de la suite.
