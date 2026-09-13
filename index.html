@@ -4606,7 +4606,7 @@ function renderResults(prediction, stats, matchDetail){
   let html = `
     <div class="result-category">
       <div class="result-cat-head">
-        <span class="result-cat-name">${picto('Composition')} Ton onze face à celui d'Enrique</span>
+        <span class="result-cat-name">${picto('Composition')} Composition</span>
         <span class="result-cat-points">${fmtNum(compoAccuracy)}/100</span>
       </div>
       <div class="result-cat-row" style="margin-bottom:6px;">
@@ -8049,6 +8049,18 @@ function terrainFaceAEnrique(reels, mesIds){
     parLigne[l].forEach(p => {
       if(!monOnze.has(p.id) && !dessous[p.id] && orphelins.length){ dessous[p.id] = orphelins.shift(); }
     });
+  });
+
+  // Un titulaire manqué occupe la place de CELUI QU'ON AVAIT MIS À SA PLACE :
+  // Dro Fernández, milieu gauche de métier, prend le couloir droit de João
+  // Neves qu'il remplace, et Vitinha retrouve le centre qui est le sien.
+  // Sans ça, le blanc se rangeait à son propre poste et poussait les dorés.
+  const placeDe = p => {
+    const m = dessous[p.id];
+    return (m && rang(m) !== 99) ? rang(m) : rang(p);
+  };
+  TERRAIN_LIGNES.forEach(l => {
+    parLigne[l].sort((a, b) => (placeDe(a) - placeDe(b)) || ((a.shirtNumber || 0) - (b.shirtNumber || 0)));
   });
 
   let html = '<div class="terrain">'
