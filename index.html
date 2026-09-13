@@ -1353,10 +1353,6 @@
   .ranking-table-row.sorti .rt-name,
   .ranking-table-row.sorti .rt-games,
   .ranking-table-row.sorti .rt-score{ color:var(--text-dim); }
-  .ranking-seuil-note{
-    color:var(--gold); font-size:13px; line-height:1.5;
-    text-align:center; margin:0 4px 16px;
-  }
   .ranking-name{ flex:1; font-size:15px; }
   .ranking-score{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--gold); }
 
@@ -2617,8 +2613,6 @@
         <div class="ranking-me-rank" id="ranking-me-rank"></div>
         <div class="ranking-me-def" id="ranking-me-def"></div>
       </div>
-
-      <p class="ranking-seuil-note" id="ranking-seuil-note" style="display:none;"></p>
 
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div id="ranking-table"></div>
@@ -5350,17 +5344,8 @@ async function loadRanking(tab){
       ? 'Le Coef Expert est la moyenne de tes résultats obtenus match après match.'
       : 'La note record est le meilleur résultat que tu as obtenu sur un match.';
 
-    // Le message à celui qui est sous la barre : sans lui, sa ligne barrée
-    // passerait pour un bug.
-    const noteSeuil = document.getElementById('ranking-seuil-note');
-    if(noteSeuil){
-      if(me && me.ranked === false){
-        noteSeuil.textContent = "Participe à plus de 66 % des matchs pour apparaître vraiment au classement.";
-        noteSeuil.style.display = 'block';
-      }else{
-        noteSeuil.style.display = 'none';
-      }
-    }
+    // Plus de message personnel à celui qui est sous la barre : la règle est
+    // dite une fois, sous la liste, pour tout le monde.
 
     const liste = complet;
 
@@ -5392,9 +5377,8 @@ async function loadRanking(tab){
     // La regle d'assiduite, dite a tout le monde et pas seulement a ceux qui
     // sont dessous : c'est ce qui donne son sens au dore.
     document.getElementById('ranking-table').innerHTML = liste.map(ligne).join('')
-      + '<p class="ranking-note">La fidélité pour un supporter c\'est important. '
-      + 'Ceux qui participent à plus de 66 % des matchs apparaissent en doré au '
-      + 'classement, la position de ceux qui sont moins assidus ne sera que virtuelle.</p>';
+      + '<p class="ranking-note">Un joueur qui participe aux 2/3 des matchs apparaît '
+      + 'en doré au classement, la position d\'un joueur moins assidu est virtuelle.</p>';
 
     // On se place au milieu de l'écran : ceux qui font mieux au-dessus, ceux qui
     // font moins bien en dessous, et le pouce décide de la suite.
