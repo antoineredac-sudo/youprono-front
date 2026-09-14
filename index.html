@@ -2601,7 +2601,7 @@
         <p class="profil-def" id="profil-def"></p>
 
         <div id="profil-voisinage"></div>
-        <p class="profil-def" id="profil-regle">Plus tu participes, plus tu augmentes tes chances de bien figurer au classement. En cas de forfait, on t'attribue la meilleure note du tiers le plus faible des participants.</p>
+        <p class="profil-def" id="profil-regle">Plus tu participes, plus tu augmentes tes chances de bien figurer au classement. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
         <span class="profil-tout" onclick="goToRanking()">Tout le classement ›</span>
 
         <div class="dash-history-label" style="margin-top:24px;">mon historique</div>
@@ -2629,7 +2629,7 @@
 
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div id="ranking-table"></div>
-      <p class="ranking-note" id="ranking-regle" style="display:none;">Plus tu participes, plus tu augmentes tes chances de bien figurer au classement. En cas de forfait, on t'attribue la meilleure note du tiers le plus faible des participants.</p>
+      <p class="ranking-note" id="ranking-regle" style="display:none;">Plus tu participes, plus tu augmentes tes chances de bien figurer au classement. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
     </section>
     <section id="view-match-ranking" class="view" style="display:none;">
       <h2 class="play-title">CLASSEMENT DU MATCH</h2>
@@ -2726,7 +2726,7 @@
 
         <div class="faq-item">
           <div class="faq-q">Si je loupe un match, est-ce que j'aurais 0/100 ?</div>
-          <p class="faq-a">Non, mais tu ne pars pas indemne. On t'attribue la meilleure note du tiers le plus faible des participants à ce match, et elle entre dans ton Coef Expert comme une vraie note.</p>
+          <p class="faq-a">Non, mais tu ne pars pas indemne. On t'attribue une note en dessous de la moyenne des participants à ce match, et elle entre dans ton Coef Expert comme une vraie note.</p>
           <p class="faq-a">C'est une note basse, mais jamais la pire : tu passes devant ceux qui ont joué et se sont trompés. Et elle s'adapte au match — un soir où tout le monde a vu juste, elle te coûte peu ; un soir où les écarts se creusent, elle te coûte cher.</p>
           <p class="faq-a">Dans les compétitions de groupe, en revanche, un forfait vaut toujours 0 point. C'est difficile à rattraper.</p>
         </div>
@@ -4372,8 +4372,8 @@ function messagesDuMatch(d, matchId){
   // donner de rang — il n'a pas couru cette course, il n'a pas à y être classé.
   if(!d.hasScore){
     if(d.isForfait){
-      msg.push("N'ayant pas participé au dernier match, tu obtiens la meilleure note "
-        + "du tiers le plus faible des participants : <b>" + fmtNote(d.forfaitScore)
+      msg.push("N'ayant pas participé au dernier match, on t'attribue une note en "
+        + "dessous de la moyenne des participants : <b>" + fmtNote(d.forfaitScore)
         + "</b>. Elle entre dans ton Coef Expert comme une vraie note. Les pronos "
         + "pour le prochain match sont ouverts, tu vas pouvoir prendre ta revanche.");
     }
