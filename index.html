@@ -192,6 +192,12 @@
     z-index:60;
   }
   header.topbar .left{ display:flex; align-items:center; gap:10px; }
+  /* Le blason et le nom ramènent au prochain match. C'est le geste qu'on fait
+     sans y penser sur n'importe quel site : on clique sur le logo pour rentrer. */
+  header.topbar .marque{
+    display:flex; align-items:center; gap:10px; cursor:pointer;
+  }
+  header.topbar .marque:active{ opacity:.7; }
   header.topbar .display{ font-size:18px; color:var(--gold); }
   header.topbar .who{ font-size:13px; color:var(--text-dim); }
   .menu-toggle{
@@ -1157,8 +1163,7 @@
   }
 
   .buste{ flex:1 1 0; min-width:0; text-align:center; }
-  .buste svg{ width:100%; max-width:60px; }
-  .buste-nom{ color:var(--text); font-size:10px; margin-top:2px; }
+  .buste svg{ width:100%; max-width:72px; }
   .buste-sous{ color:#5c6da8; font-size:11px; font-weight:700; }
   .buste-sous.gagne{ color:var(--gold); }
 
@@ -1929,8 +1934,11 @@
   <header class="topbar">
     <div class="left">
       <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+      <span class="marque" onclick="retourAccueil()" role="button" tabindex="0"
+            aria-label="Retour au prochain match">
       <svg class="mark" viewBox="0 0 99 111" aria-hidden="true"><g transform="translate(5.5,5.5)"><polygon points="44,0 88,25 88,75 44,100 0,75 0,25" fill="none" stroke="#e8b923" stroke-width="10" stroke-linejoin="round"/><circle cx="26" cy="30" r="9.5" fill="#f5f5f7"/><circle cx="62" cy="30" r="9.5" fill="#f5f5f7"/><circle cx="26" cy="57" r="9.5" fill="#f5f5f7"/><circle cx="62" cy="57" r="9.5" fill="#f5f5f7"/><circle cx="44" cy="82" r="9.5" fill="#f5f5f7"/></g></svg>
       <span class="display"><span class="you">You</span><span class="prono">Prono</span></span>
+      </span>
     </div>
     <span class="who" id="who-am-i" onclick="toggleMenuCompte()"></span>
 
@@ -2306,7 +2314,7 @@
     <section id="view-groups" class="view" style="display:none;">
       <h2 class="play-title">MES GROUPES D'AMIS</h2>
 
-      <p class="groups-intro">Un groupe, c'est un mini-championnat entre 2 et 10 amis. Cinq matchs, des points à chaque rencontre et des médailles à décrocher. Plus vous êtes nombreux, plus le métal est précieux.</p>
+      <p class="groups-intro">Un groupe, c'est un mini-championnat entre 2 et 10 amis. Cinq matchs, des points à chaque rencontre et des ballons à décrocher. Plus vous êtes nombreux, plus le ballon est précieux.</p>
 
       <div id="groups-list"></div>
 
@@ -2625,7 +2633,7 @@
     <section id="view-trophies" class="view" style="display:none;">
       <h2 class="play-title">MES TROPHÉES</h2>
 
-      <p class="trophy-pitch">Finis haut dans les classements de groupe pour remplir ta vitrine de trophées</p>
+      <p class="trophy-pitch">Finis haut dans les classements de groupe pour remplir ta vitrine de ballons</p>
 
       <div class="verdict" id="trophy-verdict" style="display:none;"></div>
 
@@ -2639,7 +2647,7 @@
         </div>
       </div>
 
-      <p class="trophy-note">Chaque fin de mini-championnat, les mieux classés de chaque groupe reçoivent une médaille. Plus le groupe compte de joueurs, plus le métal est précieux. Les médailles remplissent ta coupe — une fois pleine, elle rejoint ta vitrine et une nouvelle commence.</p>
+      <p class="trophy-note">Chaque fin de mini-championnat, les mieux classés de chaque groupe reçoivent un ballon, du ballon de baudruche au ballon d'or. Plus le groupe compte de joueurs, plus le ballon est précieux. Les ballons remplissent ta coupe — une fois pleine, elle rejoint ta vitrine et une nouvelle commence.</p>
 
       <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
@@ -2711,7 +2719,7 @@
 
         <div class="faq-item">
           <div class="faq-q">Puis-je m'inscrire en cours de jeu ?</div>
-          <p class="faq-a">Bien sûr, tu es le bienvenu à tout moment du jeu. Tu pourras prouver ta valeur au classement de la note record dès les premiers matchs et remonter au classement général en étant régulier. N'oublie pas qu'il existe aussi une vraie compétition au sein des groupes qui permet de décrocher des médailles et des trophées.</p>
+          <p class="faq-a">Bien sûr, tu es le bienvenu à tout moment du jeu. Tu pourras prouver ta valeur au classement de la note record dès les premiers matchs et remonter au classement général en étant régulier. N'oublie pas qu'il existe aussi une vraie compétition au sein des groupes qui permet de décrocher des ballons et des trophées.</p>
         </div>
 
         <div class="faq-item">
@@ -2740,7 +2748,7 @@
 
         <div class="faq-item">
           <div class="faq-q">Comment fonctionne le classement des groupes ?</div>
-          <p class="faq-a">Un groupe est composé de 2 à 10 joueurs. Ici pas de moyenne : chacun cumule des points en fonction de sa note globale match après match pendant une période de 5 matchs. Plus vous êtes nombreux dans le groupe, plus vous êtes récompensés par des médailles ou des trophées.</p>
+          <p class="faq-a">Un groupe est composé de 2 à 10 joueurs. Ici pas de moyenne : chacun cumule des points en fonction de sa note globale match après match pendant une période de 5 matchs. Plus vous êtes nombreux dans le groupe, plus le ballon à décrocher est précieux : baudruche, cuir, bronze, argent, puis le ballon d'or.</p>
         </div>
       </div>
     </section>
@@ -6006,6 +6014,13 @@ function switchView(name){
   });
 }
 
+// Le clic sur le logo ramène à l'accueil, et referme les menus au passage :
+// sinon le menu resterait ouvert par-dessus l'écran qu'on vient d'ouvrir.
+function retourAccueil(){
+  closeMenu();
+  switchView('home');
+}
+
 function toggleMenu(){
   const menu = document.getElementById('dropdown-menu');
   menu.style.display = (menu.style.display === 'none') ? 'block' : 'none';
@@ -7267,51 +7282,88 @@ function navFromMenu(name){
 // les groupes du joueur et renvoie les médailles, le total et l'état de la coupe.
 // Les seuils vivent côté serveur — ne jamais les recopier ici, ils divergeraient.
 const METAUX = [
-  { cle:'bronze',  nom:'Bronze',  teinte:'#B87333', bord:'#8C5626', encre:'#4a2a12', seuil:15, forme:'disque' },
-  { cle:'argent',  nom:'Argent',  teinte:'#C9CDD4', bord:'#9BA1AA', encre:'#3c4149', seuil:22, forme:'disque' },
-  { cle:'or',      nom:'Or',      teinte:'#E8B923', bord:'#C79A2E', encre:'#6E5210', seuil:29, forme:'disque' },
-  { cle:'platine', nom:'Platine', teinte:'#8FA6C4', bord:'#6E86A6', encre:'#22364d', seuil:36, forme:'hexagone' },
-  { cle:'diamant', nom:'Diamant', teinte:'#9BE7F0', bord:'#63BCC9', encre:'#14464e', seuil:43, forme:'losange' }
+  { cle:'baudruche', dessin:'baudruche', l1:'BALLON DE', l2:'BAUDRUCHE',
+    cadre:'#6b7dc4', trait:1.4, seuil:12 },
+  { cle:'cuir', dessin:'cuir', l1:'BALLON DE', l2:'CUIR',
+    cadre:'#7A4F21', trait:1.4, seuil:22 },
+  { cle:'bronze', dessin:'panneaux', teinte:'#B87333', ombre:'#7A4A1C', bord:'#8C5622',
+    l1:'BALLON DE', l2:'BRONZE', cadre:'#8C5622', trait:1.7, seuil:29 },
+  { cle:'argent', dessin:'panneaux', teinte:'#C9CDD4', ombre:'#8B929C', bord:'#8B929C',
+    l1:'BALLON', l2:"D'ARGENT", cadre:'#8B929C', trait:2, seuil:36 },
+  { cle:'or', dessin:'panneaux', teinte:'#E8B923', ombre:'#A87F12', bord:'#C79A2E',
+    l1:'BALLON', l2:"D'OR", cadre:'#E8B923', trait:2.4, seuil:43 }
 ];
 
-// Un buste porte la médaille, comme dans une vitrine de bijoutier : le ruban en
-// V, puis le métal. Le buste vide garde le nom et le seuil à atteindre — le
-// joueur voit ce qui l'attend et ce que ça coûte.
-function busteMedaille(m, nb){
-  const gagnee = nb > 0;
-  const teinte = gagnee ? m.teinte : m.teinte;
-  const opac   = gagnee ? '1' : '0.26';
-  const trait  = gagnee ? '1.8' : '1.6';
+// Le ballon seul, dessiné autour de (0,0) sur un rayon de 26.
+// La baudruche n'a ni panneaux ni coutures : elle ne doit ressembler à aucun
+// ballon de football, c'est tout le propos.
+function ballonSvg(m, gagne){
+  const o = gagne ? 1 : 0.28;
+  const id = 'bl' + m.cle;
 
-  let forme;
-  if(m.forme === 'hexagone'){
-    forme = '<polygon points="30,15 42,22 42,36 30,43 18,36 18,22" fill="' + teinte + '" fill-opacity="' + opac
-          + '" stroke="' + teinte + '" stroke-width="' + trait + '"/>';
-  }else if(m.forme === 'losange'){
-    forme = '<polygon points="30,14 43,29 30,44 17,29" fill="' + teinte + '" fill-opacity="' + opac
-          + '" stroke="' + teinte + '" stroke-width="' + trait + '"/>';
-  }else{
-    forme = '<circle cx="30" cy="29" r="13" fill="' + teinte + '" fill-opacity="' + opac
-          + '" stroke="' + teinte + '" stroke-width="' + trait + '"/>';
+  if(m.dessin === 'baudruche'){
+    return '<g opacity="' + o + '">'
+         + '<path d="M0 26q7 7 2 13t-4 9" stroke="#c2cae8" stroke-width="1.6" fill="none" stroke-linecap="round"/>'
+         + '<path d="M0 22l-4 5h8z" fill="#c97f97"/>'
+         + '<ellipse cx="0" cy="-2" rx="21" ry="24" fill="#e89ab0" stroke="#c97f97" stroke-width="2"/>'
+         + '<ellipse cx="-8" cy="-11" rx="6" ry="8" fill="#ffffff" opacity=".38" transform="rotate(-18)"/>'
+         + '</g>';
   }
 
-  const chiffre = gagnee
-    ? '<text x="30" y="34" text-anchor="middle" fill="' + m.encre + '" font-size="15" font-weight="700">' + nb + '</text>'
-    : '';
+  if(m.dessin === 'cuir'){
+    return '<g opacity="' + o + '">'
+         + '<defs><clipPath id="' + id + '"><circle cx="0" cy="0" r="26"/></clipPath></defs>'
+         + '<circle cx="0" cy="0" r="26" fill="#C08A4A"/>'
+         + '<g clip-path="url(#' + id + ')" stroke="#8A5C27" stroke-width="2" fill="none">'
+         + '<path d="M-30 -11h60M-30 11h60M-11 -30v19M11 -30v19M-11 30V11M11 30V11"/></g>'
+         + '<g clip-path="url(#' + id + ')">'
+         + '<rect x="-9" y="-9" width="18" height="18" rx="2.5" fill="#A8712F"/>'
+         + '<g stroke="#F0DCBC" stroke-width="1.5" stroke-linecap="round">'
+         + '<path d="M-6 -4h12M-6 0h12M-6 4h12"/></g></g>'
+         + '<circle cx="0" cy="0" r="26" fill="none" stroke="#7A4F21" stroke-width="2.2"/>'
+         + '<ellipse cx="-9" cy="-13" rx="8" ry="5" fill="#ffffff" opacity=".14"/>'
+         + '</g>';
+  }
+
+  // Les trois ballons à panneaux. Même dessin, la couleur fait l'échelle — et
+  // les hexagones sont ceux du logo.
+  return '<g opacity="' + o + '">'
+       + '<defs><clipPath id="' + id + '"><circle cx="0" cy="0" r="26"/></clipPath></defs>'
+       + '<circle cx="0" cy="0" r="26" fill="' + m.teinte + '"/>'
+       + '<g clip-path="url(#' + id + ')" fill="' + m.ombre + '">'
+       + '<polygon points="0,-9 8,-3 5,7 -5,7 -8,-3"/>'
+       + '<polygon points="0,-27 7,-23 5,-15 -5,-15 -7,-23"/>'
+       + '<polygon points="-22,-5 -15,-10 -9,-4 -12,4 -20,3"/>'
+       + '<polygon points="22,-5 15,-10 9,-4 12,4 20,3"/>'
+       + '<polygon points="-8,25 -11,15 -3,11 5,14 5,23"/>'
+       + '</g>'
+       + '<circle cx="0" cy="0" r="26" fill="none" stroke="' + m.bord + '" stroke-width="2.2"/>'
+       + '<ellipse cx="-9" cy="-13" rx="8" ry="5" fill="#ffffff" opacity=".26"/>'
+       + '</g>';
+}
+
+// Le ballon repose sur une plaque gravée à son nom, comme une pièce de musée.
+// Le nom fait partie du trophée : il n'y a plus de légende flottante à côté.
+// Tant que le ballon n'est pas gagné, la plaque est en pointillé.
+function busteMedaille(m, nb){
+  const gagne = nb > 0;
+  const cadre = gagne ? m.cadre : '#6b7dc4';
+  const encre = gagne ? (m.cle === 'or' ? '#e8b923' : '#f5f5f7') : '#8b99d0';
+  const gras  = (gagne && m.cle === 'or') ? ' font-weight="700"' : '';
+  const tirets = gagne ? '' : ' stroke-dasharray="4 4"';
 
   return '<div class="buste">'
-       + '<svg viewBox="0 0 60 96" aria-hidden="true">'
-       + '<path d="M12 62 C12 38 20 22 30 22 C40 22 48 38 48 62 Z" fill="#0a1c48"'
-       + (gagnee ? ' stroke="var(--gold)" stroke-width="1.4"' : ' stroke="#2f4a86" stroke-width="1.2"') + '/>'
-       + '<ellipse cx="30" cy="63" rx="19" ry="4" fill="#0a1c48"'
-       + (gagnee ? ' stroke="var(--gold)" stroke-width="1.4"' : ' stroke="#2f4a86" stroke-width="1.2"') + '/>'
-       + '<path d="M21 26 L30 44 L39 26" fill="none" stroke="' + m.bord + '" stroke-width="2" opacity="'
-       + (gagnee ? '1' : '.5') + '"/>'
-       + forme + chiffre
+       + '<svg viewBox="0 0 66 100" aria-hidden="true">'
+       + '<g transform="translate(33,30)">' + ballonSvg(m, gagne) + '</g>'
+       + '<rect x="1.5" y="60" width="63" height="26" rx="2.5" fill="#0a1c48" stroke="'
+       + cadre + '" stroke-width="' + (gagne ? m.trait : 1.3) + '"' + tirets + '/>'
+       + '<text x="33" y="71.5" text-anchor="middle" fill="' + encre
+       + '" font-size="8.6" letter-spacing=".4"' + gras + '>' + m.l1 + '</text>'
+       + '<text x="33" y="81.5" text-anchor="middle" fill="' + encre
+       + '" font-size="8.6" letter-spacing=".4"' + gras + '>' + m.l2 + '</text>'
        + '</svg>'
-       + '<div class="buste-nom">' + m.nom + '</div>'
-       + '<div class="buste-sous' + (gagnee ? ' gagne' : '') + '">'
-       + (gagnee ? (nb > 1 ? nb + ' gagnées' : '1 gagnée') : '') + '</div>'
+       + '<div class="buste-sous' + (gagne ? ' gagne' : '') + '">'
+       + (gagne ? (nb > 1 ? nb + ' gagnés' : '1 gagné') : '') + '</div>'
        + '</div>';
 }
 
@@ -7354,11 +7406,11 @@ function coupeSVG(pleine, hauteur){
 // partir de fragments : une ligne de rang, un corps selon le métal, une ligne
 // de coupe. Neuf fragments couvrent les 54 combinaisons de taille et de place.
 const VERDICT_METAUX = {
-  5: { nom:'Diamant', phrase:'Le métal le plus rare du jeu.' },
-  4: { nom:'Platine', phrase:'Très peu de joueurs montent aussi haut.' },
-  3: { nom:'Or',      phrase:'Une belle série.' },
-  2: { nom:'Argent',  phrase:'Solide.' },
-  1: { nom:'Bronze',  phrase:'La première marche.' }
+  5: { nom:"Ballon d'or",        phrase:'Le ballon le plus rare du jeu.' },
+  4: { nom:"Ballon d'argent",    phrase:'Très peu de joueurs montent aussi haut.' },
+  3: { nom:'Ballon de bronze',   phrase:'Une belle série.' },
+  2: { nom:'Ballon de cuir',     phrase:'Le premier vrai ballon de football.' },
+  1: { nom:'Ballon de baudruche', phrase:"Tu étais là à chaque match, c'est déjà ça." }
 };
 
 function verdictHtml(m, d){
@@ -7370,7 +7422,7 @@ function verdictHtml(m, d){
     const autre = echapper(m.opponentName || 'ton adversaire');
     const corps = m.isChampion
       ? 'Bravo, tu as battu ' + autre + ' sur un mini-championnat.'
-      : autre + ' t\'a battu sur ce mini-championnat. À deux, il n\'y a pas de médaille — mais à trois, il y en a une.';
+      : autre + ' t\'a battu sur ce mini-championnat. À deux, il n\'y a pas de ballon à gagner — mais à trois, il y en a un.';
     return grand
          + '<div class="verdict-texte">' + corps + '</div>'
          + '<button class="cta-play-outline" onclick="goToGroups()">Défie encore plus d\'amis</button>';
@@ -7394,7 +7446,8 @@ function verdictHtml(m, d){
   if(metal){
     html += '<div class="verdict-metal">' + metal.nom + '</div>'
           + '<div class="verdict-texte">' + m.points + ' points en cinq matchs. '
-          + metal.phrase + ' Il pèse ' + m.metalValue + ' dans ta coupe.</div>';
+          + metal.phrase + ' Il pèse ' + m.metalValue
+          + (m.metalValue > 1 ? ' points' : ' point') + ' dans ta coupe.</div>';
 
     const cible = d.cupTarget || 12;
     const reste = cible - (d.cupProgress || 0);
@@ -7404,9 +7457,9 @@ function verdictHtml(m, d){
         + '</b>. Encore ' + reste + ' points et elle rejoint ta vitrine.</div>';
   }else{
     const seuil = d.bronzeThreshold || 15;
-    html += '<div class="verdict-metal">Pas de médaille cette fois.</div>'
+    html += '<div class="verdict-metal">Pas de ballon cette fois.</div>'
           + '<div class="verdict-texte">' + m.points + ' points en cinq matchs, il en fallait '
-          + seuil + ' pour le bronze. Le prochain championnat commence au match suivant.</div>';
+          + seuil + ' pour la baudruche. Le prochain championnat commence au match suivant.</div>';
   }
 
   return html;
