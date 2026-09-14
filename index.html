@@ -789,6 +789,12 @@
     margin-top:4px;
   }
   .results-rank{ color:var(--text-dim); font-size:13px; margin-top:6px; }
+  .mr-lien{ cursor:pointer; }
+  /* Le classement du match n'a ni flèche de mouvement ni fraction d'assiduité :
+     le pseudo prend la place laissée libre. */
+  #mr-table .rt-name{ flex:1; }
+  #mr-table .rt-score{ width:70px; }
+  .mr-lien b{ color:var(--gold); font-weight:600; white-space:nowrap; }
 
   .result-category{
     background:var(--surface);
@@ -2625,6 +2631,21 @@
       <div id="ranking-table"></div>
       <p class="ranking-note" id="ranking-regle" style="display:none;">Plus tu participes aux matchs, plus tu augmentes tes chances de bien figurer au classement. En cas de forfait, on t'attribue la meilleure note du tiers le plus faible des participants.</p>
     </section>
+    <section id="view-match-ranking" class="view" style="display:none;">
+      <h2 class="play-title">CLASSEMENT DU MATCH</h2>
+      <span class="back-link" onclick="goToResults()">← Retour à mon résultat</span>
+
+      <div class="results-banner" style="margin-top:14px;">
+        <div class="results-score-line" id="mr-affiche"></div>
+        <div class="results-date" id="mr-date"></div>
+      </div>
+
+      <div id="mr-loading" class="placeholder">Chargement du classement…</div>
+      <div id="mr-table"></div>
+      <p class="ranking-note" id="mr-note" style="display:none;"></p>
+
+      <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
+    </section>
     <section id="view-trophies" class="view" style="display:none;">
       <h2 class="play-title">MES TROPHÉES</h2>
 
@@ -3017,6 +3038,7 @@ function restoreRoute(brut){
     else if(nom === 'kops'){ goToKops(); }
     else if(nom === 'kop' && parts[1]){ openKop(parts[1]); }
     else if(nom === 'ranking'){ goToRanking(); }
+    else if(nom === 'match-ranking'){ goToMatchRanking(parts[1]); }
     else if(nom === 'profile'){ goToProfile(); }
     else if(nom === 'badges'){ goToBadges(); }
     else if(nom === 'myprono'){ goToMyProno(); }
@@ -4548,8 +4570,16 @@ function renderResults(prediction, stats, matchDetail){
 
   const totalNote = stats.result.team.total || 0;
   document.getElementById('results-total-value').textContent = fmtNote(totalNote);
-  document.getElementById('results-rank').textContent =
-    stats.result.rank > 0 ? 'Classé ' + stats.result.rank + '/' + stats.nblayer + ' sur ce match' : '';
+  // Le rang ouvre le classement complet du match : c'est le geste naturel, on
+  // voit sa place et on veut voir les autres.
+  const rangEl = document.getElementById('results-rank');
+  if(stats.result.rank > 0){
+    rangEl.innerHTML = '<span class="mr-lien" onclick="goToMatchRanking(\''
+      + matchDetail.id + '\')">Classé ' + stats.result.rank + '/' + stats.nblayer
+      + ' sur ce match <b>Voir le classement →</b></span>';
+  }else{
+    rangEl.textContent = '';
+  }
 
   // L'adversaire affiché doit être celui de CE match. getOpponentName() lisait
   // currentMatch, c'est-à-dire le prochain match du calendrier : sur un résultat
@@ -5075,6 +5105,72 @@ async function chargerVoisinage(tab){
     majTuilesProfil(complet, moi);
   }catch(e){
     cible.innerHTML = '<div class="placeholder">Impossible de charger le classement.</div>';
+  }
+}
+
+// ===== LE CLASSEMENT DU DERNIER MATCH =====
+// Toutes les notes d'un match, de la meilleure à la plus basse. Le jeu disait
+// déjà à chacun son rang — « 8ᵉ/11 » — mais nulle part on ne pouvait voir la
+// liste. C'est pourtant l'écran qu'on regarde le soir d'un match.
+//
+// Aucun absent ici : la note de forfait ne pèse que sur le coefficient expert.
+// Et l'écran ne se vide jamais — il bascule sur le match suivant le jour où ses
+// statistiques sont saisies, comme le reste du jeu.
+async function goToMatchRanking(matchId){
+  switchView('match-ranking');
+  if(matchId){ setRoute('match-ranking', matchId); }
+  document.getElementById('mr-loading').style.display = 'block';
+  document.getElementById('mr-table').innerHTML = '';
+  document.getElementById('mr-note').style.display = 'none';
+  document.getElementById('mr-affiche').textContent = '';
+  document.getElementById('mr-date').textContent = '';
+
+  try{
+    const teamId = await getPsgTeamId();
+    const url = matchId
+      ? `${API_BASE}/UserStats/MatchRanking/${teamId}/${matchId}`
+      : `${API_BASE}/UserStats/MatchRanking/${teamId}`;
+    const json = await fetch(url).then(r => r.json());
+    const d = (json.success && json.data) ? json.data : null;
+
+    if(!d || !d.rows || !d.rows.length){
+      document.getElementById('mr-loading').textContent =
+        "Aucun classement pour ce match — il n'a pas encore été noté.";
+      return;
+    }
+
+    document.getElementById('mr-affiche').textContent =
+      (d.homeTeam || '') + ' ' + d.homeScore + ' – ' + d.awayScore + ' ' + (d.awayTeam || '');
+    document.getElementById('mr-date').textContent =
+      d.dateTime ? formatMatchDate(new Date(d.dateTime)) : '';
+
+    const moi = getUserId();
+    const meilleur = d.rows[0].score;
+    const plancher = meilleur / 2;
+    const largeur = (n) => meilleur <= 0 ? 0
+      : Math.max(6, Math.min(100, ((n - plancher) / (meilleur - plancher)) * 100)).toFixed(1);
+
+    const boite = document.getElementById('mr-table');
+    boite.innerHTML = d.rows.map(r => `
+      <div class="ranking-table-row ${r.id === moi ? 'me' : ''}">
+        <span class="rt-barre" style="width:${largeur(r.score)}%"></span>
+        <span class="rt-rank">#${r.rank}</span>
+        <span class="rt-name assidu">${echapper(r.userName || '')}</span>
+        <span class="rt-score">${fmtNote(r.score)}</span>
+      </div>`).join('');
+
+    document.getElementById('mr-loading').style.display = 'none';
+
+    const note = document.getElementById('mr-note');
+    note.textContent = d.rows.length + ' joueur' + (d.rows.length > 1 ? 's ont' : ' a')
+      + ' été noté' + (d.rows.length > 1 ? 's' : '') + ' sur ce match. Médiane : '
+      + fmtNote(d.median) + '.';
+    note.style.display = 'block';
+
+    cadrerClassement(boite);
+  }catch(e){
+    document.getElementById('mr-loading').textContent =
+      'Impossible de charger le classement du match.';
   }
 }
 
