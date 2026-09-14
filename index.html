@@ -2967,6 +2967,12 @@ async function submitAuth(){
   btn.disabled = false;
 }
 
+// La destination réclamée par un lien alors que personne n'était connecté.
+// Un bouton de courriel — « Mon classement », « Défie tes amis » — mène à un
+// écran précis ; si le joueur doit d'abord s'identifier, on ne l'abandonne pas
+// sur l'accueil, on l'emmène là où on le lui avait promis.
+let routeApresConnexion = '';
+
 function enterApp(restaurer){
   const auth = getAuth();
 
@@ -2975,6 +2981,9 @@ function enterApp(restaurer){
   let route = '';
   if(restaurer){
     try{ route = (location.hash || '').replace(/^#/, ''); }catch(e){}
+  }else if(routeApresConnexion){
+    route = routeApresConnexion;
+    routeApresConnexion = '';
   }
 
   document.getElementById('screen-auth').classList.remove('active');
@@ -2992,7 +3001,7 @@ function enterApp(restaurer){
   assurerMonKop().then(majLibelleMenuKop);
 
   // Au rafraîchissement, on rouvre l'écran lu plus haut. Après une connexion,
-  // non : on entre par l'accueil.
+  // on n'ouvre que la destination qu'un lien avait réclamée ; sinon, l'accueil.
   if(route){ restoreRoute(route); }
 }
 
@@ -7647,6 +7656,9 @@ async function rejoindreGroupeDAmis(code){
     return;
   }
   if(getAuth()){ enterApp(true); }
+  // Pas connecté, mais une destination était demandée : on la garde de côté
+  // pour l'ouvrir juste après l'inscription ou la connexion.
+  else if(h){ routeApresConnexion = h; }
 })();
 
 // ===== ÉCRAN DE COMPOSITION =====
