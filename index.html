@@ -4365,7 +4365,20 @@ function verdictDuMatch(d){
 
 function messagesDuMatch(d, matchId){
   const msg = [];
-  if(!d || !d.hasScore) return msg;
+  if(!d) return msg;
+
+  // Le joueur n'a pas pronostiqué ce match, mais il était inscrit avant la
+  // clôture : il a écopé de la note de forfait. On la lui annonce, sans lui
+  // donner de rang — il n'a pas couru cette course, il n'a pas à y être classé.
+  if(!d.hasScore){
+    if(d.isForfait){
+      msg.push("N'ayant pas participé au dernier match, tu obtiens la meilleure note "
+        + "du tiers le plus faible des participants : <b>" + fmtNote(d.forfaitScore)
+        + "</b>. Elle entre dans ton Coef Expert comme une vraie note. Les pronos "
+        + "pour le prochain match sont ouverts, tu vas pouvoir prendre ta revanche.");
+    }
+    return msg;
+  }
 
   // --- Le verdict, toujours en tête ---
   const verdict = verdictDuMatch(d);
