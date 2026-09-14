@@ -4373,7 +4373,11 @@ function messagesDuMatch(d, matchId){
 
   // --- Son rang sur ce match, parmi tous les joueurs notés ---
   if(d.matchRank > 0 && d.scoredCount > 1){
-    msg.push(d.matchRank + 'ᵉ/' + d.scoredCount + ' sur ce match, tous joueurs confondus.');
+    // La ligne ouvre le classement complet du match, comme les lignes de groupe
+    // ouvrent le salon : on annonce un rang, on doit pouvoir voir les autres.
+    msg.push('<span class="evenement-lien" onclick="goToMatchRanking(\'' + matchId + '\')">'
+      + d.matchRank + 'ᵉ/' + d.scoredCount + ' sur ce match, tous joueurs confondus.'
+      + ' <b>Voir →</b></span>');
   }
 
   // --- Une ligne par groupe d'amis, toujours ---
