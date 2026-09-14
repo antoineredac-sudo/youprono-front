@@ -3276,8 +3276,14 @@ async function loadHomeMatch(){
       document.getElementById('match-date').textContent = "Coup d'envoi : " + formatMatchDate(matchKickoff);
 
       predictionsDeadline = new Date(matchKickoff.getTime() - CLOTURE_AVANT_MS);
+      // « à 18:45 » plutôt que « · 18:45 » : c'est une phrase, pas une fiche.
+      const jourCloture = predictionsDeadline.toLocaleDateString('fr-FR',
+        { weekday:'long', day:'numeric', month:'long' });
+      const heureCloture = predictionsDeadline.toLocaleTimeString('fr-FR',
+        { hour:'2-digit', minute:'2-digit' });
       document.getElementById('deadline-note').textContent =
-        "Les pronos ferment 2 heures avant le coup d'envoi, soit le " + formatMatchDate(predictionsDeadline) + '.';
+        "Tu peux modifier tes pronos jusqu'à 2 heures avant le coup d'envoi, soit le "
+        + jourCloture + ' à ' + heureCloture + '.';
 
       if(countdownInterval) clearInterval(countdownInterval);
       updateCountdown();
