@@ -4318,104 +4318,25 @@ function renderMyProno(match, prediction){
 const EVENEMENTS_MAX = 4;
 
 // ===== LE VERDICT DU MATCH =====
-// Une phrase selon la note, croisée avec la médiane des joueurs notés sur ce
-// match : la même note ne se lit pas pareil un soir de 6-1 et un soir de 2-0
-// sans surprise. En dessous de MEDIANE_MIN_JOUEURS notés, la médiane ne veut
-// rien dire et on s'en tient à une phrase neutre par tranche.
-// Une seconde phrase cite la meilleure catégorie du joueur (à partir de
-// CATEGORIE_FORTE) quand la note est bonne, ou la pire (sous CATEGORIE_FAIBLE)
-// quand elle ne l'est pas. Jamais les deux.
-// Les huit tranches et les textes sont d'Antoine, validés le 11 septembre 2026.
+// La phrase n'est plus écrite ici. Le serveur la fabrique — huit tranches
+// croisées avec la médiane du match, plus un complément de catégorie — et la
+// renvoie déjà rédigée dans « verdict ». Le site ne fait que l'afficher, avec
+// la médiane en dessous quand elle a du sens.
+//
+// C'est ce qui garantit que le site et le courriel du lendemain disent
+// exactement la même chose : les textes vivent à un seul endroit,
+// GroupService.Verdicts côté serveur.
 const MEDIANE_MIN_JOUEURS = 4;
-const CATEGORIE_FORTE  = 90;
-const CATEGORIE_FAIBLE = 40;
-const VERDICT_BASCULE  = 70;   // au-dessus on cite la meilleure catégorie, en dessous la pire
-
-// Tranches par note minimale, de la plus haute à la plus basse.
-const VERDICTS = [
-  { min: 90,
-    dessous: "Plus de 90 et pas dans la moitié haute : le soir où tout le monde avait vu le match avant qu'il se joue.",
-    dessus:  "Tu as vu le match avant qu'il se joue. Enrique devrait t'appeler.",
-    neutre:  "Tu as vu le match avant qu'il se joue. Enrique devrait t'appeler." },
-  { min: 85,
-    dessous: "Grand soir pour toi, plus grand encore pour les autres. Le match était écrit d'avance.",
-    dessus:  "Grand soir, et la majorité en est loin.",
-    neutre:  "Grand soir." },
-  { min: 80,
-    dessous: "Note d'expert, dans un match d'experts. Ce soir, 80 ne suffisait pas.",
-    dessus:  "Note d'expert, et peu de supporters voient le match aussi juste.",
-    neutre:  "Note d'expert. Peu de supporters voient le match aussi juste." },
-  { min: 75,
-    dessous: "Solide, et pourtant dans la moitié basse : le match était lisible, tout le monde l'a lu.",
-    dessus:  "Solide, et au-dessus du lot. Le match était difficile à lire, tu l'as lu.",
-    neutre:  "Solide. Tu as lu le match." },
-  { min: 70,
-    dessous: "Pas mal défendu, mais les autres ont mieux lu le match.",
-    dessus:  "Bien défendu. Ce n'était pas un match facile à lire, tu l'as mieux lu que la plupart.",
-    neutre:  "Tu ne t'es pas mal défendu. Il manquait un titulaire ou un but pour changer de catégorie." },
-  { min: 60,
-    dessous: "Peut mieux faire. La moitié des supporters t'a devancé.",
-    dessus:  "Note moyenne, soirée difficile : tu finis dans la bonne moitié.",
-    neutre:  "Dans la moyenne des supporters. Ni la tribune, ni le banc." },
-  { min: 50,
-    dessous: "Tu as vu le match de loin. Et la plupart l'ont vu de plus près.",
-    dessus:  "Mauvaise note, mais la majorité a fait pire. Ce soir, 55 c'était voir juste.",
-    neutre:  "Tu as vu le match de loin." },
-  { min: -Infinity,
-    dessous: "Naufrage. Le PSG a joué un match, tu en avais pronostiqué un autre.",
-    dessus:  "Naufrage collectif. Ta note est mauvaise, celle de la majorité est pire : personne n'avait vu ce match venir.",
-    neutre:  "Naufrage. Le PSG a joué un match, tu en avais pronostiqué un autre." }
-];
-
-// Le complément selon la catégorie. Clés renvoyées par le serveur.
-const CATEGORIE_FORTE_TEXTE = {
-  composition: "Et tu as été exceptionnel en compo.",
-  score:       "Et tu avais le score.",
-  possession:  "Et tu avais la possession au pourcent près.",
-  shots:       "Et tu avais les tirs.",
-  fouls:       "Et tu avais les fautes.",
-  crosses:     "Et tu avais les centres."
-};
-const CATEGORIE_FAIBLE_TEXTE = {
-  composition: "C'est la compo qui t'a coulé.",
-  score:       "C'est le score qui t'a coulé.",
-  possession:  "C'est la possession qui t'a coulé.",
-  shots:       "Ce sont les tirs qui t'ont coulé.",
-  fouls:       "Ce sont les fautes qui t'ont coulé.",
-  crosses:     "Ce sont les centres qui t'ont coulé."
-};
 
 function verdictDuMatch(d){
-  if(!d || !d.hasScore) return '';
-  const note = d.score;
-  const tranche = VERDICTS.find(v => note >= v.min) || VERDICTS[VERDICTS.length - 1];
-
-  const medianeUtile = (d.scoredCount || 0) >= MEDIANE_MIN_JOUEURS;
-  let phrase;
-  if(!medianeUtile)                phrase = tranche.neutre;
-  else if(note >= d.matchMedian)   phrase = tranche.dessus;
-  else                             phrase = tranche.dessous;
-
-  // Le complément : une seule catégorie citée, jamais les deux.
-  let complement = '';
-  if(note >= VERDICT_BASCULE){
-    if(d.bestCategory && d.bestCategoryNote >= CATEGORIE_FORTE && CATEGORIE_FORTE_TEXTE[d.bestCategory]){
-      complement = CATEGORIE_FORTE_TEXTE[d.bestCategory];
-      // La phrase de base a déjà son « et » : le complément lâche le sien.
-      if(/, et /.test(phrase)) complement = complement.replace(/^Et tu/, 'Tu');
-    }
-  }else{
-    if(d.worstCategory && d.worstCategoryNote < CATEGORIE_FAIBLE && CATEGORIE_FAIBLE_TEXTE[d.worstCategory]){
-      complement = CATEGORIE_FAIBLE_TEXTE[d.worstCategory];
-    }
-  }
+  if(!d || !d.hasScore || !d.verdict) return '';
 
   // Le chiffre qui rend la phrase vérifiable.
-  const mediane = medianeUtile
+  const mediane = ((d.scoredCount || 0) >= MEDIANE_MIN_JOUEURS)
     ? '<span class="verdict-mediane">Médiane du match : ' + fmtNote(d.matchMedian) + '</span>'
     : '';
 
-  return '<div class="verdict-match">' + phrase + (complement ? ' ' + complement : '') + '</div>' + mediane;
+  return '<div class="verdict-match">' + d.verdict + '</div>' + mediane;
 }
 
 function messagesDuMatch(d, matchId){
