@@ -789,6 +789,23 @@
     margin-top:4px;
   }
   .results-rank{ color:var(--text-dim); font-size:13px; margin-top:6px; }
+  /* L'écran du joueur qui n'a pas pronostiqué : il n'a pas de résultat détaillé,
+     mais il a une note de forfait, et il doit la connaître. */
+  .forfait-carte{
+    background:var(--surface-raised); border:1px solid var(--gold);
+    border-radius:12px; padding:22px 18px; text-align:center; margin:14px 0 4px;
+  }
+  .forfait-label{
+    color:var(--text-dim); font-size:11px; letter-spacing:2px; text-transform:uppercase;
+  }
+  .forfait-note{
+    font-family:'Oswald',sans-serif; font-size:42px; font-weight:700;
+    color:var(--gold); line-height:1.1; margin:6px 0 2px;
+  }
+  .forfait-sur{ color:var(--text-dim); font-size:12px; }
+  .forfait-texte{
+    color:var(--text); font-size:15px; line-height:1.6; margin-top:14px;
+  }
   .mr-lien{ cursor:pointer; }
   /* Le classement du match n'a ni flèche de mouvement ni fraction d'assiduité :
      le pseudo prend la place laissée libre. */
@@ -1521,7 +1538,12 @@
     font-family:'Oswald',sans-serif; font-size:40px;
     color:var(--gold); line-height:1.15; margin-top:4px;
   }
-  .profil-carte-matchs{ color:var(--text-dim); font-size:13px; margin-top:6px; }
+  /* Titre de la courbe, et non légende du coef expert : l'écart au-dessus le
+     décroche du grand chiffre, celui en dessous le colle au dessin. */
+  .profil-carte-matchs{
+    color:var(--text-dim); font-size:11px; letter-spacing:1.5px;
+    text-transform:uppercase; margin:26px 0 2px;
+  }
   /* La définition de la note, juste sous l'onglet qu'on vient de toucher :
      on sait ce qu'on regarde avant de regarder la liste. */
   .profil-def{
@@ -2283,6 +2305,7 @@
     </section>
     <section id="view-results" class="view" style="display:none;">
       <div id="results-loading" class="placeholder">Chargement des résultats…</div>
+      <div id="results-forfait" style="display:none;"></div>
       <div id="results-empty" class="placeholder" style="display:none;">
         Pas encore de résultat pour ce match — reviens une fois qu'il aura été joué et noté.
       </div>
@@ -4372,10 +4395,11 @@ function messagesDuMatch(d, matchId){
   // donner de rang — il n'a pas couru cette course, il n'a pas à y être classé.
   if(!d.hasScore){
     if(d.isForfait){
-      msg.push("N'ayant pas participé au dernier match, on t'attribue une note en "
-        + "dessous de la moyenne des participants : <b>" + fmtNote(d.forfaitScore)
-        + "</b>. Elle entre dans ton Coef Expert comme une vraie note. Les pronos "
-        + "pour le prochain match sont ouverts, tu vas pouvoir prendre ta revanche.");
+      msg.push("Comme tu as été forfait sur le dernier match, tu obtiens une note en "
+        + "dessous de la note moyenne obtenue par l'ensemble des participants : <b>"
+        + fmtNote(d.forfaitScore) + "</b>. Elle entre dans ton Coef Expert comme une "
+        + "vraie note. Les pronos pour le prochain match sont ouverts, tu vas pouvoir "
+        + "prendre ta revanche.");
     }
     return msg;
   }
@@ -4446,11 +4470,42 @@ function blocInviteSansGroupe(){
        + '<span>INVITE-LES SUR WHATSAPP</span></button></div>';
 }
 
+// Le joueur n'a pas pronostiqué ce match. On lui annonce sa note de forfait,
+// en grand, avec la raison. Rend true si quelque chose a été affiché.
+async function afficherForfait(matchId){
+  const boite = document.getElementById('results-forfait');
+  if(!boite) return false;
+
+  try{
+    const teamId = await getPsgTeamId();
+    const json = await fetch(
+      `${API_BASE}/Group/MatchEvents/${teamId}/${matchId}/${getUserId()}`).then(r => r.json());
+    const d = (json.success && json.data) ? json.data : null;
+    if(!d || !d.isForfait) return false;
+
+    boite.innerHTML =
+        '<div class="forfait-carte">'
+      + '<div class="forfait-label">Ta note de forfait</div>'
+      + '<div class="forfait-note">' + fmtNote(d.forfaitScore) + '</div>'
+      + '<div class="forfait-sur">sur 100</div>'
+      + '<div class="forfait-texte">Comme tu as été forfait sur le dernier match, '
+      + 'tu obtiens une note en dessous de la note moyenne obtenue par l\'ensemble '
+      + 'des participants. Elle entre dans ton Coef Expert comme une vraie note.</div>'
+      + '</div>'
+      + '<p class="ranking-note">Les pronos pour le prochain match sont ouverts, '
+      + 'tu vas pouvoir prendre ta revanche.</p>';
+    boite.style.display = 'block';
+    return true;
+  }catch(e){ return false; }
+}
+
 async function afficherEvenementsDuMatch(matchId){
   const bloc = document.getElementById('results-evenements');
   if(!bloc) return;
   bloc.style.display = 'none';
   bloc.innerHTML = '';
+  const boiteForfait = document.getElementById('results-forfait');
+  if(boiteForfait){ boiteForfait.style.display = 'none'; boiteForfait.innerHTML = ''; }
 
   try{
     const teamId = await getPsgTeamId();
@@ -4558,7 +4613,12 @@ async function enterResultsScreen(matchId){
     document.getElementById('results-loading').style.display = 'none';
 
     if(!predRes.success || !statsRes.success || !statsRes.data || !matchDetailRes.success){
-      document.getElementById('results-empty').style.display = 'block';
+      // Il n'a pas pronostiqué ce match. Il n'a donc pas de résultat détaillé —
+      // mais il a peut-être écopé d'une note de forfait, et la lui cacher serait
+      // le pire des traitements : il la découvrirait dans son coef expert sans
+      // comprendre d'où elle vient.
+      const vu = await afficherForfait(matchId);
+      if(!vu){ document.getElementById('results-empty').style.display = 'block'; }
       return;
     }
 
@@ -5799,8 +5859,10 @@ async function loadDashboard(){
     document.getElementById('profil-note').textContent = fmtNote(g.expertCoef || 0);
 
     const joues = g.matchesPlayed || 0;
+    // Ce libellé titre la courbe, il ne complète plus le coef expert : sinon on
+    // croirait que la moyenne ne porte que sur les matchs dessinés.
     document.getElementById('profil-matchs').textContent =
-      joues + (joues > 1 ? ' matchs joués' : ' match joué');
+      joues > 0 ? 'Tes derniers matchs' : '';
 
     const history = (historyRes.success && historyRes.data && historyRes.data.page) ? historyRes.data.page : [];
     const historyEl = document.getElementById('dash-history');
