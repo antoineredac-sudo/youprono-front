@@ -5386,7 +5386,11 @@ function courbeDesNotes(history){
   const x = i => marge + (pts.length === 1 ? (L - 2*marge)/2 : i * (L - 2*marge) / (pts.length - 1));
   const y = v => 18 + (1 - (v - (bas - etendue*0.2)) / (etendue*1.4)) * 56;
 
-  const iRecord = notes.indexOf(haut);
+  // Le record ne peut pas être une note de forfait : on ne décore pas d'une
+  // étoile un match qu'on n'a pas joué.
+  const joues = pts.map((p, i) => p.isForfait ? -1 : p.score);
+  const meilleurJoue = Math.max.apply(null, joues);
+  const iRecord = meilleurJoue > 0 ? joues.indexOf(meilleurJoue) : -1;
   const ligne = pts.map((p, i) => x(i).toFixed(1) + ',' + y(p.score).toFixed(1)).join(' ');
 
   let svg = '<svg class="courbe" viewBox="0 0 ' + L + ' ' + H + '" aria-hidden="true">';
@@ -5401,14 +5405,23 @@ function courbeDesNotes(history){
       svg += '<circle cx="' + cx + '" cy="' + cy + '" r="5" fill="var(--text)"/>';
       svg += '<path transform="translate(' + (cx - 12) + ',' + (cy - 30) + ')" fill="var(--gold)" '
            + 'd="M12 2l1.5 3.1 3.4.5-2.5 2.4.6 3.4-3-1.6-3 1.6.6-3.4-2.5-2.4 3.4-.5z"/>';
+    }else if(p.isForfait){
+      // Un forfait : point gris et creux, il compte dans la moyenne mais ce
+      // n'est pas une performance.
+      svg += '<circle cx="' + cx + '" cy="' + cy + '" r="3.5" fill="var(--bg)" '
+           + 'stroke="#8b99d0" stroke-width="2"/>';
     }else{
       svg += '<circle cx="' + cx + '" cy="' + cy + '" r="3.5" fill="var(--gold)"/>';
     }
-    svg += '<text x="' + cx + '" y="' + (H - 8) + '" text-anchor="middle" fill="var(--text-dim)" '
-         + 'font-size="9">' + echapper(p.court || '') + '</text>';
+    svg += '<text x="' + cx + '" y="' + (H - 8) + '" text-anchor="middle" fill="'
+         + (p.isForfait ? '#8b99d0' : 'var(--text-dim)') + '" '
+         + 'font-size="9">' + (p.isForfait ? 'FOR' : echapper(p.court || '')) + '</text>';
   });
 
-  return svg + '</svg><div class="courbe-legende">le pointillé marque ta moyenne, l\'étoile ton record</div>';
+  const aForfait = pts.some(p => p.isForfait);
+  return svg + '</svg><div class="courbe-legende">le pointillé marque ta moyenne, '
+       + 'l\'étoile ton record'
+       + (aForfait ? ', FOR un match que tu n\'as pas joué' : '') + '</div>';
 }
 
 // « 3/3 » plutôt que « 3 » : le nombre de matchs joués ne dit rien sans le
@@ -5880,14 +5893,30 @@ async function loadDashboard(){
       });
     }catch(e){}
 
-    // Trois lettres d'adversaire sous chaque point de la courbe : « c'est
-    // contre Brest que j'avais explosé » se retient, pas une date.
-    const pourCourbe = history.map(h => {
-      const rawOpp = (h.opponent === undefined || h.opponent === null) ? '' : String(h.opponent).trim();
-      const opponent = opponentByMatch[h.matchId] || ((rawOpp && rawOpp !== 'null') ? rawOpp : '');
-      return { score: h.score, date: h.date, court: opponent.slice(0, 3).toUpperCase() };
-    });
-    document.getElementById('profil-courbe').innerHTML = courbeDesNotes(pourCourbe);
+    // La courbe a sa propre route : elle sert les matchs joués ET les forfaits,
+    // sans quoi la moyenne pointillée serait plus haute que le coef expert
+    // affiché juste au-dessus, qui compte les absences.
+    // Trois lettres d'adversaire sous chaque point : « c'est contre Brest que
+    // j'avais explosé » se retient, pas une date.
+    try{
+      const courbeJson = await fetch(
+        `${API_BASE}/UserStats/Courbe/${userId}/${teamId}?limit=10`).then(r => r.json());
+      const points = (courbeJson.success && courbeJson.data) ? courbeJson.data : [];
+
+      const pourCourbe = points.map(p => {
+        const rawOpp = (p.opponent === undefined || p.opponent === null) ? '' : String(p.opponent).trim();
+        const opponent = opponentByMatch[p.matchId] || ((rawOpp && rawOpp !== 'null') ? rawOpp : '');
+        return {
+          score: p.score,
+          date: p.date,
+          isForfait: !!p.isForfait,
+          court: opponent.slice(0, 3).toUpperCase()
+        };
+      });
+      document.getElementById('profil-courbe').innerHTML = courbeDesNotes(pourCourbe);
+    }catch(e){
+      document.getElementById('profil-courbe').innerHTML = '';
+    }
 
     if(history.length === 0){
       historyEl.innerHTML = '<div class="placeholder">Aucun match pronostiqué pour l\'instant.</div>';
