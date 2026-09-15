@@ -1542,7 +1542,7 @@
      décroche du grand chiffre, celui en dessous le colle au dessin. */
   .profil-carte-matchs{
     color:var(--text-dim); font-size:11px; letter-spacing:1.5px;
-    text-transform:uppercase; margin:26px 0 2px;
+    text-transform:uppercase; margin:40px 0 2px;
   }
   /* La définition de la note, juste sous l'onglet qu'on vient de toucher :
      on sait ce qu'on regarde avant de regarder la liste. */
@@ -5116,6 +5116,11 @@ async function majTuilesProfil(complet, moi){
   const rang = (moi >= 0) ? complet[moi].rank : 0;
   const joues = (moi >= 0) ? complet[moi].games : 0;
 
+  // « 1/3 » plutôt que « 1 » : le nombre de matchs joués ne dit rien sans celui
+  // des matchs qu'il y avait à jouer depuis l'inscription. C'est la fraction que
+  // le classement affiche déjà à côté de chaque joueur.
+  const fraction = (moi >= 0) ? assiduite(complet[moi]) : '–';
+
   let record = null;
   try{
     const recs = await ensureRanking('record');
@@ -5131,7 +5136,7 @@ async function majTuilesProfil(complet, moi){
   cible.innerHTML =
       tuile('Coef expert', rang > 0 ? (rang + 'ᵉ') : '–', 'au classement général')
     + tuile('Note record', (record !== null) ? fmtNote(record) : '–', 'record')
-    + tuile('Matchs joués', joues || '–', joues > 1 ? 'matchs joués' : 'match joué');
+    + tuile('Matchs joués', joues ? fraction : '–', joues > 1 ? 'matchs joués' : 'match joué');
 }
 
 async function chargerVoisinage(tab){
@@ -5876,6 +5881,7 @@ async function loadDashboard(){
     // croirait que la moyenne ne porte que sur les matchs dessinés.
     document.getElementById('profil-matchs').textContent =
       joues > 0 ? 'Tes derniers matchs' : '';
+
 
     const history = (historyRes.success && historyRes.data && historyRes.data.page) ? historyRes.data.page : [];
     const historyEl = document.getElementById('dash-history');
