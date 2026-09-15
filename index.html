@@ -4579,20 +4579,25 @@ async function afficherRepere(cle, unite){
 // Toujours sur un match PASSÉ : montrer la moyenne du match à venir ferait
 // converger tout le monde vers elle et aplatirait le jeu.
 // Rend true si quelque chose a été affiché.
-async function afficherDecouverte(matchId){
+async function afficherDecouverte(){
   const boite = document.getElementById('results-decouverte');
   if(!boite) return false;
 
   try{
     const teamId = await getPsgTeamId();
-    const [detJson, moyJson] = await Promise.all([
-      fetch(`${API_BASE}/Match/ById/${matchId}?detailed=true`).then(r => r.json()),
-      fetch(`${API_BASE}/UserStats/MoyennePronos/${teamId}`).then(r => r.json())
-    ]);
 
-    const det = (detJson.success && detJson.data) ? detJson.data : null;
+    // On ignore le match demandé : un nouvel inscrit doit voir le DERNIER MATCH
+    // NOTÉ, pas celui qui vient de s'ouvrir aux pronostics. Le serveur le
+    // désigne lui-même quand on ne lui donne pas d'identifiant.
+    const moyJson = await fetch(
+      `${API_BASE}/UserStats/MoyennePronos/${teamId}`).then(r => r.json());
     const moy = (moyJson.success && moyJson.data) ? moyJson.data : null;
-    if(!det || !det.homeTeam || !det.awayTeam || !moy || !moy.count) return false;
+    if(!moy || !moy.matchId || !moy.count) return false;
+
+    const detJson = await fetch(
+      `${API_BASE}/Match/ById/${moy.matchId}?detailed=true`).then(r => r.json());
+    const det = (detJson.success && detJson.data) ? detJson.data : null;
+    if(!det || !det.homeTeam || !det.awayTeam) return false;
 
     if(squadData.length === 0){
       try{
@@ -4755,6 +4760,13 @@ async function enterResultsScreen(matchId){
   document.getElementById('results-empty').style.display = 'none';
   document.getElementById('results-content').style.display = 'none';
 
+  // Les deux écrans de repli sont remis à zéro : sans ça, celui d'une
+  // consultation précédente resterait affiché sous le nouveau contenu.
+  ['results-forfait', 'results-decouverte'].forEach(function(id){
+    const el = document.getElementById(id);
+    if(el){ el.style.display = 'none'; el.innerHTML = ''; }
+  });
+
   if(!matchId){
     // "Dernier résultat" : le dernier match que CE joueur a pronostiqué et
     // qui a été noté. Celui qui saute un match retrouve donc son résultat
@@ -4801,9 +4813,16 @@ async function enterResultsScreen(matchId){
 
     if(!updateJson.success){
       document.getElementById('results-loading').style.display = 'none';
-      const emptyEl = document.getElementById('results-empty');
-      emptyEl.textContent = "Ce match n'a pas encore été joué — reviens une fois le coup de sifflet final donné et les statistiques officielles saisies.";
-      emptyEl.style.display = 'block';
+
+      // Un nouvel inscrit n'a aucun pronostic : le calcul échoue et le jeu
+      // désignait le prochain match, pas encore joué. On lui montre le dernier
+      // match noté plutôt qu'un écran vide.
+      const decouvert = await afficherDecouverte();
+      if(!decouvert){
+        const emptyEl = document.getElementById('results-empty');
+        emptyEl.textContent = "Ce match n'a pas encore été joué — reviens une fois le coup de sifflet final donné et les statistiques officielles saisies.";
+        emptyEl.style.display = 'block';
+      }
       return;
     }
 
@@ -4824,7 +4843,7 @@ async function enterResultsScreen(matchId){
       if(!vu){
         // Aucun forfait non plus : c'est un nouvel inscrit. On lui montre le
         // dernier match plutôt qu'une page vide.
-        const decouvert = await afficherDecouverte(matchId);
+        const decouvert = await afficherDecouverte();
         if(!decouvert){ document.getElementById('results-empty').style.display = 'block'; }
       }
       return;
