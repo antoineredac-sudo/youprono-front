@@ -1611,6 +1611,21 @@
     cursor:pointer;
   }
   .ranking-tab.active{ background:var(--red); color:var(--text); }
+  /* Huit onglets ne tiennent pas en largeurs égales : cette rangée-là défile,
+     chaque onglet prend la place de son texte, et l'ascenseur reste invisible.
+     Le dégradé sur la droite dit qu'il y en a d'autres plus loin. */
+  .ranking-tabs.defile{
+    overflow-x:auto;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+    position:relative;
+  }
+  .ranking-tabs.defile::-webkit-scrollbar{ display:none; }
+  .ranking-tabs.defile .ranking-tab{
+    flex:0 0 auto;
+    padding:10px 14px;
+    white-space:nowrap;
+  }
 
   .ranking-me-card{
     background:var(--surface);
@@ -2666,9 +2681,15 @@
       <h2 class="play-title">CLASSEMENT</h2>
       <span class="back-link" onclick="goToProfile()">← Retour</span>
 
-      <div class="ranking-tabs">
-        <button class="ranking-tab active" id="ranking-tab-final" onclick="switchRankingTab('final')">coefficient expert</button>
+      <div class="ranking-tabs defile">
+        <button class="ranking-tab active" id="ranking-tab-final" onclick="switchRankingTab('final')">coef expert</button>
         <button class="ranking-tab" id="ranking-tab-record" onclick="switchRankingTab('record')">note record</button>
+        <button class="ranking-tab" id="ranking-tab-composition" onclick="switchRankingTab('composition')">compo</button>
+        <button class="ranking-tab" id="ranking-tab-score" onclick="switchRankingTab('score')">score</button>
+        <button class="ranking-tab" id="ranking-tab-possession" onclick="switchRankingTab('possession')">possession</button>
+        <button class="ranking-tab" id="ranking-tab-shots" onclick="switchRankingTab('shots')">tirs</button>
+        <button class="ranking-tab" id="ranking-tab-fouls" onclick="switchRankingTab('fouls')">fautes</button>
+        <button class="ranking-tab" id="ranking-tab-crosses" onclick="switchRankingTab('crosses')">centres</button>
       </div>
 
       <div class="ranking-me-card">
@@ -5496,10 +5517,23 @@ async function goToRanking(){
   await loadRanking('final');
 }
 
+// Les huit classements : les deux généraux, puis un par catégorie de pronostic.
+// Une rangée qui défile plutôt qu'un menu déroulant : un menu cacherait son
+// contenu, et personne ne saurait que ces classements existent.
+const ONGLETS_CLASSEMENT = ['final', 'record', 'composition', 'score',
+                            'possession', 'shots', 'fouls', 'crosses'];
+
 function switchRankingTab(tab){
   rankingTab = tab;
-  document.getElementById('ranking-tab-final').classList.toggle('active', tab === 'final');
-  document.getElementById('ranking-tab-record').classList.toggle('active', tab === 'record');
+  ONGLETS_CLASSEMENT.forEach(function(t){
+    const el = document.getElementById('ranking-tab-' + t);
+    if(el) el.classList.toggle('active', t === tab);
+  });
+  // L'onglet touché se ramène dans le champ de vision.
+  const actif = document.getElementById('ranking-tab-' + tab);
+  if(actif && actif.scrollIntoView){
+    actif.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }
   loadRanking(tab);
 }
 
@@ -5507,8 +5541,12 @@ function switchRankingTab(tab){
 async function ensureRanking(tab){
   if(rankingCache[tab]) return rankingCache[tab];
   const teamId = await getPsgTeamId();
-  const endpoint = (tab === 'final') ? 'RankingByResultFinalTotal' : 'RankingByResultTotal';
-  const res = await fetch(`${API_BASE}/UserStats/${endpoint}/${teamId}`);
+  const url = (tab === 'final')
+    ? `${API_BASE}/UserStats/RankingByResultFinalTotal/${teamId}`
+    : (tab === 'record')
+      ? `${API_BASE}/UserStats/RankingByResultTotal/${teamId}`
+      : `${API_BASE}/UserStats/RankingByCategory/${teamId}/${tab}`;
+  const res = await fetch(url);
   const json = await res.json();
   rankingCache[tab] = (json.success && json.data) ? json.data : [];
   return rankingCache[tab];
@@ -5769,7 +5807,12 @@ async function loadRanking(tab){
     // sont dessous : c'est ce qui donne son sens au dore.
     const boite = document.getElementById('ranking-table');
     boite.innerHTML = liste.map(ligne).join('');
-    document.getElementById('ranking-regle').style.display = 'block';
+
+    // La règle du forfait ne vaut que pour le coef expert : les classements par
+    // catégorie ne comptent que les matchs réellement joués, un absent n'a pas
+    // de note de possession.
+    document.getElementById('ranking-regle').style.display =
+      (tab === 'final') ? 'block' : 'none';
 
     cadrerClassement(boite);
   }catch(e){
