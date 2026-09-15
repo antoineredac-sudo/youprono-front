@@ -7735,12 +7735,22 @@ function busteMedaille(m, nb){
 
 // Une phrase complète par niveau : elle porte le nom du ballon, il n'y a donc
 // plus de ligne de titre séparée au-dessus.
+// Une phrase d'annonce et un commentaire par niveau. Le commentaire ne parle du
+// nombre de joueurs qu'à partir du bronze, et ce n'est pas une flatterie : le
+// barème est positionnel, on ne peut marquer 9 points sur un match que s'il y a
+// au moins 9 joueurs actifs. Un ballon d'or est donc mathématiquement impossible
+// dans un petit groupe — alors qu'une baudruche, à 12 points, s'obtient à trois.
 const VERDICT_METAUX = {
-  5: "Tu as remporté le Ballon d'Or des experts du PSG.",
-  4: "Tu as remporté le Ballon d'Argent des experts du PSG.",
-  3: "Tu as remporté le Ballon de Bronze des experts du PSG.",
-  2: "Tu as gagné le Ballon de Cuir des experts du PSG.",
-  1: "Tu as gagné un ballon de baudruche."
+  5: { annonce: "Tu as remporté le Ballon d'Or des experts du PSG.",
+       mot: "La plus haute récompense du jeu. Tu as été le plus fort d'un groupe d'experts pendant cinq matchs. Félicitations." },
+  4: { annonce: "Tu as remporté le Ballon d'Argent des experts du PSG.",
+       mot: "Une récompense rare. Tu as été aux meilleures places à chaque match, dans un groupe fourni. Tu peux être fier de toi." },
+  3: { annonce: "Tu as remporté le Ballon de Bronze des experts du PSG.",
+       mot: "Plus haut, il n'y a que l'argent et l'or. Tu as été performant et régulier, et il y avait du monde dans ton groupe. Bravo à toi." },
+  2: { annonce: "Tu as gagné le Ballon de Cuir des experts du PSG.",
+       mot: "Le deuxième niveau. Tu as été assidu et tu as réussi quelques coups. Bien joué." },
+  1: { annonce: "Tu as gagné un ballon de baudruche.",
+       mot: "Le premier niveau de récompense. Tu étais là à chaque match, les résultats viendront." }
 };
 
 // Le verdict du dernier mini-championnat achevé, affiché en tête de la vitrine.
@@ -7775,7 +7785,8 @@ function verdictHtml(m, d){
 
   const metal = VERDICT_METAUX[m.metalLevel];
   if(metal){
-    html += '<div class="verdict-metal">' + metal + '</div>'
+    html += '<div class="verdict-metal">' + metal.annonce + '</div>'
+          + '<div class="verdict-texte">' + metal.mot + '</div>'
           + '<div class="verdict-texte">' + m.points
           + ' points en cinq matchs. Il rejoint ta vitrine.</div>';
   }else{
