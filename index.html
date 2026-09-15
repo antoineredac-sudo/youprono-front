@@ -5391,17 +5391,15 @@ let profilTab = 'final';
 function majDefinitionProfil(tab){
   const el = document.getElementById('profil-def');
   if(!el) return;
-  el.textContent = (tab === 'final')
-    ? 'Le Coef Expert est la moyenne de tes résultats obtenus match après match, notes de forfaits incluses.'
-    : 'La note record est le meilleur résultat que tu as obtenu sur un match.';
+  el.textContent = ficheOnglet(tab).def;
 }
 
 function switchProfilTab(tab){
   profilTab = tab;
   document.getElementById('profil-tab-final').classList.toggle('active', tab === 'final');
   document.getElementById('profil-tab-record').classList.toggle('active', tab === 'record');
-  const nomOnglet = (tab === 'final') ? 'Coef expert' : 'Note record';
-  document.getElementById('profil-label').innerHTML = picto(nomOnglet) + ' ' + nomOnglet.toLowerCase();
+  const fiche = ficheOnglet(tab);
+  document.getElementById('profil-label').innerHTML = picto(fiche.picto) + ' ' + fiche.nom.toLowerCase();
   majDefinitionProfil(tab);
   chargerVoisinage(tab);
 }
@@ -5584,6 +5582,33 @@ function switchRankingTab(tab){
     actif.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   }
   loadRanking(tab);
+}
+
+// Les huit onglets du classement, chacun avec son libelle, son picto et sa
+// definition. Tout est ecrit ici, a un seul endroit : l'encadre du haut se
+// contentait d'une question a deux reponses, et les six categories tombaient
+// donc toutes dans « note record ».
+const FICHE_ONGLET = {
+  final:       { nom:'Coef expert',  picto:'Coef expert',
+                 def:'Le Coef Expert est la moyenne de tes résultats obtenus match après match, notes de forfaits incluses.' },
+  record:      { nom:'Note record',  picto:'Note record',
+                 def:'La note record est le meilleur résultat que tu as obtenu sur un match.' },
+  composition: { nom:'Note compo',       picto:'Composition',
+                 def:'La note compo est la moyenne de tes compositions sur les matchs que tu as joués.' },
+  score:       { nom:'Note score',       picto:'Score',
+                 def:'La note score est la moyenne de tes pronostics de score sur les matchs que tu as joués.' },
+  possession:  { nom:'Note possession',  picto:'Possession',
+                 def:'La note possession est la moyenne de tes pronostics de possession sur les matchs que tu as joués.' },
+  shots:       { nom:'Note tirs',        picto:'Tirs',
+                 def:'La note tirs est la moyenne de tes pronostics de tirs sur les matchs que tu as joués.' },
+  fouls:       { nom:'Note fautes',      picto:'Fautes',
+                 def:'La note fautes est la moyenne de tes pronostics de fautes sur les matchs que tu as joués.' },
+  crosses:     { nom:'Note centres',     picto:'Centres',
+                 def:'La note centres est la moyenne de tes pronostics de centres sur les matchs que tu as joués.' }
+};
+
+function ficheOnglet(tab){
+  return FICHE_ONGLET[tab] || FICHE_ONGLET.final;
 }
 
 // Le classement complet, chargé une fois par onglet puis gardé en mémoire.
@@ -5806,9 +5831,9 @@ async function loadRanking(tab){
     const userId = getUserId();
 
     const me = complet.find(u => u.id === userId);
-    const nomOnglet = (tab === 'final') ? 'Coef expert' : 'Note record';
-    document.getElementById('ranking-me-label').textContent = nomOnglet.toLowerCase();
-    document.getElementById('ranking-me-picto').innerHTML = picto(nomOnglet);
+    const fiche = ficheOnglet(tab);
+    document.getElementById('ranking-me-label').textContent = fiche.nom.toLowerCase();
+    document.getElementById('ranking-me-picto').innerHTML = picto(fiche.picto);
     document.getElementById('ranking-me-score').textContent = me ? fmtNote(me.score) : '–';
     // Il garde son rang même sous le seuil : c'est la ligne du classement qui
     // dit, en barré, que la place n'est pas encore acquise.
@@ -5816,11 +5841,9 @@ async function loadRanking(tab){
       : '#' + me.rank + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '');
     document.getElementById('ranking-me-rank').textContent = rangTexte;
 
-    // La définition suit l'onglet : la même phrase sous les deux notes serait
-    // fausse dans un cas sur deux.
-    document.getElementById('ranking-me-def').textContent = (tab === 'final')
-      ? 'Le Coef Expert est la moyenne de tes résultats obtenus match après match, notes de forfaits incluses.'
-      : 'La note record est le meilleur résultat que tu as obtenu sur un match.';
+    // La définition suit l'onglet : une phrase par note, toutes rangées dans
+    // FICHE_ONGLET.
+    document.getElementById('ranking-me-def').textContent = fiche.def;
 
     // Plus de message personnel à celui qui est sous la barre : la règle est
     // dite une fois, sous la liste, pour tout le monde.
