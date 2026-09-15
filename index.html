@@ -806,6 +806,26 @@
   .forfait-texte{
     color:var(--text); font-size:15px; line-height:1.6; margin-top:14px;
   }
+  /* L'écran du nouvel inscrit : plutôt qu'une page vide, le dernier match du PSG
+     avec les chiffres réels et ce que les joueurs avaient annoncé. Il découvre
+     les ordres de grandeur avant son premier pronostic. */
+  /* Le repère du débutant, sous chaque curseur du tunnel : au dernier match, le
+     chiffre réel et ce que les joueurs avaient annoncé. Il disparaît dès que le
+     joueur a pronostiqué une fois — passé ce cap, il n'en a plus besoin, et ce
+     serait une béquille qui fait converger tout le monde. */
+  .repere{
+    display:none; margin:18px 0 0; padding:12px 14px;
+    background:var(--surface); border-left:3px solid var(--gold); border-radius:8px;
+    color:var(--text-dim); font-size:13px; line-height:1.6; text-align:left;
+  }
+  .repere b{ color:var(--text); font-weight:600; }
+  .repere .repere-titre{
+    display:block; color:#8b99d0; font-size:10px; letter-spacing:1.5px;
+    text-transform:uppercase; margin-bottom:5px;
+  }
+  /* L'écran du nouvel inscrit emprunte la mise en page de la page de résultat.
+     Seul le texte d'introduction lui appartient. */
+  .dec-intro{ color:var(--text-dim); font-size:13px; line-height:1.6; margin:14px 0; }
   .mr-lien{ cursor:pointer; }
   /* Le classement du match n'a ni flèche de mouvement ni fraction d'assiduité :
      le pseudo prend la place laissée libre. */
@@ -2065,6 +2085,8 @@
 
       <input type="range" min="0" max="100" step="0.1" value="50" id="possession-slider" class="possession-slider" oninput="updatePossession(this.value)">
 
+      <div class="repere" id="repere-possession"></div>
+
       <button class="cta-play" onclick="goToNextStepPossession()">Suivant</button>
     </section>
     <section id="view-shots" class="view" style="display:none;">
@@ -2097,6 +2119,8 @@
           <button class="stepper-btn" onclick="adjustShots('opp',1)">+</button>
         </div>
       </div>
+
+      <div class="repere" id="repere-shots"></div>
 
       <button class="cta-play" style="margin-top:32px;" onclick="goToNextStepShots()">Suivant</button>
     </section>
@@ -2139,6 +2163,8 @@
         <button class="stepper-btn" onclick="adjustFouls('opp',1)">+</button>
       </div>
 
+      <div class="repere" id="repere-fouls"></div>
+
       <button class="cta-play" style="margin-top:32px;" onclick="goToNextStepFouls()">Suivant</button>
     </section>
     <section id="view-crosses" class="view" style="display:none;">
@@ -2170,6 +2196,8 @@
         <button class="stepper-btn" onclick="adjustCrosses('opp',1)">+</button>
       </div>
 
+      <div class="repere" id="repere-crosses"></div>
+
       <button class="cta-play" style="margin-top:32px;" onclick="goToNextStepCrosses()">Suivant</button>
     </section>
     <section id="view-score" class="view" style="display:none;">
@@ -2188,6 +2216,8 @@
           <div class="stat-team-name" id="score-opp-name">Adversaire</div>
         </div>
       </div>
+
+      <div class="repere" id="repere-score"></div>
 
       <button class="cta-play" style="margin-top:32px;" onclick="goToRecap()">Voir le récapitulatif</button>
     </section>
@@ -2306,6 +2336,7 @@
     <section id="view-results" class="view" style="display:none;">
       <div id="results-loading" class="placeholder">Chargement des résultats…</div>
       <div id="results-forfait" style="display:none;"></div>
+      <div id="results-decouverte" style="display:none;"></div>
       <div id="results-empty" class="placeholder" style="display:none;">
         Pas encore de résultat pour ce match — reviens une fois qu'il aura été joué et noté.
       </div>
@@ -4470,6 +4501,176 @@ function blocInviteSansGroupe(){
        + '<span>INVITE-LES SUR WHATSAPP</span></button></div>';
 }
 
+// Le repère du débutant. Sous chaque curseur du tunnel, on rappelle le chiffre
+// réel du dernier match et ce que les joueurs avaient annoncé en moyenne. Un
+// nouveau venu ne sait pas si un match compte dix tirs ou cinquante : sans ce
+// repère, il saisit au hasard, prend une mauvaise note et ne revient pas.
+//
+// Il ne s'affiche qu'avant le tout premier pronostic. Passé ce cap, le joueur
+// connaît les ordres de grandeur, et laisser le repère ferait converger tout le
+// monde vers la même valeur.
+let repereDonnees = null;   // { reel:{...}, moyenne:{...}, count, affiche }
+let repereCharge = false;
+
+async function chargerRepere(){
+  if(repereCharge) return repereDonnees;
+  repereCharge = true;
+
+  try{
+    const teamId = await getPsgTeamId();
+
+    // Le joueur a-t-il déjà pronostiqué ? Un seul suffit à retirer l'aide.
+    const histJson = await fetch(
+      `${API_BASE}/UserMatch/ByUserTeam/${getUserId()}/${teamId}?page=1&limit=1`).then(r => r.json());
+    const dejaJoue = (histJson.success && histJson.data && histJson.data.totalCount > 0);
+    if(dejaJoue){ repereDonnees = null; return null; }
+
+    const moyJson = await fetch(
+      `${API_BASE}/UserStats/MoyennePronos/${teamId}`).then(r => r.json());
+    const moy = (moyJson.success && moyJson.data) ? moyJson.data : null;
+    if(!moy || !moy.matchId) { repereDonnees = null; return null; }
+
+    const detJson = await fetch(
+      `${API_BASE}/Match/ById/${moy.matchId}?detailed=true`).then(r => r.json());
+    const det = (detJson.success && detJson.data) ? detJson.data : null;
+    if(!det || !det.homeTeam || !det.awayTeam) { repereDonnees = null; return null; }
+
+    const psgDomicile = det.homeTeam.name === 'Paris Saint-Germain'
+                     || det.homeTeam.officialName === 'Paris Saint-Germain';
+
+    repereDonnees = {
+      reelPsg: psgDomicile ? det.homeTeam : det.awayTeam,
+      reelAdv: psgDomicile ? det.awayTeam : det.homeTeam,
+      moyenne: (moy.count > 0) ? moy : null,
+      adversaire: teamLabel(psgDomicile ? det.awayTeam : det.homeTeam, "l'adversaire")
+    };
+    return repereDonnees;
+  }catch(e){
+    repereDonnees = null;
+    return null;
+  }
+}
+
+async function afficherRepere(cle, unite){
+  const el = document.getElementById('repere-' + cle);
+  if(!el) return;
+
+  const d = await chargerRepere();
+  if(!d){ el.style.display = 'none'; return; }
+
+  const u = unite || '';
+  let html = '<span class="repere-titre">Au dernier match</span>'
+    + 'Le PSG : <b>' + fmtNum(d.reelPsg[cle]) + u + '</b> · '
+    + echapper(d.adversaire) + ' : <b>' + fmtNum(d.reelAdv[cle]) + u + '</b>';
+
+  // Seulement le chiffre réel ici : quatre valeurs d'un coup sous un curseur,
+  // c'est trop pour quelqu'un qui découvre. La moyenne des pronostics reste sur
+  // l'écran de découverte, où il a le temps de lire.
+
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+
+// Le nouvel inscrit n'a jamais pronostiqué : plutôt qu'une page vide, on lui
+// montre le dernier match du PSG — les chiffres réels, et à côté ce que les
+// joueurs avaient annoncé en moyenne. Il découvre ainsi l'ordre de grandeur des
+// valeurs avant sa première saisie, au lieu d'entrer des nombres au hasard.
+//
+// Toujours sur un match PASSÉ : montrer la moyenne du match à venir ferait
+// converger tout le monde vers elle et aplatirait le jeu.
+// Rend true si quelque chose a été affiché.
+async function afficherDecouverte(matchId){
+  const boite = document.getElementById('results-decouverte');
+  if(!boite) return false;
+
+  try{
+    const teamId = await getPsgTeamId();
+    const [detJson, moyJson] = await Promise.all([
+      fetch(`${API_BASE}/Match/ById/${matchId}?detailed=true`).then(r => r.json()),
+      fetch(`${API_BASE}/UserStats/MoyennePronos/${teamId}`).then(r => r.json())
+    ]);
+
+    const det = (detJson.success && detJson.data) ? detJson.data : null;
+    const moy = (moyJson.success && moyJson.data) ? moyJson.data : null;
+    if(!det || !det.homeTeam || !det.awayTeam || !moy || !moy.count) return false;
+
+    if(squadData.length === 0){
+      try{
+        const teamJson = await fetch(`${API_BASE}/Team/ById/${teamId}`).then(r => r.json());
+        squadData = teamJson.data.players;
+      }catch(e){}
+    }
+
+    const psgDomicile = det.homeTeam.name === 'Paris Saint-Germain'
+                     || det.homeTeam.officialName === 'Paris Saint-Germain';
+    const reelPsg = psgDomicile ? det.homeTeam : det.awayTeam;
+    const reelAdv = psgDomicile ? det.awayTeam : det.homeTeam;
+    const nomAdv = teamLabel(reelAdv, "L'adversaire");
+
+    let html = '<p class="dec-intro">Tu n\'as pas encore pronostiqué. Voici le dernier '
+      + 'match du PSG tel que tu le verras après ta première participation — avec, à la '
+      + 'place de ton pronostic, la moyenne de ceux des autres joueurs.</p>'
+      + '<div class="results-banner"><div class="results-score-line">'
+      + echapper(teamLabel(det.homeTeam, 'Domicile')) + ' ' + (det.homeTeam.score ?? 0)
+      + ' – ' + (det.awayTeam.score ?? 0) + ' ' + echapper(teamLabel(det.awayTeam, 'Extérieur'))
+      + '</div><div class="results-date">'
+      + (det.dateTime ? formatMatchDate(new Date(det.dateTime)) : '') + '</div></div>';
+
+    // La composition, dans la même mise en page que l'écran de résultat : le onze
+    // le plus pronostiqué remplace celui du joueur. Doré pour les titulaires que
+    // la majorité avait vus, blanc pour ceux qu'elle avait manqués.
+    const titulaires = (psgDomicile ? det.homeTeam.players : det.awayTeam.players) || [];
+    const onzeMajoritaire = moy.topPlayers || [];
+    if(titulaires.length){
+      const terrain = terrainFaceAEnrique(titulaires, onzeMajoritaire);
+      const trouves = titulaires.filter(p => onzeMajoritaire.indexOf(p.id) !== -1).length;
+      html += '<div class="result-category">'
+        + '<div class="result-cat-head">'
+        + '<span class="result-cat-name">' + picto('Composition') + ' Composition</span>'
+        + '</div>'
+        + '<div class="result-cat-row" style="margin-bottom:6px;">'
+        + '<span>' + trouves + ' titulaire' + (trouves > 1 ? 's' : '')
+        + ' trouvé' + (trouves > 1 ? 's' : '') + ' sur 11 en moyenne</span></div>'
+        + terrain
+        + '<div class="hx-leg" style="margin-top:10px;">'
+        + '<span class="hx-leg-i"><span class="hx-pastille or"></span>les joueurs l\'avaient</span>'
+        + '<span class="hx-leg-i"><span class="hx-pastille blanc-plein"></span>ils l\'avaient manqué</span>'
+        + '</div></div>';
+    }
+
+    const cats = [
+      { key:'possession', label:'Possession', unit:' %' },
+      { key:'shots',      label:'Tirs',       unit:'' },
+      { key:'fouls',      label:'Fautes',     unit:'' },
+      { key:'crosses',    label:'Centres',    unit:'' },
+      { key:'score',      label:'Score',      unit:'' }
+    ];
+
+    cats.forEach(c => {
+      html += '<div class="result-category">'
+        + '<div class="result-cat-head">'
+        + '<span class="result-cat-name">' + picto(c.label) + ' ' + c.label + '</span>'
+        + '</div>'
+        + '<div class="result-cat-row"><span>PSG</span>'
+        + '<span>Moyenne : <b>' + fmtNum(moy.team[c.key]) + c.unit + '</b> · Réel : <b>'
+        + fmtNum(reelPsg[c.key]) + c.unit + '</b></span></div>'
+        + '<div class="result-cat-row"><span>' + echapper(nomAdv) + '</span>'
+        + '<span>Moyenne : <b>' + fmtNum(moy.opponent[c.key]) + c.unit + '</b> · Réel : <b>'
+        + fmtNum(reelAdv[c.key]) + c.unit + '</b></span></div>'
+        + '</div>';
+    });
+
+    html += '<p class="dec-intro" style="margin-top:14px;">Moyenne calculée sur '
+          + moy.count + ' pronostic' + (moy.count > 1 ? 's' : '') + '.</p>'
+          + '<button class="cta-play-outline" onclick="switchView(\'home\')">'
+          + 'Faire mes premiers pronos</button>';
+
+    boite.innerHTML = html;
+    boite.style.display = 'block';
+    return true;
+  }catch(e){ return false; }
+}
+
 // Le joueur n'a pas pronostiqué ce match. On lui annonce sa note de forfait,
 // en grand, avec la raison. Rend true si quelque chose a été affiché.
 async function afficherForfait(matchId){
@@ -4506,6 +4707,8 @@ async function afficherEvenementsDuMatch(matchId){
   bloc.innerHTML = '';
   const boiteForfait = document.getElementById('results-forfait');
   if(boiteForfait){ boiteForfait.style.display = 'none'; boiteForfait.innerHTML = ''; }
+  const boiteDec = document.getElementById('results-decouverte');
+  if(boiteDec){ boiteDec.style.display = 'none'; boiteDec.innerHTML = ''; }
 
   try{
     const teamId = await getPsgTeamId();
@@ -4618,7 +4821,12 @@ async function enterResultsScreen(matchId){
       // le pire des traitements : il la découvrirait dans son coef expert sans
       // comprendre d'où elle vient.
       const vu = await afficherForfait(matchId);
-      if(!vu){ document.getElementById('results-empty').style.display = 'block'; }
+      if(!vu){
+        // Aucun forfait non plus : c'est un nouvel inscrit. On lui montre le
+        // dernier match plutôt qu'une page vide.
+        const decouvert = await afficherDecouverte(matchId);
+        if(!decouvert){ document.getElementById('results-empty').style.display = 'block'; }
+      }
       return;
     }
 
@@ -5095,7 +5303,7 @@ function majDefinitionProfil(tab){
   const el = document.getElementById('profil-def');
   if(!el) return;
   el.textContent = (tab === 'final')
-    ? 'Le Coef Expert est la moyenne de tes résultats obtenus match après match.'
+    ? 'Le Coef Expert est la moyenne de tes résultats obtenus match après match, notes de forfaits incluses.'
     : 'La note record est le meilleur résultat que tu as obtenu sur un match.';
 }
 
@@ -5505,7 +5713,7 @@ async function loadRanking(tab){
     // La définition suit l'onglet : la même phrase sous les deux notes serait
     // fausse dans un cas sur deux.
     document.getElementById('ranking-me-def').textContent = (tab === 'final')
-      ? 'Le Coef Expert est la moyenne de tes résultats obtenus match après match.'
+      ? 'Le Coef Expert est la moyenne de tes résultats obtenus match après match, notes de forfaits incluses.'
       : 'La note record est le meilleur résultat que tu as obtenu sur un match.';
 
     // Plus de message personnel à celui qui est sous la barre : la règle est
@@ -7937,6 +8145,7 @@ function syncPossession(source){
 
 // ===== ÉCRAN DE POSSESSION =====
 function enterPossessionScreen(){
+  afficherRepere('possession', ' %');
   if(currentMatch){
     const isPsgHome = currentMatch.homeTeam.name === 'Paris Saint-Germain';
     const opponent = isPsgHome ? currentMatch.awayTeam.name : currentMatch.homeTeam.name;
@@ -7971,6 +8180,7 @@ function getOpponentName(){
 }
 
 function enterShotsScreen(){
+  afficherRepere('shots', '');
   document.getElementById('shots-opp-name').textContent = getOpponentName();
   const psgVal = predictionDraft.team.shots !== undefined ? predictionDraft.team.shots : 10;
   const oppVal = predictionDraft.opponent.shots !== undefined ? predictionDraft.opponent.shots : 10;
@@ -8006,6 +8216,7 @@ const RING_R = 50;
 const RING_CIRC = 2 * Math.PI * RING_R;
 
 function enterFoulsScreen(){
+  afficherRepere('fouls', '');
   document.getElementById('fouls-opp-name').textContent = getOpponentName();
   const psgVal = predictionDraft.team.fouls !== undefined ? predictionDraft.team.fouls : 10;
   const oppVal = predictionDraft.opponent.fouls !== undefined ? predictionDraft.opponent.fouls : 10;
@@ -8041,6 +8252,7 @@ function goToNextStepFouls(){
 
 // ===== ÉCRAN DES CENTRES =====
 function enterCrossesScreen(){
+  afficherRepere('crosses', '');
   document.getElementById('crosses-opp-name').textContent = getOpponentName();
   const psgVal = predictionDraft.team.crosses !== undefined ? predictionDraft.team.crosses : 10;
   const oppVal = predictionDraft.opponent.crosses !== undefined ? predictionDraft.opponent.crosses : 10;
@@ -8086,6 +8298,7 @@ function populateScoreSelect(id){
 }
 
 function enterScoreScreen(){
+  afficherRepere('score', '');
   document.getElementById('score-opp-name').textContent = getOpponentName();
   populateScoreSelect('score-psg-select');
   populateScoreSelect('score-opp-select');
