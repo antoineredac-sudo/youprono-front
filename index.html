@@ -1655,6 +1655,9 @@
     color:var(--text-dim); font-size:12px; line-height:1.5;
     margin:10px 4px 0; padding-top:10px; border-top:1px solid var(--border);
   }
+  /* L'accroche dorée, seule sur sa ligne, au-dessus de la définition. Même
+     taille que la définition : c'est la couleur qui la distingue. */
+  .def-accroche{ display:block; color:var(--gold); }
 
   /* Positionnée pour servir de repère aux lignes qu'elle contient, et pour que
      le cadrage sur le joueur connecté tombe juste. */
@@ -5391,7 +5394,20 @@ let profilTab = 'final';
 function majDefinitionProfil(tab){
   const el = document.getElementById('profil-def');
   if(!el) return;
-  el.textContent = ficheOnglet(tab).def;
+  ecrireDefinition(el, ficheOnglet(tab));
+}
+
+// Écrit l'accroche (s'il y en a une) puis la définition. En texte brut, jamais
+// en innerHTML : les phrases restent de simples chaînes dans FICHE_ONGLET.
+function ecrireDefinition(el, fiche){
+  el.textContent = '';
+  if(fiche.accroche){
+    const ligne = document.createElement('span');
+    ligne.className = 'def-accroche';
+    ligne.textContent = fiche.accroche;
+    el.appendChild(ligne);
+  }
+  el.appendChild(document.createTextNode(fiche.def));
 }
 
 function switchProfilTab(tab){
@@ -5589,8 +5605,11 @@ function switchRankingTab(tab){
 // contentait d'une question a deux reponses, et les six categories tombaient
 // donc toutes dans « note record ».
 const FICHE_ONGLET = {
+  // accroche : ligne facultative, en doré, posée au-dessus de la définition.
+  // Seul le coef expert en a une : c'est lui qui fait le classement général.
   final:       { nom:'Coef expert',  picto:'Coef expert',
-                 def:'Le Coef Expert est la moyenne de tes résultats obtenus match après match, notes de forfaits incluses.' },
+                 accroche:'Le Coef Expert est le classement général du jeu.',
+                 def:"C'est la moyenne de tes résultats match après match." },
   record:      { nom:'Note record',  picto:'Note record',
                  def:'La note record est le meilleur résultat que tu as obtenu sur un match.' },
   composition: { nom:'Note compo',       picto:'Composition',
@@ -5843,7 +5862,7 @@ async function loadRanking(tab){
 
     // La définition suit l'onglet : une phrase par note, toutes rangées dans
     // FICHE_ONGLET.
-    document.getElementById('ranking-me-def').textContent = fiche.def;
+    ecrireDefinition(document.getElementById('ranking-me-def'), fiche);
 
     // Plus de message personnel à celui qui est sous la barre : la règle est
     // dite une fois, sous la liste, pour tout le monde.
