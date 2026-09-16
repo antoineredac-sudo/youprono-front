@@ -2564,6 +2564,18 @@
         <h2 class="play-title" id="kop-name">KOP</h2>
         <div class="group-season-info" id="kop-sub"></div>
 
+        <!-- Deux onglets (16 septembre 2026). « Le dernier match » regroupe
+             l'hexagone, le classement du match et le onze face à Enrique ;
+             « Le classement du kop » porte le classement de saison, sans titre
+             au-dessus puisque l'onglet le nomme déjà. -->
+        <div class="tab-switch group-tabs" style="margin-top:16px;">
+          <button id="ktab-btn-match" class="active" onclick="switchKopTab('match')">Le dernier match</button>
+          <button id="ktab-btn-classement" onclick="switchKopTab('classement')">Le classement du kop</button>
+        </div>
+
+        <div id="ktab-match">
+        <p class="kop-note" id="kop-match-vide" style="display:none;text-align:center;margin:8px 0 0;">Ce kop n'a pas encore de match noté.</p>
+
         <!-- L'hexagone comparé : ma note en doré plein, la moyenne du kop en
              blanc pointillé, puis les six écarts détaillés. -->
         <div class="kop-hero" id="kop-hexa-block" style="display:none;">
@@ -2576,9 +2588,6 @@
           </div>
           <div class="kop-ecarts" id="kop-ecarts"></div>
         </div>
-
-        <div class="dash-history-label" style="margin-top:20px;">Le classement du kop</div>
-        <div class="kop-card" id="kop-ranking"></div>
 
         <div id="kop-lastmatch-block" style="display:none;">
           <div class="dash-history-label" style="margin-top:20px;">Le classement sur le dernier match</div>
@@ -2595,6 +2604,11 @@
               <span class="hx-leg-i"><span class="hx-pastille blanc-plein"></span>le kop l'avait manqué</span>
             </div>
           </div>
+        </div>
+        </div>
+
+        <div id="ktab-classement" style="display:none;">
+          <div class="kop-card" id="kop-ranking"></div>
         </div>
 
         <div class="group-invite-box" style="margin-top:28px;" id="kop-invite-box">
@@ -7072,9 +7086,24 @@ function afficherKop(k){
   afficherClassementDuKop(k);
   afficherDernierMatchDuKop(k);
 
+  // L'onglet du dernier match s'ouvre en premier. Un kop sans aucun match noté
+  // s'ouvre sur son classement, avec une phrase dans l'onglet resté vide.
+  const aUnMatch = !!(k.hexa || (k.lastMatch && k.lastMatch.length));
+  document.getElementById('kop-match-vide').style.display = aUnMatch ? 'none' : 'block';
+  switchKopTab(aUnMatch ? 'match' : 'classement');
+
   // Le terrain a besoin des postes de chaque joueur : sans l'effectif en
   // mémoire, il ne trouve aucune fiche et ne dessine rien.
   ensureSquadLoaded().then(function(){ afficherCompositionsDuKop(k); });
+}
+
+// Bascule entre les deux onglets de l'écran d'un kop, comme switchGroupTab.
+function switchKopTab(tab){
+  const match = (tab !== 'classement');
+  document.getElementById('ktab-btn-match').classList.toggle('active', match);
+  document.getElementById('ktab-btn-classement').classList.toggle('active', !match);
+  document.getElementById('ktab-match').style.display = match ? 'block' : 'none';
+  document.getElementById('ktab-classement').style.display = match ? 'none' : 'block';
 }
 
 function afficherCompositionsDuKop(k){
