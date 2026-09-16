@@ -1879,7 +1879,20 @@
 .ec-d.moins{ color:#e0665a; }
 
 /* Les classements du kop défilent, la ligne du joueur est amenée au milieu. */
-#kop-ranking, #kop-lastmatch{ max-height:296px; overflow-y:auto; }
+/* Le classement du kop montre dix membres, puis défile (décision d'Antoine du
+   16 septembre 2026). La hauteur exacte est posée par ajusterHauteurKop() : on
+   voit dix lignes entières et le haut de la onzième, qui invite à faire glisser.
+   L'ascenseur est doré et plus large pour se voir ; sur iPhone, où Safari le
+   cache, la phrase sous la liste prend le relais. */
+#kop-lastmatch{ max-height:296px; overflow-y:auto; }
+#kop-ranking{
+  overflow-y:auto;
+  scrollbar-width:thin; scrollbar-color:rgba(232,185,35,.7) rgba(255,255,255,.08);
+}
+#kop-ranking::-webkit-scrollbar{ width:6px; }
+#kop-ranking::-webkit-scrollbar-track{ background:rgba(255,255,255,.08); border-radius:3px; }
+#kop-ranking::-webkit-scrollbar-thumb{ background:rgba(232,185,35,.7); border-radius:3px; }
+.kop-suite{ text-align:center; color:#c2cae8; font-size:12px; margin:-6px 0 14px; }
 
 /* Le onze d'Enrique : pastille blanche pour qui n'était pas dans le onze du kop. */
 .terrain-pastille.blanc{ background:#fff; color:#0b2265; }
@@ -2579,8 +2592,8 @@
              « Le classement du kop » porte le classement de saison, sans titre
              au-dessus puisque l'onglet le nomme déjà. -->
         <div class="tab-switch group-tabs" style="margin-top:16px;">
-          <button id="ktab-btn-classement" class="active" onclick="switchKopTab('classement')">Le classement du kop</button>
-          <button id="ktab-btn-match" onclick="switchKopTab('match')">Le dernier match</button>
+          <button id="ktab-btn-classement" class="active" onclick="switchKopTab('classement')">Classement du kop</button>
+          <button id="ktab-btn-match" onclick="switchKopTab('match')">Dernier match</button>
         </div>
 
         <div id="ktab-match" style="display:none;">
@@ -2619,6 +2632,7 @@
 
         <div id="ktab-classement" style="display:none;">
           <div class="kop-card" id="kop-ranking"></div>
+          <p class="kop-suite" id="kop-ranking-suite" style="display:none;"></p>
         </div>
 
         <div class="group-invite-box" style="margin-top:28px;" id="kop-invite-box">
@@ -7180,6 +7194,12 @@ function switchKopTab(tab){
   document.getElementById('ktab-btn-classement').classList.toggle('active', !match);
   document.getElementById('ktab-match').style.display = match ? 'block' : 'none';
   document.getElementById('ktab-classement').style.display = match ? 'none' : 'block';
+  if(!match){
+    requestAnimationFrame(function(){
+      ajusterHauteurKop();
+      centrerSurMoi(document.getElementById('kop-ranking'));
+    });
+  }
 }
 
 function afficherCompositionsDuKop(k){
@@ -7325,9 +7345,16 @@ function ecartsHtml(moi, kop){
 // général : ceux qui font mieux au-dessus, ceux qui font moins bien en dessous.
 function centrerSurMoi(cible){
   const maLigne = cible.querySelector('.kop-row.moi');
-  if(!maLigne || !maLigne.scrollIntoView) return;
+  if(!maLigne) return;
+  // On fait défiler la liste seule, jamais la page : scrollIntoView déplaçait
+  // aussi l'écran entier et pouvait cacher le bandeau de bienvenue.
   setTimeout(function(){
-    try{ maLigne.scrollIntoView({ block:'center', behavior:'auto' }); }catch(e){}
+    try{
+      const c = cible.getBoundingClientRect();
+      const l = maLigne.getBoundingClientRect();
+      cible.scrollTop += (l.top + l.height / 2) - (c.top + cible.clientHeight / 2);
+      if(cible.id === 'kop-ranking'){ majSuiteKop(); }
+    }catch(e){}
   }, 40);
 }
 
@@ -7473,7 +7500,44 @@ function afficherClassementDuKop(k){
   }).join('');
 
   cible.innerHTML = html;
+  cible.scrollTop = 0;
+  cible.onscroll = majSuiteKop;
+  ajusterHauteurKop();
   centrerSurMoi(cible);
+}
+
+const KOP_LIGNES_VISIBLES = 10;
+
+// Dix lignes entières plus le haut de la onzième. Mesuré sur la page, parce
+// qu'une ligne n'a pas toujours la même hauteur. Si l'onglet est caché, on ne
+// peut rien mesurer : switchKopTab relance le calcul à l'ouverture.
+function ajusterHauteurKop(){
+  const cible = document.getElementById('kop-ranking');
+  if(!cible) return;
+  const lignes = cible.querySelectorAll('.kop-row');
+  if(lignes.length <= KOP_LIGNES_VISIBLES){
+    cible.style.maxHeight = '';
+    majSuiteKop();
+    return;
+  }
+  if(cible.offsetParent === null) return;
+  const haut = cible.getBoundingClientRect().top;
+  const basDixieme = lignes[KOP_LIGNES_VISIBLES - 1].getBoundingClientRect().bottom;
+  cible.style.maxHeight = Math.round(basDixieme - haut + cible.scrollTop + 20) + 'px';
+  majSuiteKop();
+}
+
+// « Fais glisser la liste pour voir les 4 autres membres », qui s'efface une
+// fois arrivé en bas.
+function majSuiteKop(){
+  const cible = document.getElementById('kop-ranking');
+  const suite = document.getElementById('kop-ranking-suite');
+  if(!cible || !suite) return;
+  const n = cible.querySelectorAll('.kop-row').length - KOP_LIGNES_VISIBLES;
+  const enBas = cible.scrollTop + cible.clientHeight >= cible.scrollHeight - 4;
+  if(n <= 0 || enBas){ suite.style.display = 'none'; return; }
+  suite.textContent = 'Fais glisser la liste pour voir ' + (n === 1 ? "l'autre membre" : 'les ' + n + ' autres membres') + '.';
+  suite.style.display = 'block';
 }
 
 // Le message ne s'affiche qu'au moment où quelqu'un essaie d'entrer dans un
