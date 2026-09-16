@@ -1403,6 +1403,7 @@
   .rt-name.assidu{ color:var(--gold); font-weight:600; }
   .ranking-name{ flex:1; font-size:15px; }
   .ranking-score{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--gold); }
+  .ranking-pas-joue{ font-size:13px; color:var(--text-dim); }
 
   /* --- Tableau de bord --- */
   .dash-grid-2x2{
@@ -6241,7 +6242,15 @@ async function openGroupDetail(groupId){
       return '';
     };
 
-    rankingEl.innerHTML = g.ranking.map(r => `
+    // Un membre qui n'a encore joué aucun match du groupe — nouvel arrivé ou
+    // absent de tous les matchs — reste dans la liste, sans rang, avec
+    // « aucun match joué » à la place du score (16 septembre 2026).
+    rankingEl.innerHTML = g.ranking.map(r => (!r.rank || !r.matchesPlayed) ? `
+      <div class="ranking-row">
+        <span class="ranking-rank"></span>
+        <span class="ranking-name">${echapper(r.displayName)}</span>
+        <span class="ranking-pas-joue">aucun match joué</span>
+      </div>` : `
       <div class="ranking-row">
         <span class="ranking-rank ${r.rank === 1 ? 'top' : ''}">${r.rank}</span>
         <span class="ranking-name">${r.displayName}</span>
