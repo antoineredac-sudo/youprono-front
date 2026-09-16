@@ -1776,6 +1776,14 @@
 }
 .kop-row:last-child{ border-bottom:none; }
 .kop-row.moi{ font-weight:700; }
+/* Bandeau de bienvenue du nouveau venu, et membres sans match (16 septembre 2026). */
+.kop-bienvenue{
+  background:var(--surface); border:1px solid #e8b923; border-radius:10px;
+  padding:14px; margin-bottom:16px; text-align:center;
+}
+.kop-bienvenue-titre{ color:#e8b923; font-weight:600; font-size:16px; }
+.kop-bienvenue-texte{ color:#c2cae8; font-size:13px; line-height:1.5; margin-top:6px; }
+.kop-pas-joue{ margin-left:auto; color:#c2cae8; font-size:12px; font-weight:400; }
 .kop-note{ color:#e8b923; }
 
 /* Le classement du kop : rang, pseudo, pastille du rang général, flèche, note. */
@@ -2561,6 +2569,7 @@
       <div id="kop-loading" class="placeholder">Chargement du kop…</div>
 
       <div id="kop-content" style="display:none;">
+        <div class="kop-bienvenue" id="kop-bienvenue" style="display:none;"></div>
         <h2 class="play-title" id="kop-name">KOP</h2>
         <div class="group-season-info" id="kop-sub"></div>
 
@@ -2569,11 +2578,11 @@
              « Le classement du kop » porte le classement de saison, sans titre
              au-dessus puisque l'onglet le nomme déjà. -->
         <div class="tab-switch group-tabs" style="margin-top:16px;">
-          <button id="ktab-btn-match" class="active" onclick="switchKopTab('match')">Le dernier match</button>
-          <button id="ktab-btn-classement" onclick="switchKopTab('classement')">Le classement du kop</button>
+          <button id="ktab-btn-classement" class="active" onclick="switchKopTab('classement')">Le classement du kop</button>
+          <button id="ktab-btn-match" onclick="switchKopTab('match')">Le dernier match</button>
         </div>
 
-        <div id="ktab-match">
+        <div id="ktab-match" style="display:none;">
         <p class="kop-note" id="kop-match-vide" style="display:none;text-align:center;margin:8px 0 0;">Ce kop n'a pas encore de match noté.</p>
 
         <!-- L'hexagone comparé : ma note en doré plein, la moyenne du kop en
@@ -6707,8 +6716,10 @@ async function assurerMonKop(){
     const res = await fetch(`${API_BASE}/Group/Kops/${userId}`);
     const json = await res.json();
     if(!json.success || !json.data) return false;
-    monKopId = json.data.myKopId || null;
-    monKopNom = json.data.myKopName || null;
+    // Une réponse partie avant l'entrée dans le kop ne doit pas effacer le kop
+    // que le joueur vient de rejoindre pendant ce temps.
+    monKopId = json.data.myKopId || monKopId;
+    monKopNom = json.data.myKopName || monKopNom;
     return !!monKopId;
   }catch(e){ return false; }
 }
@@ -6866,14 +6877,16 @@ async function chargerKops(){
 // L'entrée de menu dit « Mon kop » à celui qui en a un, « Rejoins un kop » aux
 // autres. Rien ne promet une possession que le joueur n'a pas.
 function majLibelleMenuKop(){
-  const libelle = monKopId ? 'Mon kop' : 'Rejoins un kop';
+  // Depuis le 16 septembre 2026, le menu porte le nom du kop (« Mookie Kop »)
+  // plutôt que « Mon kop ». La page de liste garde « Mon kop » en titre : elle
+  // montre aussi les autres kops.
+  const libelle = monKopId ? (monKopNom || 'Mon kop') : 'Rejoins un kop';
 
   const btn = document.getElementById('menu-kops');
   if(btn){ btn.textContent = libelle; }
 
-  // Le bandeau de la page dit la même chose que le menu qui y mène.
   const titre = document.getElementById('kops-titre');
-  if(titre){ titre.textContent = libelle.toUpperCase(); }
+  if(titre){ titre.textContent = monKopId ? 'MON KOP' : 'REJOINS UN KOP'; }
 }
 
 function majBandeauMonKop(){
@@ -7032,7 +7045,10 @@ function rejoindreCeKop(){
   rejoindreKopParCode(kopCourant.inviteCode);
 }
 
-async function openKop(groupId){
+let kopBienvenue = false;
+
+async function openKop(groupId, options){
+  kopBienvenue = !!(options && options.bienvenue);
   marquerKopVu();
   switchView('kop');
   setRoute('kop', groupId);
@@ -7086,15 +7102,52 @@ function afficherKop(k){
   afficherClassementDuKop(k);
   afficherDernierMatchDuKop(k);
 
-  // L'onglet du dernier match s'ouvre en premier. Un kop sans aucun match noté
-  // s'ouvre sur son classement, avec une phrase dans l'onglet resté vide.
+  // « Le classement du kop » est à gauche et s'ouvre toujours en premier
+  // (décision d'Antoine du 16 septembre 2026) : qui arrive voit d'abord les
+  // autres membres. « Le dernier match » affiche une phrase s'il est vide.
   const aUnMatch = !!(k.hexa || (k.lastMatch && k.lastMatch.length));
   document.getElementById('kop-match-vide').style.display = aUnMatch ? 'none' : 'block';
-  switchKopTab(aUnMatch ? 'match' : 'classement');
+  switchKopTab('classement');
+
+  // Un membre qui regarde son kop : le menu prend son nom.
+  if(k.isMember && getUserId()){
+    monKopId = k.id;
+    monKopNom = k.name || monKopNom;
+    majLibelleMenuKop();
+  }
+
+  afficherBienvenueKop(k);
 
   // Le terrain a besoin des postes de chaque joueur : sans l'effectif en
   // mémoire, il ne trouve aucune fiche et ne dessine rien.
   ensureSquadLoaded().then(function(){ afficherCompositionsDuKop(k); });
+}
+
+// Le bandeau de bienvenue, seulement juste après l'inscription par le lien.
+function afficherBienvenueKop(k){
+  const bloc = document.getElementById('kop-bienvenue');
+  if(!bloc) return;
+  if(!kopBienvenue || !k.isMember){ bloc.style.display = 'none'; return; }
+
+  const n = k.memberCount || 0;
+  const rang = (n === 1) ? '1<sup>er</sup>' : n + '<sup>e</sup>';
+
+  let face = '';
+  try{
+    if(currentMatch){
+      const dom = teamLabel(currentMatch.homeTeam, 'Domicile');
+      const ext = teamLabel(currentMatch.awayTeam, 'Extérieur');
+      face = ' face à ' + (isPsgSide(currentMatch.homeTeam) ? ext : dom);
+    }
+  }catch(e){ face = ''; }
+
+  const nomKop = nomDuKopAvecArticle(k.name).replace(/^le /, '');
+  bloc.innerHTML =
+      '<div class="kop-bienvenue-titre">Bienvenue dans le ' + echapper(nomKop) + '</div>'
+    + '<div class="kop-bienvenue-texte">Tu es le ' + rang + ' membre. Fais tes pronos'
+    + echapper(face) + ' pour entrer au classement du kop.</div>'
+    + '<button class="cta-play" style="margin-top:12px;" onclick="goToComposition()">Je fais mes pronos</button>';
+  bloc.style.display = 'block';
 }
 
 // Bascule entre les deux onglets de l'écran d'un kop, comme switchGroupTab.
@@ -7373,7 +7426,17 @@ function afficherClassementDuKop(k){
     return '';
   };
 
+  // Un membre qui n'a encore aucun match ni aucune note : pas de rang, pas de
+  // 0.000, mais « pas encore joué ». Il reste dans la liste, sous les autres.
   const html = k.ranking.map(function(r){
+    if(!r.matchesPlayed && !Number(r.expertCoef)){
+      return '<div class="kop-row' + (r.isMe ? ' moi' : '') + '">'
+           + '<span class="kop-rang" style="visibility:hidden;">' + r.rank + ' · </span>'
+           + '<span class="kop-nom">' + echapper(r.displayName) + (r.isMe ? ' (toi)' : '') + '</span>'
+           + '<span class="kop-mvt"></span>'
+           + '<span class="kop-pas-joue">pas encore joué</span>'
+           + '</div>';
+    }
     const pastille = r.generalRank
       ? '<span class="kr-pastille">' + ordinal(r.generalRank) + ' au CG</span>'
       : '';
@@ -8102,9 +8165,11 @@ async function personnaliserBandeauInvitation(code, banner){
     const nom = (json.data.name || '').trim();
     if(!nom) return;
 
-    if(String(json.data.type || '').toLowerCase() === 'kop'){
-      const avecKop = /^kops?\b/i.test(nom) ? nom : ('kop ' + nom);
-      banner.innerHTML = 'On t\'invite à rejoindre le <strong>' + avecKop
+    // Un kop de média (« kopmedia ») est un kop : même texte, même parcours.
+    // Tester le seul type « kop » envoyait les invités de Mookie vers les
+    // groupes d'amis (corrigé le 16 septembre 2026).
+    if(estUnKop(json.data)){
+      banner.innerHTML = 'On t\'invite à rejoindre ' + nomDuKopAvecArticle(nom).replace(/^le /, 'le <strong>')
         + '</strong> sur YouProno.<br>Choisis ton pseudo, fais tes pronos et retrouve ton kop dans le menu principal';
     }else{
       banner.innerHTML = 'On t\'invite à rejoindre <strong>' + nom
@@ -8114,6 +8179,13 @@ async function personnaliserBandeauInvitation(code, banner){
 }
 
 let invitationKopEnAttente = null;
+
+// « le Mookie Kop » et non « le kop Mookie Kop » : on n'ajoute le mot « kop »
+// que si le nom ne le contient pas déjà, où qu'il soit.
+function nomDuKopAvecArticle(nom){
+  nom = (nom || '').trim();
+  return 'le ' + (/\bkops?\b/i.test(nom) ? nom : ('kop ' + nom));
+}
 
 // Un lien partage peut mener a un groupe d'amis ou a un kop. On demande d'abord
 // au serveur ce que le code designe : un groupe d'amis se rejoint d'office,
@@ -8128,7 +8200,7 @@ async function acceptPendingInvite(){
     const res = await fetch(`${API_BASE}/Group/ByCode/${encodeURIComponent(code)}/${getUserId()}`);
     const json = await res.json();
 
-    if(json.success && json.data && String(json.data.type || '').toLowerCase() === 'kop'){
+    if(json.success && json.data && estUnKop(json.data)){
       if(json.data.alreadyMember){ openKop(json.data.id); return; }
 
       // Nouveau venu : il a cliqué sur le lien, puis créé son compte. Lui
@@ -8141,8 +8213,13 @@ async function acceptPendingInvite(){
         const entree = await fetch(`${API_BASE}/Group/Join/${code}/${getUserId()}`, { method:'POST' });
         const ok = await entree.json();
         if(ok.success && ok.data){
-          // Il est entré dans le kop sans le voir : il faudra le lui montrer.
-          marquerKopAMontrer();
+          // Il arrive directement sur la page du kop, avec un bandeau de
+          // bienvenue et le bouton vers ses pronos (16 septembre 2026).
+          // Avant, il restait sur l'accueil et ne voyait jamais son kop.
+          monKopId = ok.data.id || json.data.id;
+          monKopNom = ok.data.name || json.data.name || null;
+          majLibelleMenuKop();
+          openKop(monKopId, { bienvenue: true });
           return;
         }
       }
@@ -8163,13 +8240,12 @@ async function acceptPendingInvite(){
 function proposerInvitationKop(code, infos){
   invitationKopEnAttente = { code: code, infos: infos };
 
-  const nom = (infos.name || '').trim();
-  const avecKop = /^kops?\b/i.test(nom) ? nom : ('kop ' + nom);
+  const avecArticle = nomDuKopAvecArticle(infos.name);
 
   switchView('home');
   document.getElementById('kop-invite-banner-text').textContent =
-    'On t\'invite à rejoindre le ' + avecKop + '.';
-  document.getElementById('kop-invite-banner-btn').textContent = 'Rejoindre le ' + avecKop;
+    'On t\'invite à rejoindre ' + avecArticle + '.';
+  document.getElementById('kop-invite-banner-btn').textContent = 'Rejoindre ' + avecArticle;
   document.getElementById('kop-invite-banner').style.display = 'block';
 }
 
