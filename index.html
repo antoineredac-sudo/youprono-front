@@ -163,6 +163,11 @@
     display:none;
   }
   .field-error.show{ display:block; }
+  /* Le lien de récupération glissé sous une erreur d'inscription. */
+  .lien-erreur{
+    display:inline-block; margin-top:8px;
+    color:var(--text); text-decoration:underline; cursor:pointer;
+  }
 
   .auth-invite{
     display:none;
@@ -3003,6 +3008,25 @@ function showError(msg){
   el.classList.add('show');
 }
 
+// Texte validé par Antoine le 16 septembre 2026. Le lien ouvre la récupération
+// avec l'adresse saisie déjà remplie : il n'a plus qu'à valider.
+function afficherAdresseDejaPrise(email){
+  const el = document.getElementById('auth-error');
+  el.textContent = 'Cette adresse est déjà liée à un compte. Tu as oublié ton pseudo ou ton mot de passe ?';
+  el.appendChild(document.createElement('br'));
+  const lien = document.createElement('span');
+  lien.className = 'lien-erreur';
+  lien.setAttribute('role', 'button');
+  lien.tabIndex = 0;
+  lien.textContent = 'Récupérer mon compte';
+  lien.onclick = function(){
+    ouvrirOubli();
+    document.getElementById('oubli-email').value = email;
+  };
+  el.appendChild(lien);
+  el.classList.add('show');
+}
+
 async function submitAuth(){
   const displayName = document.getElementById('auth-username').value.trim();
   const password = document.getElementById('auth-password').value;
@@ -3040,6 +3064,14 @@ async function submitAuth(){
         : { displayName, password, email, emailOptIn })
     });
     const json = await res.json();
+
+    // Code -5 : l'adresse porte déjà un compte. Plutôt qu'un refus sec, on
+    // oriente vers la récupération, avec l'adresse déjà remplie.
+    if(!json.success && authMode === 'register' && json.code === -5){
+      afficherAdresseDejaPrise(email);
+      btn.disabled = false;
+      return;
+    }
 
     if(!json.success){
       const msg = authMode === 'login'
@@ -6745,7 +6777,11 @@ async function enregistrerEmail(){
     btn.disabled = false;
 
     if(!json.success){
-      err.textContent = "Impossible d'enregistrer cette adresse.";
+      // Code -3 : un autre compte porte déjà cette adresse. Le joueur est
+      // connecté, la récupération n'a pas de sens ici : la phrase seule suffit.
+      err.textContent = json.code === -3
+        ? 'Cette adresse est déjà liée à un compte.'
+        : "Impossible d'enregistrer cette adresse.";
       err.classList.add('show');
       return;
     }
