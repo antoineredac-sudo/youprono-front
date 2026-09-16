@@ -3142,6 +3142,9 @@ function enterApp(restaurer){
   // puisque c'est là que se trouve le bouton « Se déconnecter ».
   switchView('home');
   loadHomeMatch();
+  // On repart d'une page blanche pour le kop : le joueur qui entre n'est pas
+  // forcément celui d'avant. Son vrai kop est relu plus bas par assurerMonKop.
+  oublierKopDuJoueur();
   if(pendingInviteCode){ acceptPendingInvite(); }
   checkMatchNotification();
   verifierAdresseEmail();
@@ -6506,6 +6509,9 @@ async function envoyerReset(){
 
 function logout(){
   localStorage.removeItem(LS_AUTH);
+  // Le kop du joueur précédent ne doit pas survivre à sa déconnexion : sans
+  // ça, le compte suivant héritait de son nom dans le menu (16 septembre 2026).
+  oublierKopDuJoueur();
   try{ history.replaceState(null, '', location.pathname); }catch(e){}
   // On range l'écran derrière soi : sans ça, le profil reste affiché sous le
   // formulaire de connexion et réapparaît tel quel à la prochaine entrée.
@@ -6836,6 +6842,14 @@ async function enregistrerEmail(){
 let kopsCharges = [];      // la liste renvoyee par le serveur
 let monKopId = null;       // le kop du joueur, s'il en a un
 let monKopNom = null;
+
+// Remet à zéro tout ce que le jeu sait du kop du joueur connecté.
+function oublierKopDuJoueur(){
+  monKopId = null;
+  monKopNom = null;
+  kopCourant = null;
+  majLibelleMenuKop();
+}
 let monKopMembres = 0;
 let kopCourant = null;     // le kop actuellement ouvert
 
