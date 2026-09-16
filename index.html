@@ -1784,6 +1784,11 @@
 }
 .kop-bienvenue-titre{ color:#e8b923; font-weight:600; font-size:16px; }
 .kop-bienvenue-texte{ color:#c2cae8; font-size:13px; line-height:1.5; margin-top:6px; }
+.groupe-complet-note{
+  background:var(--surface); border:1px solid #e8b923; border-radius:10px;
+  padding:12px 14px; margin:0 0 18px; color:#c2cae8; font-size:13px; line-height:1.5; text-align:center;
+}
+.groupe-complet-note strong{ color:#e8b923; font-weight:600; }
 .kop-pas-joue{ margin-left:auto; color:#c2cae8; font-size:12px; font-weight:400; }
 .kop-note{ color:#e8b923; }
 
@@ -2429,6 +2434,7 @@
     </section>
     <section id="view-group-create" class="view" style="display:none;">
       <h2 class="play-title">CRÉER UN GROUPE</h2>
+      <div class="groupe-complet-note" id="group-create-notice" style="display:none;"></div>
       <label>Nom du groupe</label>
       <input type="text" id="group-create-name" placeholder="Les Copains du Parc">
       <div class="field-error" id="group-create-error"></div>
@@ -2492,7 +2498,11 @@
         <div class="placeholder" id="group-calendar-empty" style="display:none;"></div>
       </div>
 
-      <div class="group-invite-box" style="margin-top:28px;">
+      <div class="group-invite-box" id="group-complet-box" style="margin-top:28px;display:none;">
+        <div class="group-invite-title">Ton groupe est au complet</div>
+        <div class="group-invite-label">Tes autres amis peuvent créer le leur : ils seront prévenus en cliquant sur ton lien.</div>
+      </div>
+      <div class="group-invite-box" id="group-invite-box" style="margin-top:28px;">
         <div class="group-invite-title">Invite un nouveau membre dans le groupe</div>
         <div class="group-invite-label">Code d'invitation à partager</div>
         <div class="group-invite-code" id="group-detail-code"></div>
@@ -5244,7 +5254,24 @@ function verrouille(btnId, labelId, texte){
 function creerUnGroupe(){
   document.getElementById('group-create-name').value = '';
   document.getElementById('group-create-error').classList.remove('show');
+  document.getElementById('group-create-notice').style.display = 'none';
   switchView('group-create');
+}
+
+// Le groupe visé est complet (code -4 du serveur) : plutôt que de laisser
+// l'invité devant une erreur, on l'emmène créer le sien, avec l'explication.
+async function ouvrirNommageGroupeComplet(code){
+  creerUnGroupe();
+  let nom = '';
+  try{
+    const res = await fetch(`${API_BASE}/Group/ByCode/${encodeURIComponent(code)}`);
+    const json = await res.json();
+    if(json.success && json.data){ nom = (json.data.name || '').trim(); }
+  }catch(e){}
+  const note = document.getElementById('group-create-notice');
+  note.innerHTML = (nom ? 'Le groupe « <strong>' + echapper(nom) + '</strong> » affiche complet.' : 'Ce groupe affiche complet.')
+    + ' Lance le tien : choisis un nom, puis envoie ton lien à celui qui t\'a invité.';
+  note.style.display = 'block';
 }
 
 // --- Ancien parcours, conserve : plus aucun bouton n'y mene ---
@@ -5391,6 +5418,11 @@ async function joinGroup(){
     const userId = getUserId();
     const res = await fetch(`${API_BASE}/Group/Join/${code}/${userId}`, { method:'POST' });
     const json = await res.json();
+    if(!json.success && json.code === -4){
+      document.getElementById('group-join-code').value = '';
+      await ouvrirNommageGroupeComplet(code);
+      return;
+    }
     if(!json.success){
       errEl.textContent = json.message || "Ce code n'est pas valide, ou le groupe est déjà complet.";
       errEl.classList.add('show');
@@ -5407,6 +5439,8 @@ async function joinGroup(){
 
 let currentGroupId = null;
 let currentGroupName = '';
+// Le plafond d'un groupe d'amis, le même qu'au serveur (MaxMembers).
+const GROUPE_MAX_MEMBRES = 10;
 
 // Quitter un groupe. Le code d'invitation est rappelé dans la confirmation :
 // une fois sorti, il n'est plus affiché nulle part, et c'est la seule clé
@@ -6218,6 +6252,12 @@ async function openGroupDetail(groupId){
     document.getElementById('group-detail-name').textContent = g.name.toUpperCase();
     document.getElementById('group-detail-code').textContent = g.inviteCode;
 
+    // Un groupe d'amis plein n'invite plus : le bloc de partage laisse place à
+    // « Ton groupe est au complet » (16 septembre 2026).
+    const complet = (g.ranking || []).length >= GROUPE_MAX_MEMBRES;
+    document.getElementById('group-invite-box').style.display = complet ? 'none' : 'block';
+    document.getElementById('group-complet-box').style.display = complet ? 'block' : 'none';
+
     // Le renommage n'est proposé qu'au créateur du groupe.
     groupeAffiche = g;
     const lienRenommer = document.getElementById('group-rename-link');
@@ -6274,10 +6314,23 @@ async function openGroupDetail(groupId){
         ${fleche(r)}
         <span class="ranking-score">${fmtNum(r.totalScore)}</span>
       </div>`).join('')
+      + ligneSommeil(g.sleepingCount)
       + '<p class="ranking-note">À égalité, c\'est le coef expert sur les matchs du groupe qui départage.</p>';
   }catch(e){
     rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce groupe.</div>';
   }
+}
+
+// Les membres en sommeil (aucun prono sur les trois derniers matchs) sont
+// retirés du classement par le serveur, qui en donne le nombre. Une ligne
+// discrète le dit, sans nommer personne (16 septembre 2026).
+function ligneSommeil(n){
+  n = Number(n) || 0;
+  if(n <= 0) return '';
+  const texte = n === 1
+    ? '1 membre en sommeil : il revient au classement dès son prochain prono.'
+    : n + ' membres en sommeil : ils reviennent au classement dès leur prochain prono.';
+  return '<p class="ranking-note">' + texte + '</p>';
 }
 
 async function goToProfile(){
@@ -8258,6 +8311,11 @@ async function personnaliserBandeauInvitation(code, banner){
     if(estUnKop(json.data)){
       banner.innerHTML = 'On t\'invite à rejoindre ' + nomDuKopAvecArticle(nom).replace(/^le /, 'le <strong>')
         + '</strong> sur YouProno.<br>Choisis ton pseudo, fais tes pronos et retrouve ton kop dans le menu principal';
+    }else if(json.data.isFull){
+      // Groupe complet (16 septembre 2026) : on le dit avant l'inscription, pour
+      // que la mauvaise nouvelle ne tombe pas après, et on offre la suite.
+      banner.innerHTML = 'Le groupe <strong>' + echapper(nom)
+        + '</strong> est complet.<br>Crée ton compte et lance ton propre groupe en deux minutes.';
     }else{
       banner.innerHTML = 'On t\'invite à rejoindre <strong>' + nom
         + '</strong> sur YouProno.<br>Crée ton compte et on t\'y ajoute tout de suite.';
@@ -8372,6 +8430,11 @@ async function rejoindreGroupeDAmis(code){
     const userId = getUserId();
     const res = await fetch(`${API_BASE}/Group/Join/${code}/${userId}`, { method:'POST' });
     const json = await res.json();
+
+    if(!json.success && json.code === -4){
+      await ouvrirNommageGroupeComplet(code);
+      return;
+    }
 
     await enterGroupsScreen();
 
