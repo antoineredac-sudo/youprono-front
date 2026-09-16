@@ -5424,6 +5424,9 @@ async function majTuilesProfil(complet, moi){
   const cible = document.getElementById('profil-tuiles');
   if(!cible) return;
 
+  // « 8ᵉ/32 » plutôt que « 8ᵉ » : une place ne se lit qu'avec le nombre de
+  // joueurs classés derrière elle. Le total est la longueur de la liste servie
+  // par le serveur, la même que sur l'écran du classement.
   const rang = (moi >= 0) ? complet[moi].rank : 0;
   const joues = (moi >= 0) ? complet[moi].games : 0;
 
@@ -5445,7 +5448,7 @@ async function majTuilesProfil(complet, moi){
     + '<div class="tuile-lab">' + libelle + '</div></div>';
 
   cible.innerHTML =
-      tuile('Coef expert', rang > 0 ? (rang + 'ᵉ') : '–', 'au classement général')
+      tuile('Coef expert', rang > 0 ? (rang + 'ᵉ/' + complet.length) : '–', 'au classement général')
     + tuile('Note record', (record !== null) ? fmtNote(record) : '–', 'record')
     + tuile('Matchs joués', joues ? fraction : '–', joues > 1 ? 'matchs joués' : 'match joué');
 }
@@ -5856,8 +5859,9 @@ async function loadRanking(tab){
     document.getElementById('ranking-me-score').textContent = me ? fmtNote(me.score) : '–';
     // Il garde son rang même sous le seuil : c'est la ligne du classement qui
     // dit, en barré, que la place n'est pas encore acquise.
+    // Le rang sur le nombre de classés, comme sur la tuile de « Mon profil ».
     const rangTexte = !me ? ''
-      : '#' + me.rank + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '');
+      : '#' + me.rank + '/' + complet.length + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '');
     document.getElementById('ranking-me-rank').textContent = rangTexte;
 
     // La définition suit l'onglet : une phrase par note, toutes rangées dans
