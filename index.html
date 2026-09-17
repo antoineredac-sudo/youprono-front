@@ -438,9 +438,14 @@
   .calendar-competition{ color:var(--text-dim); font-size:11px; text-align:right; }
 
   /* --- Écran de composition --- */
+  /* Le titre de page, en doré depuis le 17 septembre 2026 : il portait le même
+     rouge, le même arrondi et la même police que les boutons, et se confondait
+     avec eux. Le rouge ne désigne plus que ce qui se clique. Les pictogrammes
+     des étapes du tunnel suivent, ils sont dessinés en currentColor. */
   .play-title{
-    background:var(--red);
-    color:var(--text);
+    background:var(--surface);
+    border:1px solid var(--gold);
+    color:var(--gold);
     text-align:center;
     font-family:'Oswald',sans-serif;
     font-size:18px;
