@@ -1623,9 +1623,21 @@
      classement : les deux écrans doivent dire la même chose. */
   #profil-regle{ margin:12px 4px 0; }
   .profil-tout{
-    display:block; text-align:center; cursor:pointer;
-    color:var(--text-dim); font-size:13px; padding:12px 0 0;
+    display:block;
+    margin:16px auto 0;
+    background:var(--red);
+    color:var(--text);
+    border:none;
+    border-radius:7px;
+    padding:11px 22px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    text-transform:uppercase;
+    text-align:center;
+    cursor:pointer;
   }
+  .profil-tout:active{ background:var(--red-dim); }
   .group-champion{
     background:var(--gold);
     color:#1b2a5e;
@@ -2795,7 +2807,7 @@
         <div class="tuiles" id="profil-tuiles"></div>
 
         <div class="ranking-tabs" style="margin-top:14px;">
-          <button class="ranking-tab active" id="profil-tab-final" onclick="switchProfilTab('final')">coefficient expert</button>
+          <button class="ranking-tab active" id="profil-tab-final" onclick="switchProfilTab('final')">coef expert</button>
           <button class="ranking-tab" id="profil-tab-record" onclick="switchProfilTab('record')">note record</button>
         </div>
 
@@ -2803,7 +2815,7 @@
 
         <div id="profil-voisinage"></div>
         <p class="profil-def" id="profil-regle">Plus tu participes, plus tu augmentes tes chances de bien figurer au classement. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
-        <span class="profil-tout" onclick="goToRanking()">Tout le classement ›</span>
+        <button class="profil-tout" onclick="goToRanking()">Tout le classement</button>
 
         <div class="dash-history-label" style="margin-top:24px;">mon historique</div>
         <div id="dash-history"></div>
