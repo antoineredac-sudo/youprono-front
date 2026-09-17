@@ -5164,7 +5164,15 @@ function renderResults(prediction, stats, matchDetail){
 function majLibelleGroupes(n){
   const pluriel = (n > 1);
   const menu = document.getElementById('menu-groupes');
-  if(menu){ menu.textContent = pluriel ? "Mes groupes d'amis" : "Mon groupe d'amis"; }
+  // Sans aucun groupe, le menu n'annonce pas un bien qu'on ne possede pas : il
+  // invite, comme « Rejoins un kop » le fait deja (17 septembre 2026). Celui
+  // qui arrive par un lien d'invitation est deja membre, il lit « Mon groupe
+  // d'amis » des sa premiere ouverture.
+  if(menu){
+    menu.textContent = (n === 0)
+      ? "Crée ton groupe d'amis"
+      : (pluriel ? "Mes groupes d'amis" : "Mon groupe d'amis");
+  }
   const titre = document.getElementById('groups-title');
   if(titre){ titre.textContent = pluriel ? "MES GROUPES D'AMIS" : "MON GROUPE D'AMIS"; }
   const retour = document.getElementById('group-back-link');
