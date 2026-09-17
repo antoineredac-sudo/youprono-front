@@ -1704,6 +1704,33 @@
      taille que la définition : c'est la couleur qui la distingue. */
   .def-accroche{ display:block; color:var(--gold); }
 
+  /* La carte du coef expert, refaite le 17 septembre 2026. L'onglet est celui
+     sur lequel on arrive en ouvrant « Classement », et rien n'y disait que
+     c'etait le classement general du jeu. La note tient la colonne de gauche,
+     la phrase occupe un bloc a filet dore attenue a droite : dore pour se
+     rattacher a la note, attenue pour ne pas rivaliser avec le titre de page.
+     Les sept autres onglets gardent la carte centree. */
+  .rmc-row{ display:flex; align-items:center; gap:11px; }
+  .rmc-left{ flex:1; text-align:center; }
+  .rmc-ligne{ display:flex; align-items:center; justify-content:center; gap:7px; margin-top:9px; }
+  .rmc-ligne .picto{ width:22px; height:22px; color:var(--gold); }
+  .rmc-lib{ text-transform:uppercase; font-size:12px; letter-spacing:.5px; color:var(--gold); }
+  .rmc-rang{
+    font-family:'Oswald',sans-serif; font-size:19px; font-weight:600;
+    color:var(--text); margin-top:7px; line-height:1;
+  }
+  .rmc-rang .ord{ font-size:12px; }
+  .rmc-rang .sur{ font-size:12px; color:var(--text-dim); }
+  .rmc-right{
+    flex:0 0 128px;
+    border:1px solid rgba(232,185,35,.45);
+    border-radius:10px;
+    padding:11px 9px;
+    color:var(--text);
+    font-size:11.5px;
+    line-height:1.45;
+  }
+
   /* Positionnée pour servir de repère aux lignes qu'elle contient, et pour que
      le cadrage sur le joueur connecté tombe juste. */
   #ranking-table{ position:relative; }
@@ -1730,7 +1757,10 @@
   .ranking-table-row > span:not(.rt-barre){ position:relative; }
   .ranking-table-row.me .rt-barre{ background:var(--surface-raised); }
   .ranking-table-row.me{ border-color:var(--red); }
-  .rt-rank{ width:26px; color:var(--text-dim); font-family:'Oswald',sans-serif; }
+  /* Trente pixels depuis le 17 septembre 2026 : le rang s'ecrit en ordinal
+     (1er, 2e, 3e) et « 12e » ne tenait pas dans vingt-six. */
+  .rt-rank{ width:30px; color:var(--text-dim); font-family:'Oswald',sans-serif; }
+  .rt-rank .ord{ font-size:10px; }
   .rt-name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .rt-games{ width:50px; text-align:right; color:var(--text-dim); font-size:12px; }
   .rt-score{ width:60px; text-align:right; font-family:'Oswald',sans-serif; color:var(--gold); }
@@ -2787,7 +2817,20 @@
         <button class="ranking-tab" id="ranking-tab-crosses" onclick="switchRankingTab('crosses')">centres</button>
       </div>
 
-      <div class="ranking-me-card">
+      <!-- La carte du coef expert : deux colonnes, la note et la phrase. Elle
+           remplace la carte centrée sur ce seul onglet (17 septembre 2026). -->
+      <div class="ranking-me-card" id="ranking-me-coef" style="display:none;">
+        <div class="rmc-row">
+          <div class="rmc-left">
+            <div class="ranking-me-value" id="rmc-score">–</div>
+            <div class="rmc-ligne"><span id="rmc-picto"></span><span class="rmc-lib">Coef expert</span></div>
+            <div class="rmc-rang" id="rmc-rang"></div>
+          </div>
+          <div class="rmc-right">Ta position au classement général dépend de ton Coef Expert.</div>
+        </div>
+      </div>
+
+      <div class="ranking-me-card" id="ranking-me-card">
         <div class="ranking-me-label" id="ranking-me-label">coef expert</div>
         <div class="ranking-me-duo">
           <span id="ranking-me-picto"></span>
@@ -5558,6 +5601,15 @@ function ecrireDefinition(el, fiche){
   el.appendChild(document.createTextNode(fiche.def));
 }
 
+// Le rang s'ecrit en ordinal depuis le 17 septembre 2026 : « 1er », « 2e »,
+// « 3e ». Le diese venait des forums, pas du sport. Le « e » est seul en
+// exposant : « 2eme » et « 2e avec accent » sont des fautes.
+function ordinal(n){
+  n = Number(n) || 0;
+  if(n <= 0) return '';
+  return n + '<span class="ord">' + (n === 1 ? 'er' : 'e') + '</span>';
+}
+
 function switchProfilTab(tab){
   profilTab = tab;
   document.getElementById('profil-tab-final').classList.toggle('active', tab === 'final');
@@ -5636,7 +5688,7 @@ async function chargerVoisinage(tab){
     cible.innerHTML = voisins.map(u => `
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
-        <span class="rt-rank">#${u.rank}</span>
+        <span class="rt-rank">${ordinal(u.rank)}</span>
         <span class="rt-name assidu">${u.userName}</span>
         <span class="rt-mvt">${fleche(u)}</span>
         <span class="rt-games">${assiduite(u)}</span>
@@ -5698,7 +5750,7 @@ async function goToMatchRanking(matchId){
     boite.innerHTML = d.rows.map(r => `
       <div class="ranking-table-row ${r.id === moi ? 'me' : ''}">
         <span class="rt-barre" style="width:${largeur(r.score)}%"></span>
-        <span class="rt-rank">#${r.rank}</span>
+        <span class="rt-rank">${ordinal(r.rank)}</span>
         <span class="rt-name assidu">${echapper(r.userName || '')}</span>
         <span class="rt-score">${fmtNote(r.score)}</span>
       </div>`).join('');
@@ -6002,6 +6054,22 @@ async function loadRanking(tab){
 
     const me = complet.find(u => u.id === userId);
     const fiche = ficheOnglet(tab);
+
+    // L'onglet du coef expert a sa propre carte, en deux colonnes : c'est
+    // l'écran d'arrivée de « Classement », et il doit dire d'emblée que ce
+    // classement-là est le classement général (17 septembre 2026).
+    const estCoef = (tab === 'final');
+    document.getElementById('ranking-me-coef').style.display = estCoef ? 'block' : 'none';
+    document.getElementById('ranking-me-card').style.display = estCoef ? 'none' : 'block';
+
+    if(estCoef){
+      document.getElementById('rmc-picto').innerHTML = picto(fiche.picto);
+      document.getElementById('rmc-score').textContent = me ? fmtNote(me.score) : '–';
+      document.getElementById('rmc-rang').innerHTML = me
+        ? ordinal(me.rank) + '<span class="sur">/' + complet.length + '</span>'
+        : '';
+    }
+
     document.getElementById('ranking-me-label').textContent = fiche.nom.toLowerCase();
     document.getElementById('ranking-me-picto').innerHTML = picto(fiche.picto);
     document.getElementById('ranking-me-score').textContent = me ? fmtNote(me.score) : '–';
@@ -6009,7 +6077,7 @@ async function loadRanking(tab){
     // dit, en barré, que la place n'est pas encore acquise.
     // Le rang sur le nombre de classés, comme sur la tuile de « Mon profil ».
     const rangTexte = !me ? ''
-      : '#' + me.rank + '/' + complet.length + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '');
+      : me.rank + 'ᵉ/' + complet.length + ' · ' + me.games + ' match' + (me.games > 1 ? 's' : '');
     document.getElementById('ranking-me-rank').textContent = rangTexte;
 
     // La définition suit l'onglet : une phrase par note, toutes rangées dans
@@ -6037,7 +6105,7 @@ async function loadRanking(tab){
     const ligne = (u) => `
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
-        <span class="rt-rank">#${u.rank}</span>
+        <span class="rt-rank">${ordinal(u.rank)}</span>
         <span class="rt-name assidu">${u.userName}</span>
         <span class="rt-mvt">${fleche(u)}</span>
         <span class="rt-games">${assiduite(u)}</span>
