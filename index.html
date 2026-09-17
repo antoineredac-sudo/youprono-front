@@ -2498,7 +2498,7 @@
                 onclick="validerRenommage()">Enregistrer</button>
         <span class="small-link" onclick="fermerRenommage()">Annuler</span>
       </div>
-      <div class="group-season-info" id="group-detail-season"></div>
+      <div class="group-season-info" id="group-detail-season" style="display:none;"></div>
       <div class="group-champion" id="group-detail-champion" style="display:none;"></div>
 
       <div class="tab-switch group-tabs">
@@ -6370,7 +6370,6 @@ async function openGroupDetail(groupId){
         <span class="ranking-score">${fmtNum(r.totalScore)}</span>
       </div>`).join('')
       + ligneSommeil(g.sleepingCount)
-      + '<p class="ranking-note">Les colonnes M1 à M5 donnent ta place à chaque match du mini-championnat, sur le nombre de participants. Un tiret : tu n\'as pas pronostiqué.</p>'
       + '<p class="ranking-note">À égalité, c\'est le coef expert sur les matchs du groupe qui départage.</p>';
   }catch(e){
     rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce groupe.</div>';
