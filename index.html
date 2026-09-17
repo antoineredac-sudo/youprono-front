@@ -5196,11 +5196,17 @@ function majLibelleGroupes(n){
   // d'amis » des sa premiere ouverture.
   if(menu){
     menu.textContent = (n === 0)
-      ? "Crée ton groupe d'amis"
+      ? "Défie tes amis"
       : (pluriel ? "Groupes d'amis" : "Groupe d'amis");
   }
+  // Le titre de la page suit le menu : celui qui n'a aucun groupe est invite,
+  // il ne lit pas le nom d'une chose qu'il ne possede pas (17 septembre 2026).
   const titre = document.getElementById('groups-title');
-  if(titre){ titre.textContent = pluriel ? "MES GROUPES D'AMIS" : "MON GROUPE D'AMIS"; }
+  if(titre){
+    titre.textContent = (n === 0)
+      ? "DÉFIE TES AMIS"
+      : (pluriel ? "MES GROUPES D'AMIS" : "MON GROUPE D'AMIS");
+  }
   const retour = document.getElementById('group-back-link');
   if(retour){ retour.textContent = pluriel ? '← Retour à mes groupes' : '← Retour à mon groupe'; }
 }
