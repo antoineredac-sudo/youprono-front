@@ -2843,6 +2843,11 @@
         <div class="ranking-me-def" id="ranking-me-def"></div>
       </div>
 
+      <!-- La definition du coef expert. Elle vivait dans la carte centree ;
+           la carte a deux colonnes ne la porte plus, elle se pose donc entre
+           l'encadre et le classement (17 septembre 2026). -->
+      <p class="ranking-note" id="ranking-def-coef" style="display:none;">Le Coef Expert est la moyenne des résultats obtenus match après match.</p>
+
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div id="ranking-table"></div>
       <p class="ranking-note" id="ranking-regle" style="display:none;">Plus tu participes, plus tu augmentes tes chances de bien figurer au classement. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
@@ -6064,6 +6069,7 @@ async function loadRanking(tab){
     const estCoef = (tab === 'final');
     document.getElementById('ranking-me-coef').style.display = estCoef ? 'block' : 'none';
     document.getElementById('ranking-me-card').style.display = estCoef ? 'none' : 'block';
+    document.getElementById('ranking-def-coef').style.display = estCoef ? 'block' : 'none';
 
     if(estCoef){
       document.getElementById('rmc-picto').innerHTML = picto(fiche.picto);
