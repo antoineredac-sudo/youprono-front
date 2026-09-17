@@ -1710,8 +1710,11 @@
      la phrase occupe un bloc a filet dore attenue a droite : dore pour se
      rattacher a la note, attenue pour ne pas rivaliser avec le titre de page.
      Les sept autres onglets gardent la carte centree. */
-  .rmc-row{ display:flex; align-items:center; gap:11px; }
-  .rmc-left{ flex:1; text-align:center; }
+  /* Les deux blocs se touchent et l'ensemble est centre dans l'encadre : la
+     colonne de gauche prend la largeur de son contenu au lieu de s'etaler
+     (17 septembre 2026). */
+  .rmc-row{ display:flex; align-items:center; justify-content:center; gap:14px; }
+  .rmc-left{ flex:0 0 auto; text-align:center; }
   .rmc-ligne{ display:flex; align-items:center; justify-content:center; gap:7px; margin-top:9px; }
   .rmc-ligne .picto{ width:22px; height:22px; color:var(--gold); }
   .rmc-lib{ text-transform:uppercase; font-size:12px; letter-spacing:.5px; color:var(--gold); }
