@@ -2118,10 +2118,10 @@
       <button data-view="home" onclick="navFromMenu('home')">Prochain match</button>
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Tableau de bord</button>
-      <button data-view="groups" onclick="navFromMenu('groups')" id="menu-groupes">Mes groupes d'amis</button>
+      <button data-view="groups" onclick="navFromMenu('groups')" id="menu-groupes">Groupes d'amis</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
       <button data-view="kops" onclick="navFromMenu('kops')" id="menu-kops">Rejoins un kop</button>
-      <button data-view="trophies" onclick="navFromMenu('trophies')">Mes trophées</button>
+      <button data-view="trophies" onclick="navFromMenu('trophies')">Trophées</button>
       <button data-view="badges" onclick="navFromMenu('badges')">Mes badges</button>
       <button data-view="faq" onclick="navFromMenu('faq')">FAQ</button>
       <button data-view="legal" onclick="navFromMenu('legal')">Mentions légales</button>
@@ -5171,7 +5171,7 @@ function majLibelleGroupes(n){
   if(menu){
     menu.textContent = (n === 0)
       ? "Crée ton groupe d'amis"
-      : (pluriel ? "Mes groupes d'amis" : "Mon groupe d'amis");
+      : (pluriel ? "Groupes d'amis" : "Groupe d'amis");
   }
   const titre = document.getElementById('groups-title');
   if(titre){ titre.textContent = pluriel ? "MES GROUPES D'AMIS" : "MON GROUPE D'AMIS"; }
