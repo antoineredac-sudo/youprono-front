@@ -1729,8 +1729,19 @@
   /* Les deux blocs se touchent et l'ensemble est centre dans l'encadre : la
      colonne de gauche prend la largeur de son contenu au lieu de s'etaler
      (17 septembre 2026). */
-  .rmc-row{ display:flex; align-items:center; justify-content:center; gap:14px; }
-  .rmc-left{ flex:0 0 auto; text-align:center; }
+  /* Deux encadres jumeaux, meme largeur et meme hauteur : la note a gauche,
+     la phrase a droite (17 septembre 2026). */
+  .rmc-row{ display:flex; align-items:stretch; gap:11px; }
+  .rmc-left{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    text-align:center;
+    border:1px solid rgba(232,185,35,.45);
+    border-radius:10px;
+    padding:11px 9px;
+  }
   .rmc-ligne{ display:flex; align-items:center; justify-content:center; gap:7px; margin-top:9px; }
   .rmc-ligne .picto{ width:22px; height:22px; color:var(--gold); }
   .rmc-lib{ text-transform:uppercase; font-size:12px; letter-spacing:.5px; color:var(--gold); }
@@ -1741,13 +1752,16 @@
   .rmc-rang .ord{ font-size:12px; }
   .rmc-rang .sur{ font-size:12px; color:var(--text-dim); }
   .rmc-right{
-    flex:0 0 128px;
+    flex:1;
+    display:flex;
+    align-items:center;
     border:1px solid rgba(232,185,35,.45);
     border-radius:10px;
     padding:11px 9px;
-    color:var(--text);
+    color:var(--gold);
     font-size:11.5px;
     line-height:1.45;
+    text-align:center;
   }
 
   /* Positionnée pour servir de repère aux lignes qu'elle contient, et pour que
