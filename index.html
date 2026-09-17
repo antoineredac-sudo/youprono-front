@@ -1379,11 +1379,14 @@
   .picto{ width:18px; height:18px; vertical-align:-4px; }
   .picto-titre{ width:22px; height:22px; vertical-align:-4px; margin-right:4px; opacity:.85; }
   .rt-mvt{ width:30px; text-align:right; flex:0 0 auto; }
+  /* Le classement d'un groupe. Les marges ont ete resserrees le 17 septembre
+     2026 pour loger les cinq colonnes des places : 8px aux deux bords de
+     l'encadre, 4px entre le rang et le pseudo. */
   .ranking-row{
     display:flex;
     align-items:center;
-    gap:12px;
-    padding:12px 14px;
+    gap:4px;
+    padding:12px 8px;
     border-radius:10px;
     background:var(--surface);
     border:1px solid var(--border);
@@ -1394,15 +1397,46 @@
     font-size:16px;
     font-weight:600;
     color:var(--text-dim);
-    width:24px;
+    width:18px;
   }
+
+  /* L'en-tete des colonnes, aligne sur les lignes du classement. */
+  .ranking-entete{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    padding:0 8px 6px 8px;
+    font-size:10px;
+    letter-spacing:.5px;
+    color:var(--text-dim);
+  }
+  .ranking-entete .e-rank{ width:18px; }
+  .ranking-entete .e-name{ flex:1; margin-right:2px; }
+  .ranking-entete .e-col{ width:31px; text-align:center; font-family:'Oswald',sans-serif; }
+  .ranking-entete .e-pts{ width:28px; text-align:right; font-family:'Oswald',sans-serif; }
+
+  /* Une place match par match : le chiffre de la place, puis le nombre de
+     participants en plus petit. Les trois premieres places prennent trois
+     dores de plus en plus pales. */
+  .gplace{
+    width:31px;
+    text-align:center;
+    font-family:'Oswald',sans-serif;
+    font-size:13px;
+    color:var(--text);
+  }
+  .gplace .sur{ font-size:9px; color:var(--text-dim); }
+  .gplace.or1{ color:#e8b923; font-weight:600; }
+  .gplace.or2{ color:#d9be6a; font-weight:600; }
+  .gplace.or3{ color:#cdc39a; font-weight:600; }
+  .gplace.vide{ color:#4a63a8; }
   .ranking-rank.top{ color:var(--gold); }
 
   /* Tout le monde figure au classement : la note de forfait a remplacé le seuil
      de participation, un absent voit sa moyenne baisser et non son nom grisé. */
   .rt-name.assidu{ color:var(--gold); font-weight:600; }
-  .ranking-name{ flex:1; font-size:15px; }
-  .ranking-score{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--gold); }
+  .ranking-name{ flex:1; font-size:15px; margin-right:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .ranking-score{ width:28px; text-align:right; font-family:'Oswald',sans-serif; font-size:16px; color:var(--gold); }
   .ranking-pas-joue{ font-size:13px; color:var(--text-dim); }
 
   /* --- Tableau de bord --- */
@@ -2418,7 +2452,7 @@
     <section id="view-groups" class="view" style="display:none;">
       <h2 class="play-title" id="groups-title">MES GROUPES D'AMIS</h2>
 
-      <p class="groups-intro">Un groupe, c'est un mini-championnat de 2 à 10 amis. Cinq matchs, des points à chaque rencontre et des trophées à remporter. Plus vous êtes nombreux, plus le trophée est précieux.</p>
+      <p class="groups-intro">Un groupe, c'est un mini-championnat de 2 à 11 amis. Cinq matchs, des points à chaque rencontre et des trophées à remporter. Plus vous êtes nombreux, plus le trophée est précieux.</p>
 
       <div id="groups-list"></div>
 
@@ -2893,7 +2927,7 @@
 
         <div class="faq-item">
           <div class="faq-q">Comment fonctionne le classement des groupes ?</div>
-          <p class="faq-a">Un groupe est composé de 2 à 10 joueurs. Ici pas de moyenne : chacun cumule des points en fonction de sa note globale match après match pendant une période de 5 matchs. Plus vous êtes nombreux dans le groupe, plus le ballon à décrocher est précieux : baudruche, cuir, bronze, argent, puis le ballon d'or.</p>
+          <p class="faq-a">Un groupe est composé de 2 à 11 joueurs. Ici pas de moyenne : chacun cumule des points en fonction de sa note globale match après match pendant une période de 5 matchs. Plus vous êtes nombreux dans le groupe, plus le ballon à décrocher est précieux : baudruche, cuir, bronze, argent, puis le ballon d'or.</p>
         </div>
       </div>
     </section>
@@ -5136,7 +5170,8 @@ async function enterGroupsScreen(){
 let monGroupe = null; // { id, name, inviteCode, memberCount }
 
 // Doit rester aligne sur MaxMembers dans GroupService.cs cote serveur.
-const MAX_MEMBRES_GROUPE = 10;
+// Onze membres depuis le 17 septembre 2026, comme une equipe de foot.
+const MAX_MEMBRES_GROUPE = 11;
 
 function pseudoCourant(){
   const auth = getAuth();
@@ -5365,7 +5400,7 @@ async function inviteFromConfirm(){
   }
 
   if(groupe.memberCount >= MAX_MEMBRES_GROUPE){
-    alert("Désolé, un groupe d'amis ne peut pas dépasser 10 membres sur YouProno, mais tu peux en créer un 2ème.");
+    alert("Désolé, un groupe d'amis ne peut pas dépasser 11 membres sur YouProno, mais tu peux en créer un 2ème.");
     goToGroups();
     return;
   }
@@ -5395,7 +5430,7 @@ async function inviteFromConfirmSurX(){
   }
 
   if(groupe.memberCount >= MAX_MEMBRES_GROUPE){
-    alert("Désolé, un groupe d'amis ne peut pas dépasser 10 membres sur YouProno, mais tu peux en créer un 2ème.");
+    alert("Désolé, un groupe d'amis ne peut pas dépasser 11 membres sur YouProno, mais tu peux en créer un 2ème.");
     goToGroups();
     return;
   }
@@ -5440,7 +5475,8 @@ async function joinGroup(){
 let currentGroupId = null;
 let currentGroupName = '';
 // Le plafond d'un groupe d'amis, le même qu'au serveur (MaxMembers).
-const GROUPE_MAX_MEMBRES = 10;
+// Onze membres depuis le 17 septembre 2026, comme une équipe de foot.
+const GROUPE_MAX_MEMBRES = 11;
 
 // Quitter un groupe. Le code d'invitation est rappelé dans la confirmation :
 // une fois sorti, il n'est plus affiché nulle part, et c'est la seule clé
@@ -6290,19 +6326,38 @@ async function openGroupDetail(groupId){
       championEl.style.display = 'none';
     }
 
-    // Le mouvement depuis le match précédent, entre le pseudo et les points.
-    const fleche = (r) => {
-      const avant = r.rankBefore || 0;
-      if(!avant) return '';
-      if(avant > r.rank) return `<span class="mvt monte">▲${avant - r.rank}</span>`;
-      if(avant < r.rank) return `<span class="mvt descend">▼${r.rank - avant}</span>`;
-      return '';
+    // Les cinq colonnes du mini-championnat (17 septembre 2026). Chaque case
+    // porte la place du membre ce soir-là sur le nombre de participants, les
+    // trois premières places en trois dorés de plus en plus pâles. Un tiret
+    // signale un match du cycle déjà joué mais pas pronostiqué, et une case
+    // vide un match à venir. Ces colonnes disent le mouvement bien mieux que
+    // la flèche ▲▼ qu'elles remplacent ici.
+    const colonnes = (r) => {
+      const places = {};
+      (r.matchPlaces || []).forEach(mp => { places[mp.position] = mp; });
+      let html = '';
+      for(let i = 1; i <= seasonLength; i++){
+        const mp = places[i];
+        if(mp){
+          const or = mp.place === 1 ? ' or1' : (mp.place === 2 ? ' or2' : (mp.place === 3 ? ' or3' : ''));
+          html += `<span class="gplace${or}">${mp.place}<span class="sur">/${mp.presents}</span></span>`;
+        } else {
+          html += `<span class="gplace vide">${i <= played ? '—' : ''}</span>`;
+        }
+      }
+      return html;
     };
 
     // Un membre qui n'a encore joué aucun match du groupe — nouvel arrivé ou
     // absent de tous les matchs — reste dans la liste, sans rang, avec
     // « aucun match joué » à la place du score (16 septembre 2026).
-    rankingEl.innerHTML = g.ranking.map(r => (!r.rank || !r.matchesPlayed) ? `
+    rankingEl.innerHTML = `
+      <div class="ranking-entete">
+        <span class="e-rank"></span><span class="e-name"></span>
+        ${Array.from({length: seasonLength}, (v, i) => `<span class="e-col">M${i + 1}</span>`).join('')}
+        <span class="e-pts">PTS</span>
+      </div>`
+      + g.ranking.map(r => (!r.rank || !r.matchesPlayed) ? `
       <div class="ranking-row">
         <span class="ranking-rank"></span>
         <span class="ranking-name">${echapper(r.displayName)}</span>
@@ -6310,11 +6365,12 @@ async function openGroupDetail(groupId){
       </div>` : `
       <div class="ranking-row">
         <span class="ranking-rank ${r.rank === 1 ? 'top' : ''}">${r.rank}</span>
-        <span class="ranking-name">${r.displayName}</span>
-        ${fleche(r)}
+        <span class="ranking-name">${echapper(r.displayName)}</span>
+        ${colonnes(r)}
         <span class="ranking-score">${fmtNum(r.totalScore)}</span>
       </div>`).join('')
       + ligneSommeil(g.sleepingCount)
+      + '<p class="ranking-note">Les colonnes M1 à M5 donnent ta place à chaque match du mini-championnat, sur le nombre de participants. Un tiret : tu n\'as pas pronostiqué.</p>'
       + '<p class="ranking-note">À égalité, c\'est le coef expert sur les matchs du groupe qui départage.</p>';
   }catch(e){
     rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce groupe.</div>';
