@@ -4812,9 +4812,9 @@ async function afficherDecouverte(){
     const reelAdv = psgDomicile ? det.awayTeam : det.homeTeam;
     const nomAdv = teamLabel(reelAdv, "L'adversaire");
 
-    let html = '<p class="dec-intro">Tu n\'as pas encore pronostiqué. Voici le dernier '
-      + 'match du PSG tel que tu le verras après ta première participation — avec, à la '
-      + 'place de ton pronostic, la moyenne de ceux des autres joueurs.</p>'
+    let html = '<p class="dec-intro">Tu n\'as pas encore participé à un match. Voici le '
+      + 'dernier match du PSG où les pronostics de l\'ensemble des participants sont '
+      + 'comparés à la compo et aux stats réelles.</p>'
       + '<div class="results-banner"><div class="results-score-line">'
       + echapper(teamLabel(det.homeTeam, 'Domicile')) + ' ' + (det.homeTeam.score ?? 0)
       + ' – ' + (det.awayTeam.score ?? 0) + ' ' + echapper(teamLabel(det.awayTeam, 'Extérieur'))
