@@ -867,6 +867,59 @@
   }
   .result-cat-row b{ color:var(--text); font-weight:500; }
 
+  /* --- Le joueur du match (18 septembre 2026). Le meilleur de la soiree a un
+     titre, et un titre se porte : chez lui il coiffe sa note, chez les autres
+     il ferme la page. --- */
+  .jdm-moi{
+    background:var(--surface); border:1px solid var(--gold); border-radius:12px;
+    padding:20px 16px; text-align:center; margin-bottom:14px;
+  }
+  .jdm-moi .jdm-coupe{ width:40px; height:40px; color:var(--gold); }
+  .jdm-titre{
+    font-family:'Oswald',sans-serif; font-weight:600; color:var(--gold);
+    text-transform:uppercase; letter-spacing:1px; font-size:21px; line-height:1.2;
+    margin-top:9px;
+  }
+  .jdm-sous{ font-size:12.5px; color:var(--text-dim); margin-top:9px; line-height:1.5; }
+  .jdm-sous b{ color:var(--text); font-weight:600; }
+  .jdm-autre{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:15px 16px; margin-top:14px;
+  }
+  /* Dans l'annonce de fin de match, le fond est deja celui de la carte : le
+     bloc prend le bleu profond pour se detacher. */
+  #notif-titres .jdm-autre{ background:var(--bg); text-align:left; }
+  #notif-titres .jdm-autre:first-child{ margin-top:4px; }
+  #notif-titres .jdm-autre:last-child{ margin-bottom:16px; }
+  /* Mon propre titre : le gabarit ne change pas, seul le filet passe en doré.
+     Le joueur reconnait son pseudo, la couleur dit que la soiree est a lui. */
+  .jdm-autre.moi{ border-color:var(--gold); }
+  .jdm-encore{
+    font-size:11.5px; color:var(--text-dim); text-align:center; margin:10px 4px 0;
+  }
+  .jdm-encore b{ color:var(--gold); font-weight:500; }
+  .jdm-lab{
+    font-family:'Oswald',sans-serif; font-size:11.5px; color:var(--gold);
+    text-transform:uppercase; letter-spacing:1.4px; text-align:center;
+  }
+  .jdm-lig{ display:flex; align-items:center; gap:11px; margin-top:11px; }
+  .jdm-lig .jdm-coupe{ width:22px; height:22px; color:var(--gold); flex:0 0 auto; }
+  .jdm-txt{ flex:1; min-width:0; }
+  .jdm-pseudo{
+    display:block; font-family:'Oswald',sans-serif; font-size:19px; font-weight:600;
+    color:var(--text); line-height:1.15; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .jdm-detail{ display:block; font-size:12px; color:var(--text-dim); margin-top:3px; }
+  /* Un titre de categorie pese moins que le titre du match : filet attenue,
+     bloc plus ramasse. La hierarchie se lit sans qu'on l'ecrive. */
+  .jdm-moi.cat{ border-color:rgba(232,185,35,.45); padding:17px 16px; }
+  .jdm-moi.cat .jdm-titre{ font-size:17px; }
+  .jdm-plus{
+    font-size:11.5px; color:var(--text-dim); margin-top:11px;
+    padding-top:11px; border-top:1px solid var(--border);
+  }
+  .jdm-plus b{ color:var(--gold); font-weight:500; }
+
   /* --- La comparaison prono / realite sur la page du dernier match, refaite le
      18 septembre 2026. Une liste de nombres ne disait rien. Une ligne doree
      court maintenant jusqu'a ce que les joueurs avaient prevu ; le chiffre du
@@ -2593,6 +2646,10 @@
 
         <div class="results-badges" id="results-badges"></div>
 
+        <!-- Le joueur du match, quand c'est un autre. En bas : on ne lui
+             presente le champion qu'une fois qu'il s'est mesure lui-meme. -->
+        <div id="results-jdm"></div>
+
         <div class="install-invite" id="install-invite-results" style="display:none;">
           <div class="install-invite-texte">Retrouve tes notes plus vite : mets le jeu sur ton écran d'accueil.</div>
           <button class="cta-play-outline" onclick="installerLeJeu()">Mettre YouProno sur mon écran d'accueil</button>
@@ -3192,6 +3249,9 @@
       <div class="notif-evenements" id="notif-evenements"></div>
       <div class="notif-line" id="notif-line"></div>
       <div class="notif-badges" id="notif-badges"></div>
+      <!-- Les titres des autres : le joueur du match et un roi de categorie.
+           Ils ferment l'annonce, apres les badges (18 septembre 2026). -->
+      <div id="notif-titres"></div>
       <div class="notif-actions">
         <button class="cta-play" onclick="closeMatchNotification('results')">Voir mon r&eacute;sultat</button>
         <button class="cta-play-outline" onclick="closeMatchNotification('badges')">Voir mes badges</button>
@@ -5222,11 +5282,121 @@ async function enterResultsScreen(matchId){
 
     renderResults(predRes.data, statsRes.data, matchDetailRes.data);
     afficherEvenementsDuMatch(matchId);
+    afficherJoueurDuMatch(matchId);
     document.getElementById('results-content').style.display = 'block';
   }catch(e){
     document.getElementById('results-loading').style.display = 'none';
     document.getElementById('results-empty').style.display = 'block';
   }
+}
+
+// La coupe du joueur du match, dans le trait des autres pictogrammes.
+const COUPE_JDM = '<svg class="jdm-coupe" viewBox="0 0 24 24" fill="none" '
+  + 'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '
+  + 'aria-hidden="true"><path d="M8 3.5h8v5a4 4 0 0 1-8 0z"/>'
+  + '<path d="M8 5H5.5v1.5A3.5 3.5 0 0 0 9 10"/><path d="M16 5h2.5v1.5A3.5 3.5 0 0 1 15 10"/>'
+  + '<path d="M12 12.5v3"/><path d="M9 20.5h6"/><path d="M10 15.5h4l.8 5h-5.6z"/></svg>';
+
+// Les six titres de categorie du soir. La note record n'en est pas : elle
+// mesure un joueur contre lui-meme, pas contre les autres (18 septembre 2026).
+const TITRES_MATCH = {
+  composition: { titre:'Le roi de la compo',        picto:'Composition', mot:'compo' },
+  score:       { titre:'Le king du score',          picto:'Score',       mot:'score' },
+  possession:  { titre:'Le boss de la possession',  picto:'Possession',  mot:'possession' },
+  shots:       { titre:'Le serial tireur',          picto:'Tirs',        mot:'tirs' },
+  fouls:       { titre:'Le pro du tacle',           picto:'Fautes',      mot:'fautes' },
+  crosses:     { titre:'Le meilleur centreur',      picto:'Centres',     mot:'centres' }
+};
+
+// Le meme joueur doit revoir le meme roi s'il rouvre sa page : le tirage se
+// fait sur son identifiant et sur le match, jamais sur le hasard du moment.
+function tirageStable(cle, n){
+  if(n <= 0) return 0;
+  let h = 0;
+  for(let i = 0; i < cle.length; i++){ h = (h * 31 + cle.charCodeAt(i)) >>> 0; }
+  return h % n;
+}
+
+function listeTitres(noms){
+  // Au fil de la phrase, le titre perd sa majuscule : « tu es aussi le roi de
+  // la compo », pas « Le roi de la compo ».
+  const bas = noms.map(n => n.charAt(0).toLowerCase() + n.slice(1));
+  if(bas.length === 1) return bas[0];
+  return bas.slice(0, -1).join(', ') + ' et ' + bas[bas.length - 1];
+}
+
+// Fabrique les trois morceaux a partir du classement du match : ce que j'ai
+// gagne, et ce que les autres ont gagne. Le meme calcul sert a l'annonce de fin
+// de match et a l'ecran de resultat, pour qu'ils ne puissent jamais se
+// contredire (18 septembre 2026).
+function titresDuMatch(d, moi){
+  const rows = (d && Array.isArray(d.rows)) ? d.rows : [];
+  if(rows.length < 2) return '';
+
+  const premier = rows[0];
+  const jeSuisLeMeilleur = String(premier.id) === String(moi);
+  const rois = (d && Array.isArray(d.bests)) ? d.bests.filter(b => TITRES_MATCH[b.category]) : [];
+  const miens = rois.filter(b => String(b.id) === String(moi));
+
+  const bloc = (lab, pic, pseudo, detail, aMoi) =>
+    '<div class="jdm-autre' + (aMoi ? ' moi' : '') + '">'
+    + '<div class="jdm-lab">' + lab + '</div>'
+    + '<div class="jdm-lig">' + pic + '<span class="jdm-txt">'
+    + '<span class="jdm-pseudo">' + echapper(pseudo || '') + '</span>'
+    + '<span class="jdm-detail">' + detail + '</span></span></div></div>';
+
+  // Le titre du match. Quand il est a moi, le filet passe en dore et la phrase
+  // me parle : c'est la seule difference, le gabarit ne change pas.
+  let h = jeSuisLeMeilleur
+    ? bloc('Le joueur du match', COUPE_JDM, premier.userName,
+           'ta note de ' + fmtNote(premier.score) + ', la meilleure de la soirée', true)
+    : bloc('Le joueur du match', COUPE_JDM, premier.userName,
+           fmtNote(premier.score) + ' · la meilleure note de la soirée', false);
+
+  // Le titre de categorie. Le mien s'il y en a un — on ne montre pas le roi
+  // d'un autre a celui qui est deja roi ; sinon un des six, tire au sort.
+  if(miens.length){
+    const t = TITRES_MATCH[miens[0].category];
+    h += bloc(t.titre, picto(t.picto, 'jdm-coupe'), miens[0].userName,
+              'ta note de ' + fmtNum(miens[0].note) + '/100 en ' + t.mot
+              + ', la meilleure de la soirée', true);
+    if(miens.length > 1){
+      h += '<p class="jdm-encore">Tu es aussi <b>'
+         + listeTitres(miens.slice(1).map(b => TITRES_MATCH[b.category].titre)).replace(/ et /, '</b> et <b>')
+         + '</b> de la soirée.</p>';
+    }
+  } else {
+    const autres = rois.filter(x => String(x.id) !== String(moi)
+                                 && String(x.id) !== String(premier.id));
+    if(autres.length){
+      const x = autres[tirageStable(String(moi) + String((d && d.matchId) || ''), autres.length)];
+      const t = TITRES_MATCH[x.category];
+      h += bloc(t.titre, picto(t.picto, 'jdm-coupe'), x.userName,
+                fmtNum(x.note) + '/100 en ' + t.mot, false);
+    }
+  }
+  return h;
+}
+
+// Le joueur du match et les six rois du soir. Le serveur les calcule avec le
+// classement du match, on ne fait que les lire. Ce que le joueur a gagne monte
+// au-dessus de sa note — c'est sa soiree ; ce que les autres ont gagne se pose
+// en bas, une fois qu'il a fini de lire la sienne. Chaque joueur voit un seul
+// roi, tire parmi les six, jamais lui-meme ni le joueur du match : sept titres,
+// deux pseudos differents par ecran (18 septembre 2026).
+async function afficherJoueurDuMatch(matchId){
+  const bas = document.getElementById('results-jdm');
+  if(!bas) return;
+  bas.innerHTML = '';
+  if(!matchId) return;
+  try{
+    const teamId = await getPsgTeamId();
+    const json = await fetch(
+      `${API_BASE}/UserStats/MatchRanking/${teamId}/${matchId}`).then(r => r.json());
+    const d = (json.success && json.data) ? json.data : null;
+    if(!d) return;
+    bas.innerHTML = titresDuMatch(d, getUserId());
+  }catch(e){}
 }
 
 function renderResults(prediction, stats, matchDetail){
@@ -8319,13 +8489,23 @@ async function checkMatchNotification(){
       }
     }catch(e){ /* la notification s'ouvre quand même */ }
 
-    showMatchNotification(lastStats, fresh, seenKey, last.matchId, evenements);
+    // Les titres du soir : le mien en tete des messages, ceux des autres en bas
+    // de l'annonce. C'est le seul ecran que tout le monde voit apres un match
+    // (18 septembre 2026).
+    let titres = '';
+    try{
+      const clJson = await fetch(
+        `${API_BASE}/UserStats/MatchRanking/${teamId}/${last.matchId}`).then(r => r.json());
+      if(clJson.success && clJson.data){ titres = titresDuMatch(clJson.data, userId); }
+    }catch(e){ /* l'annonce s'ouvre quand meme */ }
+
+    showMatchNotification(lastStats, fresh, seenKey, last.matchId, evenements, titres);
   }catch(e){
     // Rien ne doit empêcher le jeu de s'ouvrir : en cas d'échec, pas d'annonce.
   }
 }
 
-function showMatchNotification(stats, fresh, seenKey, matchId, evenements){
+function showMatchNotification(stats, fresh, seenKey, matchId, evenements, titresDesAutres){
   const team = (stats && stats.result && stats.result.team) ? stats.result.team : null;
   const note = (team && team.total !== undefined && team.total !== null) ? team.total : null;
   document.getElementById('notif-note').textContent = (note !== null) ? fmtNote(note) : '–';
@@ -8349,6 +8529,9 @@ function showMatchNotification(stats, fresh, seenKey, matchId, evenements){
       : 'Tu as débloqué le badge suivant';
     row.innerHTML = fresh.map(b => '<div class="notif-badge">' + badgeSvg(b, true) + '</div>').join('');
   }
+
+  const titres = document.getElementById('notif-titres');
+  if(titres){ titres.innerHTML = titresDesAutres || ''; }
 
   notifSeenKey = seenKey;
   notifMatchId = matchId;
