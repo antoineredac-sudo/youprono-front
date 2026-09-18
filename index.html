@@ -4927,7 +4927,7 @@ async function afficherDecouverte(){
     const reelAdv = psgDomicile ? det.awayTeam : det.homeTeam;
     const nomAdv = teamLabel(reelAdv, "L'adversaire");
 
-    let html = '<p class="dec-intro">Tu n\'as pas encore participé à un match. Voici le '
+    let html = '<p class="dec-intro">Ton premier match n\'a pas encore été joué. Voici le '
       + 'dernier match du PSG où les pronostics de l\'ensemble des participants sont '
       + 'comparés à la compo et aux stats réelles.</p>'
       + '<div class="results-banner"><div class="results-score-line">'
@@ -4984,10 +4984,18 @@ async function afficherDecouverte(){
         + '</div>';
     });
 
-    html += '<p class="dec-intro" style="margin-top:14px;">Moyenne calculée sur '
-          + moy.count + ' pronostic' + (moy.count > 1 ? 's' : '') + '.</p>'
-          + '<button class="cta-play-outline" onclick="switchView(\'home\')">'
-          + 'Faire mes premiers pronos</button>';
+    // Le nombre de pronostics sur lequel la moyenne est calculée ne s'affiche
+    // plus : tant que les joueurs sont peu nombreux, l'information dessert le
+    // jeu au lieu de le crédibiliser (18 septembre 2026).
+    //
+    // Le bouton dépend de ce que le joueur a déjà fait : « premiers pronos »
+    // n'a de sens que pour celui qui n'a rien saisi. Celui qui a déjà joué le
+    // match ouvert est renvoyé vers sa feuille, pas vers un tunnel qu'il a
+    // terminé.
+    html += hasPredictionForCurrentMatch
+      ? '<button class="cta-play-outline" onclick="goToMyProno()">Voir mon pronostic</button>'
+      : '<button class="cta-play-outline" onclick="switchView(\'home\')">'
+        + 'Faire mes premiers pronos</button>';
 
     boite.innerHTML = html;
     boite.style.display = 'block';
