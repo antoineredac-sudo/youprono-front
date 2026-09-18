@@ -1672,21 +1672,56 @@
     cursor:pointer;
   }
   .ranking-tab.active{ background:var(--red); color:var(--text); }
-  /* Huit onglets ne tiennent pas en largeurs égales : cette rangée-là défile,
-     chaque onglet prend la place de son texte, et l'ascenseur reste invisible.
-     Le dégradé sur la droite dit qu'il y en a d'autres plus loin. */
-  .ranking-tabs.defile{
-    overflow-x:auto;
-    scrollbar-width:none;
-    -webkit-overflow-scrolling:touch;
-    position:relative;
+
+  /* --- La navigation du classement, refaite le 18 septembre 2026. Les huit
+     onglets defilaient sur une rangee ou le coef expert, qui fait pourtant le
+     classement general, n'etait qu'un bouton parmi huit. Il prend maintenant
+     toute la largeur ; les sept autres attendent sous un bouton qu'on deplie,
+     chacun appele par son surnom. --- */
+  .ranking-nav{ margin:16px 0; }
+  .cl-principal{
+    width:100%;
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    background:var(--red); color:var(--text);
+    border:1px solid var(--red); border-radius:10px; padding:13px;
+    font-family:'Inter',sans-serif; font-weight:600; font-size:13px;
+    text-transform:uppercase; letter-spacing:0.06em; cursor:pointer;
   }
-  .ranking-tabs.defile::-webkit-scrollbar{ display:none; }
-  .ranking-tabs.defile .ranking-tab{
-    flex:0 0 auto;
-    padding:10px 14px;
-    white-space:nowrap;
+  .cl-principal .picto{ width:19px; height:19px; vertical-align:0; }
+  /* Sur un classement annexe il reste la, mais il rend le rouge a celui qu'on
+     regarde : un seul point chaud par ecran. */
+  .cl-principal.eteint{
+    background:var(--surface); border-color:var(--border); color:var(--text-dim);
   }
+  .cl-deroulant{
+    width:100%;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:13px; margin-top:8px;
+    color:var(--text-dim); font-family:'Inter',sans-serif; font-weight:600;
+    font-size:13px; text-transform:uppercase; letter-spacing:0.06em; cursor:pointer;
+  }
+  .cl-deroulant.choisi{ border-color:rgba(232,185,35,.45); color:var(--gold); }
+  .cl-deroulant.ouvert{
+    border-color:rgba(232,185,35,.45); color:var(--gold);
+    border-bottom-left-radius:0; border-bottom-right-radius:0;
+  }
+  .cl-chev{ width:16px; height:16px; flex:0 0 auto; transition:transform .18s; }
+  .cl-deroulant.ouvert .cl-chev{ transform:rotate(180deg); }
+  .cl-panneau{
+    background:var(--surface);
+    border:1px solid rgba(232,185,35,.45); border-top:none;
+    border-radius:0 0 10px 10px; overflow:hidden;
+  }
+  .cl-item{
+    width:100%;
+    display:flex; align-items:center; gap:10px; padding:12px 14px;
+    background:none; border:none; border-top:1px solid rgba(38,71,142,.7);
+    color:var(--text); font-family:'Inter',sans-serif; font-size:13.5px;
+    text-align:left; cursor:pointer;
+  }
+  .cl-item .picto{ width:18px; height:18px; color:var(--gold); opacity:.9; vertical-align:0; }
+  .cl-item.active{ background:var(--surface-raised); color:var(--gold); }
 
   .ranking-me-card{
     background:var(--surface);
@@ -2839,15 +2874,26 @@
       <h2 class="play-title">CLASSEMENT</h2>
       <span class="back-link" onclick="goToProfile()">← Retour</span>
 
-      <div class="ranking-tabs defile">
-        <button class="ranking-tab active" id="ranking-tab-final" onclick="switchRankingTab('final')">coef expert</button>
-        <button class="ranking-tab" id="ranking-tab-record" onclick="switchRankingTab('record')">note record</button>
-        <button class="ranking-tab" id="ranking-tab-composition" onclick="switchRankingTab('composition')">compo</button>
-        <button class="ranking-tab" id="ranking-tab-score" onclick="switchRankingTab('score')">score</button>
-        <button class="ranking-tab" id="ranking-tab-possession" onclick="switchRankingTab('possession')">possession</button>
-        <button class="ranking-tab" id="ranking-tab-shots" onclick="switchRankingTab('shots')">tirs</button>
-        <button class="ranking-tab" id="ranking-tab-fouls" onclick="switchRankingTab('fouls')">fautes</button>
-        <button class="ranking-tab" id="ranking-tab-crosses" onclick="switchRankingTab('crosses')">centres</button>
+      <!-- Le coef expert seul en avant : c'est lui qui fait le classement
+           general du jeu. Les sept classements par categorie se rangent dans
+           un menu qu'on deplie, chacun sous son surnom. Le bouton rouge reste
+           visible quand on en consulte un, pour revenir d'un doigt
+           (18 septembre 2026). -->
+      <div class="ranking-nav">
+        <button class="cl-principal active" id="ranking-tab-final" onclick="switchRankingTab('final')"><svg class="picto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="13" width="3.6" height="7" rx="1"/><rect x="10.2" y="9" width="3.6" height="11" rx="1"/><rect x="17.4" y="11" width="3.6" height="9" rx="1"/><line x1="2" y1="7" x2="22" y2="7" stroke-dasharray="2.5 2.5"/></svg>Coef expert</button>
+        <button class="cl-deroulant" id="cl-deroulant" onclick="toggleAnnexes()" aria-expanded="false">
+          <span id="cl-deroulant-lib">Classements annexes</span>
+          <svg class="cl-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="cl-panneau" id="cl-panneau" style="display:none;">
+          <button class="cl-item" id="ranking-tab-record" onclick="switchRankingTab('record')"><svg class="picto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="15" width="3.6" height="5" rx="1"/><rect x="10.2" y="7.5" width="3.6" height="12.5" rx="1"/><rect x="17.4" y="14" width="3.6" height="6" rx="1"/><path d="M12 2l1.3 2.7 2.9.4-2.1 2 .5 2.9-2.6-1.4-2.6 1.4.5-2.9-2.1-2 2.9-.4z" fill="currentColor" stroke="none"/></svg><span>Le recordman</span></button>
+          <button class="cl-item" id="ranking-tab-composition" onclick="switchRankingTab('composition')"><svg class="picto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="6" cy="5.5" r="1.6"/><circle cx="12" cy="5.5" r="1.6"/><circle cx="18" cy="5.5" r="1.6"/><circle cx="8" cy="12" r="1.6"/><circle cx="16" cy="12" r="1.6"/><circle cx="5" cy="18.5" r="1.6"/><circle cx="12" cy="18.5" r="1.6"/><circle cx="19" cy="18.5" r="1.6"/></svg><span>Le roi de la compo</span></button>
+          <button class="cl-item" id="ranking-tab-score" onclick="switchRankingTab('score')"><svg class="picto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="11" rx="1.5"/><line x1="12" y1="4.5" x2="12" y2="15.5"/><line x1="12" y1="15.5" x2="12" y2="19"/><line x1="7" y1="19.5" x2="17" y2="19.5"/></svg><span>Le king du score</span></button>
+          <button class="cl-item" id="ranking-tab-possession" onclick="switchRankingTab('possession')"><svg class="picto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5 A8.5 8.5 0 0 1 20 15 L12 12 Z" fill="currentColor" stroke="none"/></svg><span>Le boss de la possession</span></button>
+          <button class="cl-item" id="ranking-tab-shots" onclick="switchRankingTab('shots')"><svg class="picto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="15" cy="12" r="5.5"/><line x1="2" y1="7.5" x2="6.5" y2="7.5"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="2" y1="16.5" x2="6.5" y2="16.5"/></svg><span>Le serial tireur</span></button>
+          <button class="cl-item" id="ranking-tab-fouls" onclick="switchRankingTab('fouls')"><svg class="picto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3.5 10.5h9a4.5 4.5 0 1 1 0 9h-4.5a4.5 4.5 0 0 1-4.5-4.5z"/><path d="M6 10.5l1.5-3.5"/></svg><span>Le pro du tacle</span></button>
+          <button class="cl-item" id="ranking-tab-crosses" onclick="switchRankingTab('crosses')"><svg class="picto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2.5 15.5v-5h4.5l3.5 3h5.5a2.5 2.5 0 0 1 2.5 2.5v1.5H4a1.5 1.5 0 0 1-1.5-1.5z"/><circle cx="19.5" cy="8" r="3"/></svg><span>Le meilleur centreur</span></button>
+        </div>
       </div>
 
       <!-- La carte du coef expert : deux colonnes, la note et la phrase. Elle
@@ -5830,28 +5876,49 @@ let rankingTab = 'final';
 async function goToRanking(){
   switchView('ranking');
   rankingTab = 'final';
-  document.getElementById('ranking-tab-final').classList.add('active');
-  document.getElementById('ranking-tab-record').classList.remove('active');
+  majNavClassement('final');
   await loadRanking('final');
 }
 
-// Les huit classements : les deux généraux, puis un par catégorie de pronostic.
-// Une rangée qui défile plutôt qu'un menu déroulant : un menu cacherait son
-// contenu, et personne ne saurait que ces classements existent.
+// Les huit classements : le general en tete, puis un par categorie de
+// pronostic. L'ordre est celui du menu deroulant.
 const ONGLETS_CLASSEMENT = ['final', 'record', 'composition', 'score',
                             'possession', 'shots', 'fouls', 'crosses'];
 
-function switchRankingTab(tab){
-  rankingTab = tab;
+// Ouvre ou ferme le menu des classements annexes. Sans argument, il bascule.
+function toggleAnnexes(force){
+  const bouton = document.getElementById('cl-deroulant');
+  const panneau = document.getElementById('cl-panneau');
+  if(!bouton || !panneau) return;
+  const ouvrir = (force === undefined) ? (panneau.style.display === 'none') : !!force;
+  panneau.style.display = ouvrir ? 'block' : 'none';
+  bouton.classList.toggle('ouvert', ouvrir);
+  bouton.setAttribute('aria-expanded', ouvrir ? 'true' : 'false');
+}
+
+// Met la navigation au diapason du classement affiche : le bouton rouge
+// s'eteint des qu'on regarde ailleurs, et le bouton deroulant porte alors le
+// surnom du classement choisi.
+function majNavClassement(tab){
   ONGLETS_CLASSEMENT.forEach(function(t){
     const el = document.getElementById('ranking-tab-' + t);
     if(el) el.classList.toggle('active', t === tab);
   });
-  // L'onglet touché se ramène dans le champ de vision.
-  const actif = document.getElementById('ranking-tab-' + tab);
-  if(actif && actif.scrollIntoView){
-    actif.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
-  }
+  const annexe = (tab !== 'final');
+  const principal = document.getElementById('ranking-tab-final');
+  const bouton = document.getElementById('cl-deroulant');
+  const lib = document.getElementById('cl-deroulant-lib');
+  if(principal) principal.classList.toggle('eteint', annexe);
+  if(bouton) bouton.classList.toggle('choisi', annexe);
+  if(lib) lib.textContent = annexe
+    ? (ficheOnglet(tab).surnom || ficheOnglet(tab).nom)
+    : 'Classements annexes';
+  toggleAnnexes(false);
+}
+
+function switchRankingTab(tab){
+  rankingTab = tab;
+  majNavClassement(tab);
   loadRanking(tab);
 }
 
@@ -5865,19 +5932,19 @@ const FICHE_ONGLET = {
   final:       { nom:'Coef expert',  picto:'Coef expert',
                  accroche:'Le Coef Expert est le classement général du jeu.',
                  def:"C'est la moyenne de tes résultats match après match." },
-  record:      { nom:'Note record',  picto:'Note record',
+  record:      { nom:'Note record',  picto:'Note record',  surnom:'Le recordman',
                  def:'La note record est le meilleur résultat que tu as obtenu sur un match.' },
-  composition: { nom:'Note compo',       picto:'Composition',
+  composition: { nom:'Note compo',       picto:'Composition',  surnom:'Le roi de la compo',
                  def:'Cette note est ta moyenne en composition sur tes matchs joués.' },
-  score:       { nom:'Note score',       picto:'Score',
+  score:       { nom:'Note score',       picto:'Score',  surnom:'Le king du score',
                  def:'Cette note est ta moyenne en score sur tes matchs joués.' },
-  possession:  { nom:'Note possession',  picto:'Possession',
+  possession:  { nom:'Note possession',  picto:'Possession',  surnom:'Le boss de la possession',
                  def:'Cette note est ta moyenne en possession sur tes matchs joués.' },
-  shots:       { nom:'Note tirs',        picto:'Tirs',
+  shots:       { nom:'Note tirs',        picto:'Tirs',  surnom:'Le serial tireur',
                  def:'Cette note est ta moyenne en tirs sur tes matchs joués.' },
-  fouls:       { nom:'Note fautes',      picto:'Fautes',
+  fouls:       { nom:'Note fautes',      picto:'Fautes',  surnom:'Le pro du tacle',
                  def:'Cette note est ta moyenne en fautes sur tes matchs joués.' },
-  crosses:     { nom:'Note centres',     picto:'Centres',
+  crosses:     { nom:'Note centres',     picto:'Centres',  surnom:'Le meilleur centreur',
                  def:'Cette note est ta moyenne en centres sur tes matchs joués.' }
 };
 
