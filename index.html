@@ -895,7 +895,7 @@
      Le joueur reconnait son pseudo, la couleur dit que la soiree est a lui. */
   .jdm-autre.moi{ border-color:var(--gold); }
   .jdm-encore{
-    font-size:11.5px; color:var(--text-dim); text-align:center; margin:10px 4px 0;
+    font-size:11.5px; color:var(--text-dim); text-align:center; margin:10px 4px 2px;
   }
   .jdm-encore b{ color:var(--gold); font-weight:500; }
   .jdm-lab{
@@ -5345,34 +5345,45 @@ function titresDuMatch(d, moi){
     + '<span class="jdm-pseudo">' + echapper(pseudo || '') + '</span>'
     + '<span class="jdm-detail">' + detail + '</span></span></div></div>';
 
-  // Le titre du match. Quand il est a moi, le filet passe en dore et la phrase
-  // me parle : c'est la seule difference, le gabarit ne change pas.
-  let h = jeSuisLeMeilleur
-    ? bloc('Le joueur du match', COUPE_JDM, premier.userName,
-           'ta note de ' + fmtNote(premier.score) + ', la meilleure de la soirée', true)
-    : bloc('Le joueur du match', COUPE_JDM, premier.userName,
-           fmtNote(premier.score) + ' · la meilleure note de la soirée', false);
-
-  // Le titre de categorie. Le mien s'il y en a un — on ne montre pas le roi
-  // d'un autre a celui qui est deja roi ; sinon un des six, tire au sort.
-  if(miens.length){
-    const t = TITRES_MATCH[miens[0].category];
-    h += bloc(t.titre, picto(t.picto, 'jdm-coupe'), miens[0].userName,
-              'ta note de ' + fmtNum(miens[0].note) + '/100 en ' + t.mot
-              + ', la meilleure de la soirée', true);
-    if(miens.length > 1){
-      h += '<p class="jdm-encore">Tu es aussi <b>'
-         + listeTitres(miens.slice(1).map(b => TITRES_MATCH[b.category].titre)).replace(/ et /, '</b> et <b>')
-         + '</b> de la soirée.</p>';
-    }
-  } else {
-    const autres = rois.filter(x => String(x.id) !== String(moi)
-                                 && String(x.id) !== String(premier.id));
-    if(autres.length){
-      const x = autres[tirageStable(String(moi) + String((d && d.matchId) || ''), autres.length)];
-      const t = TITRES_MATCH[x.category];
-      h += bloc(t.titre, picto(t.picto, 'jdm-coupe'), x.userName,
+  // Un joueur pris au hasard parmi les rois qui ne sont pas moi : c'est
+  // quelqu'un qui m'a battu quelque part.
+  const unAutre = () => {
+    const autres = rois.filter(x => String(x.id) !== String(moi));
+    if(!autres.length) return '';
+    const x = autres[tirageStable(String(moi) + String((d && d.matchId) || ''), autres.length)];
+    const t = TITRES_MATCH[x.category];
+    return bloc(t.titre, picto(t.picto, 'jdm-coupe'), x.userName,
                 fmtNum(x.note) + '/100 en ' + t.mot, false);
+  };
+
+  const mesTitres = (liste) => liste.length
+    ? '<p class="jdm-encore">Tu es aussi <b>'
+      + listeTitres(liste.map(b => TITRES_MATCH[b.category].titre)).replace(/ et /, '</b> et <b>')
+      + '</b> de la soirée.</p>'
+    : '';
+
+  // Deux blocs, jamais plus, et jamais deux fois le meme visage : le titre du
+  // match, puis un titre de categorie. Celui qui a gagne le match voit ses
+  // autres titres resumes en une ligne et decouvre quelqu'un qui l'a battu
+  // dans une categorie — sans quoi il serait le seul a qui l'ecran ne montre
+  // personne d'autre que lui (18 septembre 2026).
+  let h = '';
+  if(jeSuisLeMeilleur){
+    h += bloc('Le joueur du match', COUPE_JDM, premier.userName,
+              'ta note de ' + fmtNote(premier.score) + ', la meilleure de la soirée', true);
+    h += mesTitres(miens);
+    h += unAutre();
+  } else {
+    h += bloc('Le joueur du match', COUPE_JDM, premier.userName,
+              fmtNote(premier.score) + ' · la meilleure note de la soirée', false);
+    if(miens.length){
+      const t = TITRES_MATCH[miens[0].category];
+      h += bloc(t.titre, picto(t.picto, 'jdm-coupe'), miens[0].userName,
+                'ta note de ' + fmtNum(miens[0].note) + '/100 en ' + t.mot
+                + ', la meilleure de la soirée', true);
+      h += mesTitres(miens.slice(1));
+    } else {
+      h += unAutre();
     }
   }
   return h;
