@@ -868,47 +868,47 @@
   .result-cat-row b{ color:var(--text); font-weight:500; }
 
   /* --- La comparaison prono / realite sur la page du dernier match, refaite le
-     18 septembre 2026. Une liste de nombres ne disait rien : la piste porte
-     maintenant deux pastilles, doree pour ce que les joueurs avaient prevu,
-     blanche pour ce que le match a donne. Le segment entre les deux EST
-     l'erreur collective, et la phrase dessous la nomme. --- */
+     18 septembre 2026. Une liste de nombres ne disait rien. Une ligne doree
+     court maintenant jusqu'a ce que les joueurs avaient prevu ; le chiffre du
+     match se pose sur la meme ligne, a sa place. La distance entre les deux
+     chiffres EST l'erreur collective : il n'y a plus rien a lire. --- */
   .sc-leg{
-    display:flex; justify-content:center; gap:20px;
-    font-size:11.5px; color:var(--text-dim); letter-spacing:.3px;
-    margin:0 0 12px;
+    display:flex; justify-content:center; gap:22px;
+    font-size:12px; color:var(--text-dim);
+    margin:2px 0 14px;
   }
   .sc-leg i{
-    display:inline-block; width:9px; height:9px; border-radius:2px;
-    margin-right:5px; vertical-align:-1px;
+    display:inline-block; width:10px; height:10px; border-radius:2px;
+    margin-right:6px; vertical-align:-1px;
   }
   .sc-leg i.g{ background:var(--gold); }
   .sc-leg i.w{ background:var(--text); }
-  .sc-lig{ margin-bottom:16px; }
+  .sc-lig{ margin-bottom:18px; }
   .sc-lig:last-child{ margin-bottom:2px; }
-  .sc-head{
-    display:flex; justify-content:space-between; align-items:baseline;
-    margin-bottom:4px;
-  }
-  .sc-nom{ font-size:12px; color:var(--text-dim); }
-  .sc-val{ font-family:'Oswald',sans-serif; font-size:21px; color:var(--text); }
+  .sc-nom{ font-size:12px; color:var(--text-dim); margin-bottom:6px; }
+  .sc-zone{ position:relative; height:46px; }
   .sc-piste{
-    position:relative; height:3px; border-radius:2px;
-    background:var(--border); margin:18px 0 4px;
+    position:absolute; left:0; right:0; bottom:8px;
+    height:3px; border-radius:2px; background:var(--border);
   }
-  .sc-seg{ position:absolute; height:3px; border-radius:2px; background:rgba(232,185,35,.5); }
+  .sc-or{
+    position:absolute; left:0; bottom:8px;
+    height:3px; border-radius:2px; background:var(--gold);
+  }
   .sc-pt{
-    position:absolute; top:50%; width:11px; height:11px; border-radius:50%;
-    transform:translate(-50%,-50%);
+    position:absolute; bottom:5px; width:9px; height:9px; border-radius:50%;
+    transform:translateX(-50%);
   }
-  .sc-pt.yp{ background:var(--gold); }
-  .sc-pt.re{ background:var(--text); border:2px solid var(--bg); }
-  .sc-pt b{
-    position:absolute; top:-16px; left:50%; transform:translateX(-50%);
-    font-family:'Oswald',sans-serif; font-size:9.5px; letter-spacing:.4px;
-    white-space:nowrap; color:var(--gold);
+  .sc-pt.or{ background:var(--gold); }
+  .sc-pt.re{ background:var(--text); }
+  /* Les chiffres ont la meme taille : aucun des deux ne commande l'autre. */
+  .sc-chif{
+    position:absolute; bottom:20px;
+    font-family:'Oswald',sans-serif; font-size:21px; font-weight:600;
+    white-space:nowrap; transform:translateX(-50%);
   }
-  .sc-sous{ font-size:11px; color:var(--text-dim); margin-top:12px; }
-  .sc-sous b{ color:var(--gold); font-weight:500; }
+  .sc-chif.or{ color:var(--gold); }
+  .sc-chif.re{ color:var(--text); }
   /* Tout ce qui est doré est au PSG : la lecture devient verticale. */
   .result-cat-row .valeur-psg,
   .result-cat-row b.valeur-psg{ color:var(--gold); }
@@ -4952,10 +4952,7 @@ async function afficherDecouverte(){
         + '<span>' + trouves + ' titulaire' + (trouves > 1 ? 's' : '')
         + ' trouvé' + (trouves > 1 ? 's' : '') + ' sur 11 en moyenne</span></div>'
         + terrain
-        + '<div class="hx-leg" style="margin-top:10px;">'
-        + '<span class="hx-leg-i"><span class="hx-pastille or"></span>les joueurs l\'avaient</span>'
-        + '<span class="hx-leg-i"><span class="hx-pastille blanc-plein"></span>ils l\'avaient manqué</span>'
-        + '</div></div>';
+        + '</div>';
     }
 
     const cats = [
@@ -4966,16 +4963,18 @@ async function afficherDecouverte(){
       { key:'score',      label:'Score',      unit:'' }
     ];
 
+    // Une seule legende pour toute la page : elle couvre le terrain de la
+    // composition comme les cinq blocs de statistiques.
     html += '<div class="sc-leg">'
-          + '<span><i class="g"></i>YouProno voyait</span>'
-          + '<span><i class="w"></i>Les stats du match</span></div>';
+          + '<span><i class="g"></i>YouProno</span>'
+          + '<span><i class="w"></i>La réalité</span></div>';
 
     cats.forEach(c => {
       // La possession se lit sur cent ; les autres catégories prennent leur
       // échelle de la plus grande des quatre valeurs du bloc.
       const vals = [moy.team[c.key], reelPsg[c.key], moy.opponent[c.key], reelAdv[c.key]]
                    .map(v => Number(v) || 0);
-      const echelle = (c.key === 'possession') ? 100 : Math.max(1, Math.max.apply(null, vals) * 1.12);
+      const echelle = (c.key === 'possession') ? 100 : Math.max(0.1, Math.max.apply(null, vals) * 1.06);
       html += '<div class="result-category">'
         + '<div class="result-cat-head">'
         + '<span class="result-cat-name">' + picto(c.label) + ' ' + c.label + '</span>'
@@ -5068,28 +5067,32 @@ function extractRealStats(matchResult){
 }
 
 // Une ligne de comparaison entre ce que les joueurs avaient prevu et ce que le
-// match a donne. Les deux pastilles se posent sur la meme piste : l'ecart se
-// voit avant d'etre lu. L'echelle laisse douze pour cent d'air au-dessus de la
-// plus grande valeur, pour qu'aucune pastille ne touche le bord.
+// match a donne. La ligne doree s'arrete sur le pronostic, le chiffre du match
+// se pose sur la meme ligne : l'ecart se voit, il ne se lit pas.
+// L'echelle laisse six pour cent d'air au-dessus de la plus grande valeur du
+// bloc, pour qu'aucun chiffre ne touche le bord.
 function ligneCompare(nom, yp, reel, unite, echelle){
-  const pos = (v) => 4 + 92 * Math.max(0, Math.min(1, (v || 0) / echelle));
+  const pos = (v) => 3 + 94 * Math.max(0, Math.min(1, (v || 0) / echelle));
   const a = pos(yp), b = pos(reel);
-  const gauche = Math.min(a, b), largeur = Math.abs(b - a);
-  const d = (reel || 0) - (yp || 0);
-  const verdict = (Math.abs(d) < 0.05)
-    ? 'tomb\u00e9 pile'
-    : (d < 0 ? '\u2193 trop haut de ' + fmtNum(-d) + unite
-             : '\u2191 trop bas de ' + fmtNum(d) + unite);
-  return '<div class="sc-lig">'
-       + '<div class="sc-head"><span class="sc-nom">' + nom + '</span>'
-       + '<span class="sc-val">' + fmtNum(reel) + unite + '</span></div>'
-       + '<div class="sc-piste">'
-       + '<span class="sc-seg" style="left:' + gauche.toFixed(1) + '%;width:' + largeur.toFixed(1) + '%"></span>'
-       + '<span class="sc-pt yp" style="left:' + a.toFixed(1) + '%"><b>' + fmtNum(yp) + unite + '</b></span>'
+  // Deux chiffres trop proches se poussent l'un l'autre ; un chiffre pres d'un
+  // bord se range du cote ou il reste de la place.
+  const ancrage = (ici, autre) => {
+    if(Math.abs(ici - autre) < 22) return ici <= autre ? 'translateX(-100%)' : 'translateX(0)';
+    if(ici > 82) return 'translateX(-100%)';
+    if(ici < 14) return 'translateX(0)';
+    return 'translateX(-50%)';
+  };
+  return '<div class="sc-lig"><div class="sc-nom">' + nom + '</div>'
+       + '<div class="sc-zone">'
+       + '<span class="sc-piste"></span>'
+       + '<span class="sc-or" style="width:' + a.toFixed(1) + '%"></span>'
+       + '<span class="sc-pt or" style="left:' + a.toFixed(1) + '%"></span>'
        + '<span class="sc-pt re" style="left:' + b.toFixed(1) + '%"></span>'
-       + '</div>'
-       + '<div class="sc-sous">YouProno voyait <b>' + fmtNum(yp) + unite + '</b> \u00b7 ' + verdict + '</div>'
-       + '</div>';
+       + '<span class="sc-chif or" style="left:' + a.toFixed(1) + '%;transform:'
+       + ancrage(a, b) + '">' + fmtNum(yp) + unite + '</span>'
+       + '<span class="sc-chif re" style="left:' + b.toFixed(1) + '%;transform:'
+       + ancrage(b, a) + '">' + fmtNum(reel) + unite + '</span>'
+       + '</div></div>';
 }
 
 function fmtNum(n){
