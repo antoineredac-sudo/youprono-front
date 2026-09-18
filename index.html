@@ -901,6 +901,10 @@
   }
   .sc-pt.or{ background:var(--gold); }
   .sc-pt.re{ background:var(--text); }
+  /* Prono tombe pile : les deux points se confondent, le doré garde la place et
+     s'entoure de blanc. Un seul chiffre, en doré : c'est une réussite, elle se
+     voit. */
+  .sc-pt.pile{ background:var(--gold); box-shadow:0 0 0 2.5px var(--text); }
   /* Les chiffres ont la meme taille : aucun des deux ne commande l'autre. */
   .sc-chif{
     position:absolute; bottom:20px;
@@ -5090,16 +5094,27 @@ function ligneCompare(nom, yp, reel, unite, echelle){
     if(ici < 14) return 'translateX(0)';
     return 'translateX(-50%)';
   };
+  // Tombe pile : un seul point, un seul chiffre. Deux chiffres identiques l'un
+  // sur l'autre ne diraient rien, alors que le doré seul dit « tu y étais ».
+  const pile = Math.abs((yp || 0) - (reel || 0)) < 0.05;
+  const points = pile
+    ? '<span class="sc-pt pile" style="left:' + a.toFixed(1) + '%"></span>'
+    : '<span class="sc-pt or" style="left:' + a.toFixed(1) + '%"></span>'
+      + '<span class="sc-pt re" style="left:' + b.toFixed(1) + '%"></span>';
+  const chiffres = pile
+    ? '<span class="sc-chif or" style="left:' + a.toFixed(1) + '%;transform:'
+      + (a > 82 ? 'translateX(-100%)' : (a < 14 ? 'translateX(0)' : 'translateX(-50%)'))
+      + '">' + fmtNum(reel) + unite + '</span>'
+    : '<span class="sc-chif or" style="left:' + a.toFixed(1) + '%;transform:'
+      + ancrage(a, b) + '">' + fmtNum(yp) + unite + '</span>'
+      + '<span class="sc-chif re" style="left:' + b.toFixed(1) + '%;transform:'
+      + ancrage(b, a) + '">' + fmtNum(reel) + unite + '</span>';
+
   return '<div class="sc-lig"><div class="sc-nom">' + nom + '</div>'
        + '<div class="sc-zone">'
        + '<span class="sc-piste"></span>'
        + '<span class="sc-or" style="width:' + a.toFixed(1) + '%"></span>'
-       + '<span class="sc-pt or" style="left:' + a.toFixed(1) + '%"></span>'
-       + '<span class="sc-pt re" style="left:' + b.toFixed(1) + '%"></span>'
-       + '<span class="sc-chif or" style="left:' + a.toFixed(1) + '%;transform:'
-       + ancrage(a, b) + '">' + fmtNum(yp) + unite + '</span>'
-       + '<span class="sc-chif re" style="left:' + b.toFixed(1) + '%;transform:'
-       + ancrage(b, a) + '">' + fmtNum(reel) + unite + '</span>'
+       + points + chiffres
        + '</div></div>';
 }
 
@@ -5284,28 +5299,34 @@ function renderResults(prediction, stats, matchDetail){
         <span>${trouves} titulaire${trouves > 1 ? 's' : ''} trouvé${trouves > 1 ? 's' : ''} sur 11</span>
       </div>
       ${terrainFace}
-      <div class="hx-leg" style="margin-top:10px;">
-        <span class="hx-leg-i"><span class="hx-pastille or"></span>tu l'avais</span>
-        <span class="hx-leg-i"><span class="hx-pastille blanc-plein"></span>tu l'avais manqué</span>
-      </div>
+    </div>
+    <!-- Une seule legende pour la page : elle vaut pour le terrain comme pour
+         les cinq blocs de statistiques (18 septembre 2026). -->
+    <div class="sc-leg">
+      <span><i class="g"></i>Toi</span>
+      <span><i class="w"></i>La réalité</span>
     </div>`;
 
+  // Meme mise en forme que la page du dernier match : la ligne doree court
+  // jusqu'au pronostic, le chiffre du match se pose sur la meme ligne. Les
+  // chiffres sont inchanges, seule la facon de les montrer a change
+  // (18 septembre 2026).
   categories.forEach(cat=>{
     const accuracy = stats.result.team[cat.key]?.formula || 0;
+    const vals = [prediction.team[cat.key], real.team[cat.key],
+                  prediction.opponent[cat.key], real.opponent[cat.key]]
+                 .map(v => Number(v) || 0);
+    const echelle = (cat.key === 'possession')
+                  ? 100
+                  : Math.max(0.1, Math.max.apply(null, vals) * 1.06);
     html += `
       <div class="result-category">
         <div class="result-cat-head">
           <span class="result-cat-name">${picto(cat.label)} ${cat.label}</span>
           <span class="result-cat-points">${fmtNum(accuracy)}/100</span>
         </div>
-        <div class="result-cat-row">
-          <span>PSG</span>
-          <span>Toi : <b>${fmtNum(prediction.team[cat.key])}${cat.unit}</b> · Réel : <b>${fmtNum(real.team[cat.key])}${cat.unit}</b></span>
-        </div>
-        <div class="result-cat-row">
-          <span>${opponentName}</span>
-          <span>Toi : <b>${fmtNum(prediction.opponent[cat.key])}${cat.unit}</b> · Réel : <b>${fmtNum(real.opponent[cat.key])}${cat.unit}</b></span>
-        </div>
+        ${ligneCompare('PSG', prediction.team[cat.key], real.team[cat.key], cat.unit, echelle)}
+        ${ligneCompare(opponentName, prediction.opponent[cat.key], real.opponent[cat.key], cat.unit, echelle)}
       </div>`;
   });
 
