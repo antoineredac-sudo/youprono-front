@@ -1052,6 +1052,51 @@
   .salon-annonce.dore{ border-color:var(--gold); }
   .salon-annonce b{ color:var(--gold); display:block; margin-bottom:3px; font-weight:600; }
 
+  /* --- Qui a joue le prochain match. Le classement raconte le passe, ce bloc
+     parle du match de dimanche : il passe devant (18 septembre 2026). --- */
+  .part{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:15px 16px; margin:0 0 16px;
+  }
+  .part-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:10px; margin-bottom:3px;
+  }
+  .part-titre{
+    font-family:'Oswald',sans-serif; font-size:14px; font-weight:600; color:var(--text);
+    text-transform:uppercase; letter-spacing:.5px;
+  }
+  .part-cloture{ font-size:11px; color:var(--text-dim); flex:0 0 auto; text-align:right; }
+  .part-sous{ font-size:12px; color:var(--text-dim); margin-bottom:13px; }
+  .part-sous b{ color:var(--gold); font-weight:600; }
+  .part-lig{
+    display:flex; align-items:center; gap:9px; padding:8px 0;
+    border-top:1px solid rgba(38,71,142,.55);
+  }
+  .part-lig:first-of-type{ border-top:none; }
+  .part-pastille{ width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
+  .part-pastille.ok{ background:#2f8f7d; }
+  .part-pastille.non{ background:#4a63a8; }
+  .part-nom{ flex:1; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .part-lig.attente .part-nom{ color:var(--text-dim); }
+  .part-etat{
+    font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.5px;
+    font-family:'Oswald',sans-serif; flex:0 0 auto;
+  }
+  .part-lig.attente .part-etat{ color:var(--gold); }
+  .part-moi{
+    font-size:10px; color:var(--gold); border:1px solid rgba(232,185,35,.5);
+    border-radius:20px; padding:1px 7px; margin-left:4px;
+  }
+  .part-note{ font-size:11px; color:var(--text-dim); text-align:center; margin-top:10px; }
+  /* Le bouton de relance : le picto respire, le libelle est plus court que
+     celui du partage, donc un cran plus petit suffit. */
+  #group-participation .cta-whatsapp{
+    margin-top:14px; display:flex; align-items:center; justify-content:center;
+    gap:10px; font-size:15px; padding:14px;
+  }
+  #group-participation .wa-icon{ width:20px; height:20px; flex:0 0 auto; }
+
   .ranking-note{
     color:var(--text-dim); font-size:12px; line-height:1.6;
     text-align:center; margin:14px 4px 0;
@@ -2001,6 +2046,15 @@
   border:1px solid #e8b923; border-radius:12px;
   padding:16px; margin-bottom:18px; text-align:center;
 }
+.groupe-rejoint-banner{
+  background:var(--surface); border:1px solid #e8b923; border-radius:12px;
+  padding:15px 16px; margin-bottom:18px; text-align:center;
+}
+.grb-titre{
+  font-family:'Oswald',sans-serif; font-size:16px; font-weight:600;
+  color:var(--gold); line-height:1.35;
+}
+.grb-texte{ font-size:13px; color:var(--text-dim); line-height:1.5; margin-top:7px; }
 .kop-invite-banner-text{ font-size:15px; line-height:1.5; margin-bottom:14px; }
 .kop-search{ width:100%; margin:0 0 14px; }
 .kop-hint{ font-size:12px; color:#c2cae8; margin-top:6px; line-height:1.5; }
@@ -2292,6 +2346,14 @@
   <main>
     <section id="view-home" class="view">
       <div class="kop-rappel" id="home-kop-rappel" style="display:none;" onclick="ouvrirMonKop()"></div>
+
+      <!-- Celui qui vient d'entrer dans un groupe par un lien d'invitation :
+           il atterrit sur le match, pas sur la liste de ses coequipiers, et ce
+           bandeau lui dit qu'il est bien dans le groupe (18 septembre 2026). -->
+      <div id="groupe-rejoint-banner" class="groupe-rejoint-banner" style="display:none;">
+        <div class="grb-titre" id="groupe-rejoint-titre"></div>
+        <div class="grb-texte">Commence par pronostiquer le prochain match&nbsp;: c'est là que tout se joue.</div>
+      </div>
 
       <div id="kop-invite-banner" class="kop-invite-banner" style="display:none;">
         <div class="kop-invite-banner-text" id="kop-invite-banner-text"></div>
@@ -2714,6 +2776,10 @@
       </div>
 
       <div id="gtab-ranking">
+        <!-- Qui a joue le prochain match, et le bouton de relance pour celui
+             qui a cree le groupe (18 septembre 2026). -->
+        <div id="group-participation"></div>
+
         <div id="group-detail-ranking"></div>
 
         <!-- Le record du groupe : la meilleure note jamais obtenue par un membre,
@@ -6748,6 +6814,120 @@ async function loadGroupCalendar(seasonLength, played){
   }
 }
 
+// ===== QUI A JOUE LE PROCHAIN MATCH (18 septembre 2026) =====
+// Le capitaine voyait son groupe decrocher sans rien pour le retenir : deux amis
+// inscrits le meme soir, aucun prono, et aucun moyen de leur secouer les puces
+// depuis le jeu. Ce bloc dit qui manque, et lui seul peut les relancer sur
+// WhatsApp, la ou il les a invites.
+//
+// Tout se fait cote site, sans nouvelle route : le salon, qui sait deja tout
+// cela, reste ferme jusqu'a la cloture — et il doit le rester, il deplie les
+// pronostics de chacun. On se contente donc de demander, pour chaque membre,
+// s'il a pronostique ce match. Aucun chiffre n'est lu.
+async function chargerParticipation(g){
+  const bloc = document.getElementById('group-participation');
+  if(!bloc) return;
+  bloc.innerHTML = '';
+
+  const membres = (g && Array.isArray(g.ranking)) ? g.ranking : [];
+  // Seul dans son groupe : il n'y a personne a relancer.
+  if(membres.length < 2) return;
+
+  try{
+    const teamId = await getPsgTeamId();
+
+    // Le prochain match encore ouvert aux pronostics.
+    const cal = await fetch(
+      `${API_BASE}/Match/ByTeamId/${teamId}?OnlyNextMatches=true&limit=8`).then(r => r.json());
+    const liste = (cal.success && cal.data && cal.data.page) ? cal.data.page : [];
+    const maintenant = Date.now();
+    const ouvert = liste.find(m => m && m.dateTime
+      && new Date(m.dateTime).getTime() - CLOTURE_AVANT_MS > maintenant);
+    // Pronostics fermes : le bloc n'a plus rien a dire, le salon prend le relais.
+    if(!ouvert) return;
+
+    // Qui a joue, membre par membre, par paquets de quatre : le serveur est
+    // gratuit, quarante appels simultanes le mettraient a genoux.
+    const etats = [];
+    for(let i = 0; i < membres.length; i += 4){
+      const paquet = membres.slice(i, i + 4);
+      const sortie = await Promise.all(paquet.map(async m => {
+        let joue = false;
+        try{
+          const r = await fetch(
+            `${API_BASE}/UserMatch/ByUserTeam/${m.userId}/${teamId}?page=1&limit=60`)
+            .then(x => x.json());
+          const lignes = (r.success && r.data && r.data.page) ? r.data.page : [];
+          joue = lignes.some(l => String(l.matchId) === String(ouvert.id));
+        }catch(e){ /* un membre muet ne fait pas tomber le bloc */ }
+        return { nom: m.displayName || '', joue: joue,
+                 moi: String(m.userId) === String(getUserId()) };
+      }));
+      sortie.forEach(x => etats.push(x));
+    }
+
+    // Les absents en haut : c'est eux qu'on vient chercher.
+    etats.sort((a, b) => (a.joue === b.joue)
+      ? a.nom.toLowerCase().localeCompare(b.nom.toLowerCase())
+      : (a.joue ? 1 : -1));
+
+    const absents = etats.filter(e => !e.joue);
+    const ontJoue = etats.length - absents.length;
+    const affiche = teamLabel(ouvert.homeTeam, 'Domicile') + ' – '
+                  + teamLabel(ouvert.awayTeam, 'Extérieur');
+
+    const cloture = new Date(new Date(ouvert.dateTime).getTime() - CLOTURE_AVANT_MS);
+    const jour = cloture.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+    const heure = cloture.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+
+    let html = '<div class="part"><div class="part-head">'
+      + '<span class="part-titre">' + echapper(affiche) + '</span>'
+      + '<span class="part-cloture">ferme ' + jour + '<br>à ' + heure + '</span></div>'
+      + '<div class="part-sous"><b>' + ontJoue + ' sur ' + etats.length
+      + '</b> ' + (ontJoue > 1 ? 'ont fait leurs pronos.' : 'a fait ses pronos.') + '</div>';
+
+    etats.forEach(e => {
+      html += '<div class="part-lig' + (e.joue ? '' : ' attente') + '">'
+        + '<span class="part-pastille ' + (e.joue ? 'ok' : 'non') + '"></span>'
+        + '<span class="part-nom">' + echapper(e.nom)
+        + (e.moi ? '<span class="part-moi">toi</span>' : '') + '</span>'
+        + '<span class="part-etat">' + (e.joue ? 'a joué' : 'pas encore') + '</span></div>';
+    });
+
+    // Le bouton n'appartient qu'au createur, et seulement s'il reste quelqu'un
+    // a relancer.
+    const jeLaiCree = g.creatorId && getUserId()
+                   && String(g.creatorId) === String(getUserId());
+    if(jeLaiCree && absents.length){
+      relanceEnAttente = { affiche: affiche, jour: jour, heure: heure, combien: absents.length };
+      html += '<button class="cta-whatsapp" onclick="relancerLesAbsents()">'
+        + '<svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01c-1.52 0-3.01-.41-4.31-1.18l-.31-.18-3.2.84.85-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.23-8.23 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.75.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29"/></svg>'
+        + '<span>Relancer ' + (absents.length > 1 ? ('les ' + absents.length + ' absents') : "l'absent") + '</span></button>'
+        + '<p class="part-note">Tu as créé ce groupe : toi seul peux les relancer.</p>';
+    }
+
+    bloc.innerHTML = html + '</div>';
+  }catch(e){ bloc.innerHTML = ''; }
+}
+
+let relanceEnAttente = null;
+
+// Le message part sur WhatsApp, la ou le capitaine a invite ses amis. On ne
+// nomme personne : le message atterrit dans la conversation de groupe, et
+// designer les retardataires par leur nom serait une humiliation publique.
+function relancerLesAbsents(){
+  const d = relanceEnAttente;
+  if(!d) return;
+  // Le barème des points de groupe est ancre sur le nombre de participants du
+  // soir : le dernier present marque 2 points, chaque place au-dessus en vaut
+  // un de plus. Un ami qui s'y met ajoute donc vraiment un point a tous ceux
+  // qui finissent devant lui — la phrase n'est pas une formule, elle est juste.
+  const texte = 'Les amis, plus on est nombreux à jouer, plus on marque de points. '
+    + 'Ceux qui n\'ont pas encore fait leurs pronos pour ' + d.affiche + ', '
+    + 'ça ferme ' + d.jour + ' à ' + d.heure + ' : ' + siteBaseUrl();
+  window.location.href = 'https://wa.me/?text=' + encodeURIComponent(texte);
+}
+
 async function openGroupDetail(groupId){
   currentGroupId = groupId;
   switchView('group-detail');
@@ -6789,6 +6969,10 @@ async function openGroupDetail(groupId){
 
     // On rouvre toujours sur le classement : c'est ce que les membres viennent voir.
     switchGroupTab('ranking');
+
+    // Qui a joue le prochain match : charge a part, pour que le classement
+    // s'affiche sans attendre les appels membre par membre.
+    chargerParticipation(g);
 
     // Les matchs restants du mini-championnat (chargement en parallèle : le
     // classement s'affiche sans attendre le calendrier).
@@ -8969,36 +9153,75 @@ async function accepterInvitationKop(){
   }
 }
 
-// L'ancien comportement, inchange : un groupe d'amis se rejoint d'office.
+// Un groupe d'amis se rejoint d'office, et celui qui vient d'entrer atterrit
+// sur le match, pas sur la liste de ses coequipiers.
+//
+// CORRECTION DU 18 SEPTEMBRE 2026. Cette fonction commencait par
+// switchView('groups') : l'invite qui venait de creer son compte tombait sur la
+// page de son groupe — deux pseudos et un code d'invitation — sans avoir jamais
+// vu le match a pronostiquer, ni le bouton pour le jouer. Il fallait qu'il
+// ouvre le menu de lui-meme. Le parcours des kops avait ete corrige le
+// 16 septembre pour cette raison exacte ; celui des groupes d'amis ne l'avait
+// pas ete. Le bandeau lui dit qu'il est bien dans le groupe, le match est
+// juste en dessous, son groupe l'attend dans le menu.
 async function rejoindreGroupeDAmis(code){
-  switchView('groups');
-
   try{
     const userId = getUserId();
     const res = await fetch(`${API_BASE}/Group/Join/${code}/${userId}`, { method:'POST' });
     const json = await res.json();
 
     if(!json.success && json.code === -4){
+      switchView('groups');
       await ouvrirNommageGroupeComplet(code);
       return;
     }
 
-    await enterGroupsScreen();
-
-    if(json.success) return;
+    if(json.success){
+      // Le nom du groupe pour le bandeau : le serveur vient de le renvoyer.
+      let nom = (json.data && json.data.name) ? String(json.data.name).trim() : '';
+      if(!nom){
+        try{
+          const info = await fetch(`${API_BASE}/Group/ByCode/${encodeURIComponent(code)}`)
+            .then(r => r.json());
+          if(info.success && info.data) nom = String(info.data.name || '').trim();
+        }catch(e){}
+      }
+      await annoncerGroupeRejoint(nom);
+      return;
+    }
 
     // Échec (code périmé, groupe complet, déjà membre…) : on ne laisse pas
     // l'invité dans le vide, on prérenseigne le code et on affiche la raison.
+    switchView('groups');
+    await enterGroupsScreen();
     document.getElementById('group-join-code').value = code;
     const errEl = document.getElementById('group-join-error');
     errEl.textContent = json.message || "On n'a pas pu te faire rejoindre ce groupe automatiquement.";
     errEl.classList.add('show');
   }catch(e){
+    switchView('groups');
+    try{ await enterGroupsScreen(); }catch(e2){}
     document.getElementById('group-join-code').value = code;
     const errEl = document.getElementById('group-join-error');
     errEl.textContent = "Impossible de contacter le serveur. Réessaie avec le bouton ci-dessus.";
     errEl.classList.add('show');
   }
+}
+
+// Il est dans le groupe : on l'emmene devant le match, avec un bandeau qui le
+// lui dit. Le libelle du menu se met a jour au passage, pour qu'il retrouve son
+// groupe quand il le voudra.
+async function annoncerGroupeRejoint(nom){
+  switchView('home');
+  try{ majLibelleGroupes(await compterMesGroupes()); }catch(e){}
+
+  const banner = document.getElementById('groupe-rejoint-banner');
+  const titre = document.getElementById('groupe-rejoint-titre');
+  if(!banner || !titre) return;
+  titre.innerHTML = nom
+    ? ('Bienvenue dans <strong>' + echapper(nom) + '</strong>')
+    : 'Tu es bien dans le groupe';
+  banner.style.display = 'block';
 }
 
 // --- Démarrage : si déjà connecté, on saute directement dans l'app ---
