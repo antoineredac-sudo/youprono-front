@@ -8690,7 +8690,9 @@ async function checkMatchNotification(){
         .then(r => r.json());
       if(evJson.success && evJson.data){
         evenements = messagesDuMatch(evJson.data, last.matchId);
-        if(!(evJson.data.podiums || []).length){ evenements.push('__invite__'); }
+        // Plus d'invitation a creer un groupe dans l'annonce : a ce moment-la,
+        // le joueur veut voir son resultat, personne ne clique ailleurs. Elle
+        // reste sur l'ecran du resultat, ou il a le temps (19 septembre 2026).
       }
     }catch(e){ /* la notification s'ouvre quand même */ }
 
