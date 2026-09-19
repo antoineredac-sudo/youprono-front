@@ -1296,11 +1296,21 @@
     inset:0;
     background:rgba(6,12,38,0.88);
     z-index:9000;
-    align-items:center;
+    /* L'annonce peut etre plus haute que l'ecran d'un telephone (badges,
+       joueur du match, rois de categorie). Le fond defile donc lui-meme, et la
+       carte n'est plus centree de force : un centrage strict coupait le haut
+       (la croix) et le bas (les boutons) sans possibilite de les atteindre.
+       La marge automatique centre la carte quand elle tient dans l'ecran, et
+       la cale en haut quand elle deborde (19 septembre 2026). */
+    align-items:flex-start;
     justify-content:center;
-    padding:20px;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    padding:20px 20px max(20px, env(safe-area-inset-bottom));
   }
   .notif-card{
+    margin:auto;
     background:var(--surface);
     border:1px solid var(--gold);
     border-radius:16px;
