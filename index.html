@@ -8016,13 +8016,14 @@ function terrainDuKop(joueurs, total, colorer){
     const sp = squadData.find(function(x){ return x.id === j.id; });
     return sp ? Object.assign({}, sp, { choiceCount: j.choiceCount || 0 }) : null;
   }).filter(Boolean);
+  const fichesPlacees = ajusterOnze(fiches);
 
-  if(!fiches.length) return '';
+  if(!fichesPlacees.length) return '';
 
   const parLigne = {};
   TERRAIN_LIGNES.forEach(function(l){ parLigne[l] = []; });
   const orphelins = [];
-  fiches.forEach(function(p){
+  fichesPlacees.forEach(function(p){
     const ligne = (p.position || '').trim();
     if(parLigne[ligne]) parLigne[ligne].push(p);
     else orphelins.push(p);
@@ -9589,6 +9590,38 @@ function fmtNote(n){
 // départagé par son numéro de maillot.
 const TERRAIN_LIGNES = ['Attaquant', 'Milieu', 'Défenseur', 'Gardien'];
 
+// Les dépannages (20 septembre 2026, demande d'Antoine). Un milieu de métier
+// peut descendre en défense quand le onze en a besoin : Zaïre-Emery, milieu
+// droit dans l'effectif, joue arrière droit dès que la défense n'a que trois
+// joueurs, que personne n'y tient le côté droit (rang 4) et que le milieu en
+// compte quatre. Sans Hakimi, le onze retrouve ainsi son 4-3-3 au lieu d'un
+// 3-4-3. Ne sert qu'au dessin : la notation compte onze noms, sans regarder où.
+const DEPANNAGES = [
+  { nom: 'emery', de: 'Milieu', vers: 'Défenseur', rang: 4 }
+];
+
+function sansAccents(t){
+  return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+// Renvoie une copie des joueurs, chacun à la place qu'il occupe dans CE onze.
+function ajusterOnze(joueurs){
+  const onze = joueurs.map(p => Object.assign({}, p));
+  const ligne = p => (p.position || '').trim();
+  DEPANNAGES.forEach(d => {
+    const joueur = onze.find(p => ligne(p) === d.de && sansAccents(p.lastName).indexOf(d.nom) !== -1);
+    if(!joueur) return;
+    const cible = onze.filter(p => ligne(p) === d.vers);
+    const origine = onze.filter(p => ligne(p) === d.de);
+    const placePrise = cible.some(p => p.positionOrder === d.rang);
+    if(cible.length === 3 && origine.length >= 4 && !placePrise){
+      joueur.position = d.vers;
+      joueur.positionOrder = d.rang;
+    }
+  });
+  return onze;
+}
+
 // ===== LES PICTOGRAMMES =====
 // Dessinés dans le fichier, jamais chargés depuis un serveur : ils restent nets
 // à toutes les tailles et prennent la couleur du texte qui les entoure.
@@ -9630,7 +9663,7 @@ function trierParPoste(joueurs){
 }
 
 function terrainHtml(ids){
-  const joueurs = ids.map(id => squadData.find(sp => sp.id === id)).filter(Boolean);
+  const joueurs = ajusterOnze(ids.map(id => squadData.find(sp => sp.id === id)).filter(Boolean));
   if(!joueurs.length) return '';
 
   const parLigne = {};
@@ -9689,10 +9722,11 @@ function terrainFaceAEnrique(reels, mesIds){
   const monOnze = new Set(mesIds);
   const reelIds = new Set(reels.map(p => p.id));
 
-  const titulaires = reels.map(p => fiche(p.id) || p).filter(Boolean);
+  const titulaires = ajusterOnze(reels.map(p => fiche(p.id) || p).filter(Boolean));
   if(!titulaires.length) return '';
 
-  const manques = mesIds.filter(id => !reelIds.has(id)).map(fiche).filter(Boolean);
+  // Les manqués sont placés comme dans le onze du joueur, dépannages compris.
+  const manques = ajusterOnze(mesIds.map(fiche).filter(Boolean)).filter(p => !reelIds.has(p.id));
 
   const ligneDe = p => {
     const l = (p.position || '').trim();
