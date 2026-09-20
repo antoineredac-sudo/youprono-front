@@ -2204,6 +2204,25 @@
 .terrain-pastille.blanc{ background:#fff; color:#0b2265; }
 .terrain-part{ color:var(--text-dim); font-size:9px; margin-top:1px; }
 
+/* La page « La compo officielle est tombée » : deux terrains, et entre eux le
+   verdict — combien de titulaires trouvés, et ce que ça vaut. */
+.compo-label{
+  font-size:11px; color:var(--text-dim); text-transform:uppercase;
+  letter-spacing:.5px; margin:22px 0 6px;
+}
+.compo-verdict{
+  display:flex; align-items:center; gap:12px; background:var(--surface);
+  border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-top:18px;
+}
+.compo-pastille{
+  width:54px; height:54px; border-radius:50%; background:var(--gold); color:#061a4f;
+  font-size:19px; font-weight:700; display:flex; align-items:center;
+  justify-content:center; flex:0 0 auto;
+}
+.compo-verdict-txt b{ font-size:24px; color:var(--gold); }
+.compo-verdict-txt span{ font-size:12px; color:var(--text-dim); display:block; margin-top:2px; }
+.compo-legende{ font-size:11px; color:var(--text-dim); margin-top:8px; line-height:1.5; }
+
 .kop-compo-cols{ display:flex; gap:14px; }
 .kop-compo-col{ flex:1 1 0; min-width:0; }
 .kop-compo-entete{
@@ -2844,11 +2863,20 @@
           <div class="results-date" id="compo-match-date"></div>
         </div>
 
-        <div class="results-total-card">
-          <div class="results-total-label">Ta note de composition</div>
-          <div class="results-total-value" id="compo-note-value">0</div>
-          <div class="results-rank" id="compo-found-line"></div>
+        <div class="compo-label">Le onze de Luis Enrique</div>
+        <div id="compo-terrain-reel"></div>
+
+        <div class="compo-verdict">
+          <div class="compo-pastille" id="compo-trouves">0/11</div>
+          <div class="compo-verdict-txt">
+            <b id="compo-note-value">0</b>
+            <span>ta note de composition, sur 100</span>
+          </div>
         </div>
+
+        <div class="compo-label">Ton onze</div>
+        <div id="compo-terrain-mien"></div>
+        <p class="compo-legende" id="compo-legende"></p>
 
         <div id="compo-detail"></div>
 
@@ -4089,21 +4117,32 @@ async function checkOfficialComposition(){
 async function goToCompoNote(){
   switchView('compo');
   document.getElementById('compo-loading').style.display = 'block';
+  document.getElementById('compo-loading').textContent = 'Chargement de la composition…';
   document.getElementById('compo-content').style.display = 'none';
 
   try{
-    if(!officialCompoPlayers) await checkOfficialComposition();
-    if(!officialCompoPlayers) throw new Error('compo absente');
-
     await ensureSquadLoaded();
 
     const userId = getUserId();
     const teamId = await getPsgTeamId();
-    const predRes = await fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${currentMatch.id}/${teamId}`);
-    const predJson = await predRes.json();
-    if(!predJson.success || !predJson.data) throw new Error('pronostic absent');
 
-    renderCompoNote(predJson.data);
+    // Le serveur renvoie les deux onze, le decompte des choix de tout le monde et
+    // la note : exactement la formule de la notation d'apres match, bonus de
+    // rarete compris. Le site ne recalcule rien, il dessine.
+    const res = await fetch(`${API_BASE}/UserMatch/Compo/${teamId}/${currentMatch.id}/${userId}`);
+    const json = await res.json();
+    if(!json.success || !json.data || !json.data.hasOfficialComposition){ throw new Error('compo absente'); }
+    if(!json.data.mien || !json.data.mien.length){ throw new Error('pronostic absent'); }
+
+    // Le reste du pronostic, en attente du coup de sifflet final.
+    let prediction = null;
+    try{
+      const predRes = await fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${currentMatch.id}/${teamId}`);
+      const predJson = await predRes.json();
+      if(predJson.success && predJson.data){ prediction = predJson.data; }
+    }catch(e){ /* le terrain suffit */ }
+
+    renderCompoNote(json.data, prediction);
     document.getElementById('compo-loading').style.display = 'none';
     document.getElementById('compo-content').style.display = 'block';
   }catch(e){
@@ -4112,15 +4151,59 @@ async function goToCompoNote(){
   }
 }
 
-function renderCompoNote(prediction){
-  const predictedIds = prediction.players || [];
-  const realIds = new Set(officialCompoPlayers.map(p => p.id));
-  let trouves = 0;
-  officialCompoPlayers.forEach(p => { if(predictedIds.indexOf(p.id) !== -1) trouves++; });
+// Un terrain, deux usages. Sans « reels », c'est le onze du coach : pastilles
+// blanches, aucune couleur, rien n'est en jeu. Avec, c'est le onze du joueur :
+// dore pour un titulaire trouve, blanc pour une erreur, et sous chaque nom le
+// nombre de participants qui l'avaient aligne.
+function terrainCompo(ids, reels, choix, participants){
+  const joueurs = ajusterOnze((ids || []).map(id => squadData.find(sp => sp.id === id)).filter(Boolean));
+  if(!joueurs.length) return '';
 
-  // Exactement la formule du serveur : titulaires trouvés sur onze, ramenés sur cent.
-  const note = Math.round((trouves / 11) * 100 * 10000) / 10000;
+  const parLigne = {};
+  TERRAIN_LIGNES.forEach(l => parLigne[l] = []);
+  const orphelins = [];
 
+  joueurs.forEach(p => {
+    const ligne = (p.position || '').trim();
+    if(parLigne[ligne]) parLigne[ligne].push(p);
+    else orphelins.push(p);
+  });
+  orphelins.forEach(p => parLigne['Milieu'].push(p));
+
+  TERRAIN_LIGNES.forEach(l => parLigne[l].sort((a, b) => {
+    const ra = a.positionOrder > 0 ? a.positionOrder : 99;
+    const rb = b.positionOrder > 0 ? b.positionOrder : 99;
+    if(ra !== rb) return ra - rb;
+    return (a.shirtNumber || 0) - (b.shirtNumber || 0);
+  }));
+
+  let html = '<div class="terrain">'
+           + '<div class="terrain-ligne-mediane"></div><div class="terrain-rond"></div>'
+           + '<div class="terrain-surface"></div><div class="terrain-six"></div>';
+
+  TERRAIN_LIGNES.forEach(ligne => {
+    const l = parLigne[ligne];
+    if(!l.length) return;
+    html += '<div class="terrain-ligne">';
+    l.forEach(p => {
+      const trouve = reels ? reels.has(p.id) : false;
+      const part = (choix && participants)
+        ? '<div class="terrain-part">' + (choix[p.id] || 0) + '/' + participants + '</div>'
+        : '';
+      html += '<div class="terrain-joueur">'
+            + '<div class="terrain-pastille' + (trouve ? '' : ' blanc') + '">'
+            + (p.shirtNumber || '-') + '</div>'
+            + '<div class="terrain-nom' + (trouve ? ' or' : '') + '">'
+            + nomJoueurAffiche(p.firstName, p.lastName) + '</div>'
+            + part + '</div>';
+    });
+    html += '</div>';
+  });
+
+  return html + '</div>';
+}
+
+function renderCompoNote(d, prediction){
   const homeLabel = teamLabel(currentMatch.homeTeam, 'Domicile');
   const awayLabel = teamLabel(currentMatch.awayTeam, 'Extérieur');
   const opponentName = isPsgSide(currentMatch.homeTeam) ? awayLabel : homeLabel;
@@ -4129,47 +4212,26 @@ function renderCompoNote(prediction){
   document.getElementById('compo-match-date').textContent =
     "Coup d'envoi : " + formatMatchDate(new Date(currentMatch.dateTime));
 
-  document.getElementById('compo-note-value').textContent = fmtNote(note);
-  document.getElementById('compo-found-line').textContent =
-    trouves + (trouves > 1 ? ' titulaires trouvés sur 11' : ' titulaire trouvé sur 11');
+  document.getElementById('compo-trouves').textContent = (d.trouves || 0) + '/11';
+  // Une decimale : c'est un chiffre qu'on lit d'un coup d'oeil, pas un resultat
+  // de laboratoire. La note complete reste celle du serveur.
+  document.getElementById('compo-note-value').textContent =
+    (Math.round((d.note || 0) * 10) / 10).toFixed(1).replace('.', ',');
 
-  const nomDe = (id) => {
-    const officiel = officialCompoPlayers.find(p => p.id === id);
-    if(officiel) return nomJoueurAffiche(officiel.firstName, officiel.lastName);
-    const p = squadData.find(sp => sp.id === id);
-    return p ? nomJoueurAffiche(p.firstName, p.lastName) : '—';
-  };
+  const reels = new Set(d.officiel || []);
+  const participants = d.participantCount || 0;
 
-  const tonHtml = trierParPoste(predictedIds.map(id => squadData.find(sp => sp.id === id) || { id }))
-    .map(p => `<span class="compo-name ${realIds.has(p.id) ? '' : 'compo-wrong'}">${nomDe(p.id)}</span>`).join('');
+  document.getElementById('compo-terrain-reel').innerHTML =
+    terrainCompo(d.officiel || [], null, null, 0);
+  document.getElementById('compo-terrain-mien').innerHTML =
+    terrainCompo(d.mien || [], reels, d.choix || {}, participants);
 
-  // Les titulaires que le joueur n'avait pas vus ressortent en blanc et en gras :
-  // c'est ce qu'il regarde en premier, et c'est là qu'il a perdu des points.
-  const monOnze = new Set(predictedIds);
-  const reelHtml = trierParPoste(officialCompoPlayers).map(p =>
-    `<span class="compo-name compo-reel${monOnze.has(p.id) ? '' : ' compo-manque'}">${nomJoueurAffiche(p.firstName, p.lastName)}</span>`).join('');
-
-  // La composition d'abord : c'est la seule catégorie déjà tranchée, et la seule
-  // qu'on peut lire nom par nom.
-  let html = `
-    <div class="result-category">
-      <div class="result-cat-head">
-        <span class="result-cat-name">${picto('Composition')} Composition</span>
-        <span class="result-cat-points">${fmtNote(note)}/100</span>
-      </div>
-      <div class="compo-compare">
-        <div class="compo-col">
-          <div class="compo-col-label">Toi</div>
-          ${tonHtml}
-        </div>
-        <div class="compo-col">
-          <div class="compo-col-label">Réel</div>
-          ${reelHtml}
-        </div>
-      </div>
-    </div>`;
+  document.getElementById('compo-legende').textContent =
+    "Sous chaque joueur, le nombre de participants qui l'avaient aligné, sur les "
+    + participants + " qui ont joué ce match. Un titulaire que peu de monde avait vu rapporte davantage.";
 
   // Puis le reste du pronostic, en attente du coup de sifflet final.
+  let html = '';
   const categories = [
     { key:'possession', label:'Possession', unit:' %' },
     { key:'shots',      label:'Tirs',       unit:'' },
@@ -4178,7 +4240,7 @@ function renderCompoNote(prediction){
     { key:'score',      label:'Score',      unit:'' }
   ];
 
-  if(prediction.team && prediction.opponent){
+  if(prediction && prediction.team && prediction.opponent){
     html += `<div class="salon-legende" style="margin-top:14px;">Résultats au coup de sifflet final</div>`;
     categories.forEach(cat => {
       html += `
@@ -4291,9 +4353,24 @@ async function refreshHomeSalon(courant, precedent){
   const dore = (etat !== 'closed') ? ' dore' : '';
   const affiche = teamLabel(cible.homeTeam, 'PSG') + ' / ' + teamLabel(cible.awayTeam, 'Adversaire');
 
+  // Le joueur qui a un groupe garde son verdict personnel : sans ce lien, sa note
+  // de composition n'existait que dans le salon, noyée dans le classement du
+  // groupe, et celui qui n'a pas de groupe n'y avait pas accès du tout.
+  let perso = '';
+  if(etat === 'composition' && await aPronostiqueSur(cible)){
+    perso = `
+      <div class="salon-cta dore" style="margin-bottom:10px;" onclick="goToCompoNote()">
+        <div class="salon-cta-info">
+          La compo officielle est tombée
+          <small>${affiche}</small>
+        </div>
+        <span class="salon-cta-fleche">Voir →</span>
+      </div>`;
+  }
+
   if(salonMesGroupes.length === 1){
     const g = salonMesGroupes[0];
-    bloc.innerHTML = `
+    bloc.innerHTML = perso + `
       <div class="salon-cta${dore}" onclick="goToSalon('${g.id}','${cible.id}')">
         <div class="salon-cta-info">
           ${libelle}
@@ -4308,7 +4385,7 @@ async function refreshHomeSalon(courant, precedent){
         <span>Voir →</span>
       </div>`).join('');
 
-    bloc.innerHTML = `
+    bloc.innerHTML = perso + `
       <div class="salon-choix${dore}">
         <div class="salon-choix-titre">${libelle}</div>
         ${lignes}
@@ -4326,16 +4403,19 @@ const SOLO_ETATS = {
   results:     { libelle:null,                              cta:'Voir mes résultats →' }
 };
 
-async function renderHomeSolo(bloc, cible, etat){
-  let aPronostique = false;
+// A-t-il joué ce match ? Sans pronostic, il n'y a rien derrière le clic.
+async function aPronostiqueSur(cible){
   try{
     const teamId = await getPsgTeamId();
     const userId = getUserId();
     const res = await fetch(`${API_BASE}/UserMatch/ByUserMatchTeam/${userId}/${cible.id}/${teamId}`);
     const json = await res.json();
-    aPronostique = !!(json.success && json.data);
-  }catch(e){ return; }
+    return !!(json.success && json.data);
+  }catch(e){ return false; }
+}
 
+async function renderHomeSolo(bloc, cible, etat){
+  const aPronostique = await aPronostiqueSur(cible);
   if(!aPronostique) return;
 
   const affiche = teamLabel(cible.homeTeam, 'PSG') + ' / ' + teamLabel(cible.awayTeam, 'Adversaire');
