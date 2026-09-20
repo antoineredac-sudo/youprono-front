@@ -6954,9 +6954,9 @@ function relancerLesAbsents(){
   // soir : le dernier present marque 2 points, chaque place au-dessus en vaut
   // un de plus. Un ami qui s'y met ajoute donc vraiment un point a tous ceux
   // qui finissent devant lui — la phrase n'est pas une formule, elle est juste.
-  const texte = 'Les amis, plus on est nombreux à jouer, plus on marque de points. '
-    + 'Ceux qui n\'ont pas encore fait leurs pronos pour ' + d.affiche + ', '
-    + 'ça ferme ' + d.jour + ' à ' + d.heure + ' : ' + siteBaseUrl();
+  const texte = 'Plus on est nombreux à jouer, plus on marque de points, '
+    + 'mais tu n\'as pas encore fait tes prédictions pour ' + d.affiche + ', '
+    + 'clôture ' + d.jour + ' à ' + d.heure + ' : ' + siteBaseUrl();
   window.location.href = 'https://wa.me/?text=' + encodeURIComponent(texte);
 }
 
