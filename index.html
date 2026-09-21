@@ -1819,6 +1819,7 @@
     display:inline-block; background:rgba(232,185,35,.14); color:var(--gold);
     border:1px solid rgba(232,185,35,.5); border-radius:20px;
     padding:3px 10px; font-size:12px; font-weight:600;
+    white-space:nowrap; flex:0 0 auto;
   }
   .cc-chrono{ height:6px; background:var(--surface); border-radius:4px; overflow:hidden; margin:6px 0 4px; }
   .cc-chrono i{ display:block; height:100%; width:100%; background:var(--gold); transition:width .2s linear; }
@@ -9527,6 +9528,7 @@ function navFromMenu(name){
   else if(name === 'ranking'){ goToRanking(); }
   else if(name === 'trophies'){ goToTrophies(); }
   else if(name === 'badges'){ goToBadges(); }
+  else if(name === 'culture-club'){ goToCultureClub(); }
   else if(name === 'profile'){ goToProfile(); }
   else if(name === 'faq'){ switchView('faq'); }
   else if(name === 'legal'){ switchView('legal'); }
