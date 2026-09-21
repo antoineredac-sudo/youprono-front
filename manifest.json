@@ -1,17 +1,17 @@
 {
-  "name": "YouProno — le jeu de pronos des supporters du PSG",
-  "short_name": "YouProno",
+  "name": "The Golden Fan — le jeu des experts du PSG",
+  "short_name": "Golden Fan",
   "description": "Pronostique la compo, la possession, les tirs, les fautes, les centres et le score avant chaque match du PSG.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#25408f",
-  "theme_color": "#25408f",
+  "background_color": "#0b2265",
+  "theme_color": "#0b2265",
   "lang": "fr",
   "icons": [
     { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
