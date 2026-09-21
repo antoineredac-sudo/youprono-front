@@ -125,6 +125,13 @@
       var(--bg);
   }
   .auth-box{ width:100%; max-width:380px; }
+  /* Le rappel de la bascule, sur l'ecran de connexion. */
+  .note-bascule{
+    border:1px solid var(--gold); border-radius:10px;
+    padding:13px 15px; margin-top:18px;
+    font-size:13px; line-height:1.55; color:var(--text-dim);
+  }
+  .note-bascule b{ color:var(--gold); font-weight:600; }
   .lien-oubli{
     color:var(--text-dim); font-size:13px; text-align:center;
     margin:16px 0 0; cursor:pointer; text-decoration:underline;
@@ -1756,6 +1763,87 @@
   }
   .rdv-heure{ color:var(--gold); font-size:12px; font-weight:600; }
   .rdv-texte{ color:var(--text); font-size:13px; line-height:1.5; margin-top:3px; }
+  /* --- Le défi culture club de la trêve (21 septembre 2026) --- */
+  .cc-match{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:10px 14px; margin-bottom:16px; font-size:13px; color:var(--text-dim);
+    gap:12px;
+  }
+  .cc-match b{ color:var(--text); font-weight:600; }
+  .cc-match .j{
+    font-family:'Oswald',sans-serif; color:var(--gold); font-size:16px;
+    flex:0 0 auto; white-space:nowrap;
+  }
+  .cc-titre{
+    font-family:'Oswald',sans-serif; font-size:24px; letter-spacing:.02em;
+    text-align:center; margin:4px 0 2px;
+  }
+  .cc-sous{ text-align:center; color:var(--text-dim); font-size:13px; margin-bottom:16px; }
+  .cc-jour{
+    display:flex; justify-content:space-between; align-items:center;
+    margin:4px 0 10px; font-size:13px; color:var(--text-dim);
+  }
+  .cc-jour b{ color:var(--text); }
+  .cc-pts{
+    display:inline-block; background:rgba(232,185,35,.14); color:var(--gold);
+    border:1px solid rgba(232,185,35,.5); border-radius:20px;
+    padding:3px 10px; font-size:12px; font-weight:600;
+  }
+  .cc-chrono{ height:6px; background:var(--surface); border-radius:4px; overflow:hidden; margin:6px 0 4px; }
+  .cc-chrono i{ display:block; height:100%; width:100%; background:var(--gold); transition:width .2s linear; }
+  .cc-chrono i.presse{ background:var(--red); }
+  .cc-sec{ text-align:right; font-family:'Oswald',sans-serif; color:var(--gold); font-size:15px; margin-bottom:12px; }
+  .cc-q{ font-size:19px; line-height:1.4; font-weight:600; margin:0 0 16px; }
+  .cc-rep{
+    display:block; width:100%; text-align:left; background:var(--surface);
+    border:1px solid var(--border); border-radius:10px; padding:15px 16px;
+    margin-bottom:10px; color:var(--text); font-size:16px;
+    font-family:'Inter',sans-serif; cursor:pointer;
+  }
+  .cc-rep:disabled{ cursor:default; }
+  .cc-rep.bonne{ border-color:var(--gold); color:var(--gold); }
+  .cc-rep.mauvaise{ border-color:var(--red); color:var(--text-dim); text-decoration:line-through; }
+  .cc-dots{ display:flex; gap:6px; justify-content:center; margin:14px 0 8px; }
+  .cc-dots i{ width:8px; height:8px; border-radius:50%; background:var(--border); }
+  .cc-dots i.on{ background:var(--gold); }
+  .cc-verdict{
+    border-left:3px solid var(--gold); background:var(--surface); border-radius:8px;
+    padding:12px 14px; margin-top:14px; font-size:14px; line-height:1.55; color:var(--text);
+  }
+  .cc-verdict.rate{ border-left-color:var(--red); }
+  .cc-verdict b{ color:var(--gold); }
+  .cc-retard{
+    margin-top:16px; border-left:3px solid var(--gold); background:var(--surface);
+    border-radius:8px; padding:11px 14px; font-size:13px; line-height:1.5; color:var(--text);
+  }
+  .cc-regle{ color:var(--text-dim); font-size:12px; text-align:center; margin-top:14px; line-height:1.5; }
+  .cc-row{
+    display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:10px;
+    background:var(--surface); border:1px solid var(--border); margin-bottom:6px;
+  }
+  .cc-row.moi{ border-color:var(--gold); }
+  .cc-r{ font-family:'Oswald',sans-serif; font-size:16px; width:24px; color:var(--text-dim); }
+  .cc-r.top{ color:var(--gold); }
+  .cc-n{ flex:1; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cc-row.moi .cc-n{ font-weight:600; }
+  .cc-t{ font-size:12px; color:var(--text-dim); width:56px; text-align:right; }
+  .cc-s{ font-family:'Oswald',sans-serif; font-size:17px; color:var(--gold); width:40px; text-align:right; }
+  .cc-head{
+    display:flex; gap:10px; padding:0 14px 6px; font-size:10px;
+    letter-spacing:.08em; color:var(--text-dim); text-transform:uppercase;
+  }
+  .cc-head span:nth-child(1){ width:24px; }
+  .cc-head span:nth-child(2){ flex:1; }
+  .cc-head span:nth-child(3){ width:56px; text-align:right; }
+  .cc-head span:nth-child(4){ width:40px; text-align:right; }
+  .cc-sep{ text-align:center; color:var(--text-dim); margin:2px 0 6px; }
+  .cc-lot{
+    border:1px solid var(--gold); border-radius:10px; padding:13px 14px;
+    margin-top:14px; font-size:13px; line-height:1.55; text-align:center;
+  }
+  .cc-lot b{ color:var(--gold); }
+
   /* --- Le terrain du récapitulatif --- */
   .terrain{
     position:relative; background:#061a4f; border:1px solid #1c3d82;
@@ -2416,6 +2504,14 @@
       <div class="field-error" id="auth-error"></div>
 
       <button class="primary" id="auth-submit" onclick="submitAuth()">Créer mon compte</button>
+      <!-- Le mot de passe retenu par le navigateur l'avait ete pour youprono.fr :
+           il n'est plus propose sur la nouvelle adresse. Ce rappel disparait tout
+           seul le 1er novembre 2026, voir noteBascule(). -->
+      <div class="note-bascule" id="note-bascule" style="display:none;">
+        Tu venais de <b>YouProno</b> ? Ton pseudo et ton mot de passe n'ont pas changé.
+        Ton navigateur, lui, les avait retenus pour l'ancienne adresse et ne te les
+        proposera plus. Oublié ? Récupère-le en une minute.
+      </div>
       <p class="lien-oubli" onclick="ouvrirOubli()">Mot de passe ou pseudo oublié ?</p>
     </div>
   </div>
@@ -2439,6 +2535,7 @@
 
     <div class="dropdown-menu" id="dropdown-menu" style="display:none;">
       <button data-view="home" onclick="navFromMenu('home')">Prochain match</button>
+      <button data-view="culture-club" onclick="navFromMenu('culture-club')" id="menu-culture-club">Culture club</button>
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Tableau de bord</button>
       <button data-view="groups" onclick="navFromMenu('groups')" id="menu-groupes">Groupes d'amis</button>
@@ -2982,6 +3079,25 @@
 
         <p class="deadline-note" id="compo-footnote"></p>
       </div>
+
+      <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
+    </section>
+    <section id="view-culture-club" class="view" style="display:none;">
+      <div id="cc-vignette"></div>
+      <div class="cc-titre">CULTURE CLUB</div>
+      <div class="cc-sous" id="cc-sous">Le défi de la trêve</div>
+
+      <div class="tab-switch">
+        <button id="cc-onglet-defi" class="active" onclick="ccOuvrirOnglet('defi')">Le défi du jour</button>
+        <button id="cc-onglet-classement" onclick="ccOuvrirOnglet('classement')">Classement</button>
+      </div>
+
+      <div id="cc-defi">
+        <div class="placeholder" id="cc-chargement">Chargement du défi…</div>
+        <div id="cc-corps" style="display:none;"></div>
+      </div>
+
+      <div id="cc-classement" style="display:none;"></div>
 
       <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
@@ -3682,6 +3798,7 @@ function restoreRoute(brut){
     else if(nom === 'badges'){ goToBadges(); }
     else if(nom === 'myprono'){ goToMyProno(); }
     else if(nom === 'compo'){ goToCompoNote(); }
+    else if(nom === 'culture-club'){ goToCultureClub(); }
     // Les trophées ont leur fonction d'ouverture, comme les autres écrans :
     // les afficher sans elle laissait une vitrine vide au rafraîchissement.
     else if(nom === 'trophies'){ goToTrophies(); }
@@ -4366,6 +4483,366 @@ function renderCompoNote(d, prediction){
     "Ce n'est qu'une partie de ton score. Tu découvriras ta note globale quelques minutes après la fin du match.";
 }
 
+
+
+// ===== LE DEFI CULTURE CLUB DE LA TREVE (21 septembre 2026) =====
+// Trois questions par jour, du 23 septembre au 2 octobre. Le site ne connait
+// jamais la bonne reponse a l'avance : il demande la question au serveur, qui
+// declenche son chrono, et renvoie le verdict apres coup. Le compte a rebours
+// affiche ici n'est qu'un decor honnete : c'est l'horloge du serveur qui compte.
+
+let ccEtat = null;
+let ccFile = [];
+let ccQuestion = null;
+let ccChrono = null;
+let ccDebut = 0;
+let ccSecondes = 15;
+let ccRepondu = false;
+
+const CC_JOURS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const CC_MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août',
+                 'septembre','octobre','novembre','décembre'];
+
+function ccJourLabel(iso){
+  const p = String(iso || '').split('-');
+  if(p.length !== 3) return iso || '';
+  const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  return CC_JOURS[d.getDay()] + ' ' + d.getDate() + ' ' + CC_MOIS[d.getMonth()];
+}
+
+function ccTemps(ms){
+  if(ms === null || ms === undefined) return '—';
+  return (Math.round(ms / 100) / 10).toFixed(1).replace('.', ',') + ' s';
+}
+
+async function goToCultureClub(){
+  switchView('culture-club');
+  closeMenu();
+  ccArreterChrono();
+  document.getElementById('cc-chargement').style.display = 'block';
+  document.getElementById('cc-chargement').textContent = 'Chargement du défi…';
+  document.getElementById('cc-corps').style.display = 'none';
+  ccOuvrirOnglet('defi', true);
+  ccVignette();
+
+  try{
+    const res = await fetch(`${API_BASE}/UserMatch/Quiz/Etat/${getUserId()}`);
+    const json = await res.json();
+    if(!json.success || !json.data) throw new Error('etat');
+    ccEtat = json.data;
+    ccSecondes = ccEtat.secondes || 15;
+
+    document.getElementById('cc-sous').textContent =
+      'Le défi de la trêve · 3 questions par jour du '
+      + ccJourLabel(ccEtat.premierJour) + ' au ' + ccJourLabel(ccEtat.dernierJour);
+
+    // Les questions ouvertes et pas encore jouees, les plus anciennes d'abord :
+    // le retardataire rattrape dans l'ordre, sans avoir a choisir son jour.
+    ccFile = [];
+    (ccEtat.jours || []).forEach(j => {
+      if(!j.ouvert) return;
+      (j.questions || []).forEach(q => { if(!q.jouee) ccFile.push(q); });
+    });
+
+    document.getElementById('cc-chargement').style.display = 'none';
+    document.getElementById('cc-corps').style.display = 'block';
+    ccSuivante();
+  }catch(e){
+    document.getElementById('cc-chargement').textContent =
+      "Le défi n'est pas disponible pour l'instant. Réessaie dans un instant.";
+  }
+}
+
+// La vignette du prochain match reste visible : le défi occupe la trêve, il ne
+// remplace pas le jeu.
+function ccVignette(){
+  const bloc = document.getElementById('cc-vignette');
+  if(!bloc) return;
+  if(!currentMatch){ bloc.innerHTML = ''; return; }
+  const affiche = teamLabel(currentMatch.homeTeam, 'PSG') + ' – '
+                + teamLabel(currentMatch.awayTeam, 'Adversaire');
+  const kickoff = new Date(currentMatch.dateTime);
+  const jours = Math.max(0, Math.ceil((kickoff.getTime() - Date.now()) / 86400000));
+  const quand = kickoff.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
+  bloc.innerHTML = '<div class="cc-match"><span>Prochain match · <b>'
+    + echapper(affiche) + '</b> · ' + quand + '</span><span class="j">J-' + jours + '</span></div>';
+}
+
+function ccOuvrirOnglet(nom, sansCharger){
+  const defi = nom !== 'classement';
+  document.getElementById('cc-onglet-defi').classList.toggle('active', defi);
+  document.getElementById('cc-onglet-classement').classList.toggle('active', !defi);
+  document.getElementById('cc-defi').style.display = defi ? 'block' : 'none';
+  document.getElementById('cc-classement').style.display = defi ? 'none' : 'block';
+  if(!defi && !sansCharger){ ccChargerClassement(); }
+  if(defi){ ccVignette(); }
+}
+
+function ccArreterChrono(){
+  if(ccChrono){ clearInterval(ccChrono); ccChrono = null; }
+}
+
+// Plus rien a jouer : on dit ce qui reste a venir plutot que d'afficher un vide.
+function ccRienAJouer(){
+  const corps = document.getElementById('cc-corps');
+  const fini = !ccEtat.defiOuvert;
+  const restent = (ccEtat.questionsOuvertes || 0) - (ccEtat.questionsJouees || 0);
+
+  // Avant le premier jour, il n'y a rien a jouer et rien a rattraper : on annonce
+  // la date d'ouverture plutot que de feliciter quelqu'un qui n'a rien fait.
+  const pasEncore = ccEtat.aujourdhui < ccEtat.premierJour;
+  if(pasEncore){
+    corps.innerHTML = '<div class="cc-verdict"><b>Le défi commence le '
+      + ccJourLabel(ccEtat.premierJour) + '.</b><br>'
+      + 'Trois questions par jour, jusqu\'au ' + ccJourLabel(ccEtat.dernierJour)
+      + '. Reviens ce jour-là pour la première.</div>' + ccBlocLot();
+    return;
+  }
+
+  let html = '<div class="cc-verdict"><b>'
+    + (fini ? 'Le défi est terminé.' : 'Tu es à jour.')
+    + '</b><br>' + (fini
+      ? 'Le classement est figé, le tirage au sort peut avoir lieu.'
+      : (ccEtat.aujourdhui === ccEtat.dernierJour
+          ? 'Tu as répondu à toutes les questions du défi.'
+          : 'Trois nouvelles questions t\'attendent demain.'))
+    + '</div>';
+
+  html += '<div class="cc-verdict" style="border-left-color:var(--border);">'
+       + 'Ton total : <b>' + (ccEtat.pointsTotal || 0) + ' point'
+       + ((ccEtat.pointsTotal || 0) > 1 ? 's' : '') + '</b> en '
+       + (ccEtat.questionsJouees || 0) + ' question'
+       + ((ccEtat.questionsJouees || 0) > 1 ? 's' : '')
+       + ', pour un temps total de ' + ccTemps(ccEtat.tempsTotalMs) + '.</div>';
+
+  html += ccBlocLot();
+  corps.innerHTML = html;
+}
+
+function ccBlocLot(){
+  return '<div class="cc-lot"><b>Le lot</b><br>'
+       + 'Un T-shirt du PSG, remis au vainqueur d\'un tirage au sort parmi les '
+       + 'cinq premiers du classement final. Les questions manquées restent '
+       + 'jouables jusqu\'au dimanche 4 octobre à 18 h.</div>';
+}
+
+let ccEnCours = false;
+
+async function ccSuivante(){
+  // Deux appels simultanes ouvriraient deux fois la meme question : le serveur
+  // en refuserait un, et le joueur verrait une erreur sans rien avoir fait de mal.
+  if(ccEnCours) return;
+  ccEnCours = true;
+  ccArreterChrono();
+  ccRepondu = false;
+
+  if(!ccEtat.defiOuvert || !ccFile.length){ ccRienAJouer(); return; }
+
+  const suivante = ccFile[0];
+  const corps = document.getElementById('cc-corps');
+  corps.innerHTML = '<div class="placeholder">Un instant…</div>';
+
+  try{
+    const res = await fetch(
+      `${API_BASE}/UserMatch/Quiz/Depart/${getUserId()}/${encodeURIComponent(suivante.id)}`,
+      { method:'POST' });
+    const json = await res.json();
+    if(!json.success || !json.data) throw new Error('depart');
+    ccQuestion = json.data;
+    ccQuestion.jour = suivante.jour;
+    ccDebut = Date.now();
+    ccAfficherQuestion();
+  }catch(e){
+    corps.innerHTML = '<div class="cc-verdict rate">Impossible d\'ouvrir la question. '
+                    + 'Réessaie dans un instant.</div>';
+  }finally{
+    ccEnCours = false;
+  }
+}
+
+function ccAfficherQuestion(){
+  const corps = document.getElementById('cc-corps');
+  const q = ccQuestion;
+  const jourDuJour = q.jour === ccEtat.aujourdhui;
+  const restantes = ccFile.filter(f => f.jour === q.jour).length;
+  const rang = 4 - restantes;
+
+  let html = '<div class="cc-jour"><span><b>' + ccJourLabel(q.jour) + '</b> · question '
+           + rang + '/3</span><span class="cc-pts">' + q.difficulte + ' · '
+           + q.points + ' point' + (q.points > 1 ? 's' : '') + '</span></div>';
+
+  html += '<div class="cc-chrono"><i id="cc-barre"></i></div>'
+        + '<div class="cc-sec" id="cc-sec">' + ccSecondes + ' s</div>';
+
+  html += '<div class="cc-q">' + echapper(q.texte) + '</div>';
+
+  (q.choix || []).forEach((choix, i) => {
+    html += '<button class="cc-rep" id="cc-rep-' + i + '" onclick="ccRepondre(' + i + ')">'
+          + echapper(choix) + '</button>';
+  });
+
+  html += '<div class="cc-dots">';
+  for(let i = 1; i <= 3; i++){ html += '<i class="' + (i <= rang ? 'on' : '') + '"></i>'; }
+  html += '</div>';
+
+  if(!jourDuJour){
+    html += '<div class="cc-retard">Tu rattrapes les questions du '
+          + ccJourLabel(q.jour) + '. Elles comptent autant que celles du jour.</div>';
+  }
+
+  html += '<div class="cc-regle">' + ccSecondes + ' secondes par question · '
+        + '1, 2 ou 3 points selon la difficulté · à égalité, le plus rapide passe devant</div>';
+
+  corps.innerHTML = html;
+  ccLancerChrono();
+}
+
+function ccLancerChrono(){
+  ccArreterChrono();
+  const barre = document.getElementById('cc-barre');
+  const sec = document.getElementById('cc-sec');
+  const total = ccSecondes * 1000;
+
+  ccChrono = setInterval(() => {
+    const ecoule = Date.now() - ccDebut;
+    const reste = Math.max(0, total - ecoule);
+    if(barre){
+      barre.style.width = (reste / total * 100) + '%';
+      barre.classList.toggle('presse', reste < 5000);
+    }
+    if(sec){ sec.textContent = Math.ceil(reste / 1000) + ' s'; }
+    if(reste <= 0){
+      ccArreterChrono();
+      // Le temps est ecoule : on enregistre l'absence de reponse, sinon la
+      // question resterait a jouer indefiniment.
+      if(!ccRepondu){ ccRepondre(-1); }
+    }
+  }, 200);
+}
+
+async function ccRepondre(choix){
+  if(ccRepondu) return;
+  ccRepondu = true;
+  ccArreterChrono();
+
+  document.querySelectorAll('#cc-corps .cc-rep').forEach(b => { b.disabled = true; });
+
+  try{
+    const res = await fetch(
+      `${API_BASE}/UserMatch/Quiz/Reponse/${getUserId()}/${encodeURIComponent(ccQuestion.id)}/${choix}`,
+      { method:'POST' });
+    const json = await res.json();
+    if(!json.success || !json.data) throw new Error('reponse');
+    ccVerdict(json.data, choix);
+  }catch(e){
+    ccRepondu = false;
+    document.querySelectorAll('#cc-corps .cc-rep').forEach(b => { b.disabled = false; });
+    ccLancerChrono();
+  }
+}
+
+function ccVerdict(d, choix){
+  const bonne = document.getElementById('cc-rep-' + d.bonneReponse);
+  if(bonne) bonne.classList.add('bonne');
+  if(choix >= 0 && choix !== d.bonneReponse){
+    const mien = document.getElementById('cc-rep-' + choix);
+    if(mien) mien.classList.add('mauvaise');
+  }
+
+  // Le chrono a fini son office : il s'efface plutot que d'afficher un compte
+  // a rebours fige, qui donnerait l'impression que le temps court encore.
+  const barre = document.getElementById('cc-barre');
+  if(barre && barre.parentNode) barre.parentNode.style.display = 'none';
+  const sec = document.getElementById('cc-sec');
+  if(sec) sec.style.display = 'none';
+
+  let texte;
+  if(d.correct && !d.horsDelai){
+    texte = '<b>Bonne réponse.</b> ' + d.points + ' point' + (d.points > 1 ? 's' : '')
+          + ', en ' + ccTemps(d.tempsMs) + '.';
+  } else if(d.correct && d.horsDelai){
+    texte = '<b>Bonne réponse, mais hors délai.</b> Les 15 secondes étaient passées : '
+          + 'aucun point pour celle-là.';
+  } else if(choix < 0){
+    texte = '<b>Temps écoulé.</b> Aucun point.';
+  } else {
+    texte = '<b>Raté.</b> Aucun point.';
+  }
+  texte += '<br>Ton total : ' + d.pointsTotal + ' point' + (d.pointsTotal > 1 ? 's' : '') + '.';
+
+  const bloc = document.createElement('div');
+  bloc.className = 'cc-verdict' + ((d.correct && !d.horsDelai) ? '' : ' rate');
+  bloc.innerHTML = texte;
+
+  const suite = document.createElement('button');
+  suite.className = 'cta-play';
+  suite.style.marginTop = '14px';
+  suite.textContent = (ccFile.length > 1) ? 'Question suivante' : 'Terminer';
+  suite.onclick = ccApresVerdict;
+
+  const corps = document.getElementById('cc-corps');
+  corps.appendChild(bloc);
+  corps.appendChild(suite);
+
+  // On retire la question jouee de la file, et on met le total a jour : l'onglet
+  // Classement doit dire la meme chose que l'ecran qu'on vient de quitter.
+  ccFile.shift();
+  ccEtat.pointsTotal = d.pointsTotal;
+  ccEtat.questionsJouees = (ccEtat.questionsJouees || 0) + 1;
+  ccEtat.tempsTotalMs = (ccEtat.tempsTotalMs || 0) + (d.tempsMs || 0);
+}
+
+function ccApresVerdict(){
+  if(ccFile.length){ ccSuivante(); }
+  else { ccRienAJouer(); }
+}
+
+async function ccChargerClassement(){
+  const bloc = document.getElementById('cc-classement');
+  bloc.innerHTML = '<div class="placeholder">Chargement du classement…</div>';
+
+  try{
+    const res = await fetch(`${API_BASE}/UserMatch/Quiz/Classement/${getUserId()}?limit=20`);
+    const json = await res.json();
+    if(!json.success || !json.data) throw new Error('classement');
+    const d = json.data;
+
+    if(!d.lignes || !d.lignes.length){
+      bloc.innerHTML = '<div class="cc-verdict">Personne n\'a encore répondu. '
+                     + 'Le premier à jouer prend la tête.</div>' + ccBlocLot();
+      return;
+    }
+
+    let html = '<div class="cc-head"><span>#</span><span>Joueur</span>'
+             + '<span>Temps</span><span>Pts</span></div>';
+
+    d.lignes.forEach(l => {
+      html += '<div class="cc-row' + (l.moi ? ' moi' : '') + '">'
+            + '<span class="cc-r' + (l.rang <= 3 ? ' top' : '') + '">' + l.rang + '</span>'
+            + '<span class="cc-n">' + echapper(l.displayName) + '</span>'
+            + '<span class="cc-t">' + ccTemps(l.tempsMs) + '</span>'
+            + '<span class="cc-s">' + l.points + '</span></div>';
+    });
+
+    // Le joueur qui n'est pas dans les vingt premiers se retrouve quand meme.
+    if(d.moi && !d.lignes.some(l => l.moi)){
+      html += '<div class="cc-sep">···</div>'
+            + '<div class="cc-row moi"><span class="cc-r">' + d.moi.rang + '</span>'
+            + '<span class="cc-n">' + echapper(d.moi.displayName) + '</span>'
+            + '<span class="cc-t">' + ccTemps(d.moi.tempsMs) + '</span>'
+            + '<span class="cc-s">' + d.moi.points + '</span></div>';
+    }
+
+    html += '<div class="cc-regle">' + d.joueurs + ' joueur'
+          + (d.joueurs > 1 ? 's' : '') + ' au classement · à égalité de points, '
+          + 'le temps total départage</div>';
+
+    html += ccBlocLot();
+    bloc.innerHTML = html;
+  }catch(e){
+    bloc.innerHTML = '<div class="cc-verdict rate">Impossible de charger le classement.</div>';
+  }
+}
 
 // ===== LE SALON DU GROUPE =====
 // Une seule page, trois états, décidés par le serveur : les pronostics bruts à la
@@ -9237,6 +9714,17 @@ function siteBaseUrl(){
     ? location.origin + '/'
     : 'https://thegoldenfan.fr/';
 }
+
+// Le rappel de la bascule ne vit que le temps utile : six semaines apres le
+// changement de nom, ceux qui devaient revenir sont revenus, et la phrase ne
+// ferait plus que dater le site. Aucun depot a refaire, la date suffit.
+function noteBascule(){
+  const bloc = document.getElementById('note-bascule');
+  if(!bloc) return;
+  const fin = new Date(2026, 10, 1);   // 1er novembre 2026
+  bloc.style.display = (Date.now() < fin.getTime()) ? 'block' : 'none';
+}
+noteBascule();
 
 (function captureInviteFromUrl(){
   var code = '';
