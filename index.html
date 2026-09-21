@@ -93,6 +93,10 @@
     --red:#da1f3d;
     --red-dim:#a8172f;
     --gold:#e8b923;
+    /* Le vert ne fait pas partie de la charte : il ne sert qu'à dire « juste »
+       dans le défi culture club, en face du rouge qui dit « faux ». Un feu
+       tricolore, pas une couleur de marque. */
+    --vert:#27c07a;
     --text:#f5f5f7;
     --text-dim:#c2cae8;
   }
@@ -1828,13 +1832,22 @@
   .cc-q{ font-size:19px; line-height:1.4; font-weight:600; margin:0 0 16px; }
   .cc-rep{
     display:block; width:100%; text-align:left; background:var(--surface);
-    border:1px solid var(--border); border-radius:10px; padding:15px 16px;
+    border:1px solid var(--border); border-radius:10px; padding:15px 46px 15px 16px;
     margin-bottom:10px; color:var(--text); font-size:16px;
-    font-family:'Inter',sans-serif; cursor:pointer;
+    font-family:'Inter',sans-serif; cursor:pointer; position:relative;
   }
   .cc-rep:disabled{ cursor:default; }
-  .cc-rep.bonne{ border-color:var(--gold); color:var(--gold); }
+  .cc-rep.bonne{ border-color:var(--vert); color:var(--vert); background:rgba(39,192,122,.10); }
   .cc-rep.mauvaise{ border-color:var(--red); color:var(--text-dim); text-decoration:line-through; }
+  /* La coche et la croix : le verdict se lit avant même d'être lu. */
+  .cc-marque{
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    width:24px; height:24px; border-radius:50%; font-style:normal;
+    font-size:14px; font-weight:700; line-height:24px; text-align:center;
+    color:#fff; text-decoration:none;
+  }
+  .cc-marque.ok{ background:var(--vert); }
+  .cc-marque.ko{ background:var(--red); }
   .cc-dots{ display:flex; gap:6px; justify-content:center; margin:14px 0 8px; }
   .cc-dots i{ width:8px; height:8px; border-radius:50%; background:var(--border); }
   .cc-dots i.on{ background:var(--gold); }
@@ -1844,11 +1857,40 @@
   }
   .cc-verdict.rate{ border-left-color:var(--red); }
   .cc-verdict b{ color:var(--gold); }
+  /* Le mot du verdict prend la couleur du résultat. Avant, « Bonne réponse » et
+     « Raté » s'écrivaient tous les deux en doré : rien ne distinguait l'un de
+     l'autre au premier coup d'œil. */
+  .cc-verdict.gagne{ border-left-color:var(--vert); }
+  .cc-verdict.gagne b{ color:var(--vert); }
+  .cc-verdict.rate b{ color:var(--red); }
+  .cc-verdict .cc-sol{ color:var(--vert); font-weight:600; }
   .cc-retard{
     margin-top:16px; border-left:3px solid var(--gold); background:var(--surface);
     border-radius:8px; padding:11px 14px; font-size:13px; line-height:1.5; color:var(--text);
   }
   .cc-regle{ color:var(--text-dim); font-size:12px; text-align:center; margin-top:14px; line-height:1.5; }
+  /* Le bilan de fin de journée : le score du jour, en grand, avant tout le reste. */
+  .cc-bilan{
+    background:var(--surface-raised); border:1px solid var(--border); border-radius:12px;
+    padding:20px 18px 18px; text-align:center; margin-bottom:14px;
+  }
+  .cc-bilan-h{
+    font-size:11px; letter-spacing:1.4px; text-transform:uppercase;
+    color:var(--text-dim); margin-bottom:10px;
+  }
+  .cc-bilan-n{ font-size:44px; font-weight:800; color:var(--gold); line-height:1; }
+  .cc-bilan-n span{ font-size:17px; font-weight:600; color:var(--text-dim); }
+  .cc-bilan-s{ font-size:14px; color:var(--text); margin-top:10px; line-height:1.5; }
+  .cc-bilan-s b{ color:var(--vert); }
+  button.cc-second{
+    width:100%; background:transparent; border:1px solid var(--border);
+    color:var(--text-dim); border-radius:10px; padding:14px; font-size:15px;
+    font-weight:600; font-family:'Inter',sans-serif; cursor:pointer;
+  }
+  .cc-reprise{
+    margin:10px 0 0; border-left:3px solid var(--red); background:var(--surface);
+    border-radius:8px; padding:10px 13px; font-size:12.5px; line-height:1.5; color:var(--text);
+  }
   .cc-row{
     display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:10px;
     background:var(--surface); border:1px solid var(--border); margin-bottom:6px;
@@ -4538,6 +4580,9 @@ let ccChrono = null;
 let ccDebut = 0;
 let ccSecondes = 15;
 let ccRepondu = false;
+// La journee que le joueur vient de boucler, le temps d'un ecran : elle commande
+// le bouton du verdict et l'ecran de bilan qui suit.
+let ccJourAcheve = null;
 
 const CC_JOURS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 const CC_MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août',
@@ -4672,7 +4717,9 @@ async function ccSuivante(){
   ccArreterChrono();
   ccRepondu = false;
 
-  if(!ccEtat.defiOuvert || !ccFile.length){ ccRienAJouer(); return; }
+  // Le verrou doit retomber ici aussi : sans cela, un joueur arrive sur la page
+  // alors qu'il est a jour resterait bloque jusqu'au rechargement.
+  if(!ccEtat.defiOuvert || !ccFile.length){ ccRienAJouer(); ccEnCours = false; return; }
 
   const suivante = ccFile[0];
   const corps = document.getElementById('cc-corps');
@@ -4707,8 +4754,17 @@ function ccAfficherQuestion(){
            + rang + '/3</span><span class="cc-pts">' + q.difficulte + ' · '
            + q.points + ' point' + (q.points > 1 ? 's' : '') + '</span></div>';
 
+  // Le serveur annonce le temps qui reste à CETTE question : quinze secondes
+  // la première fois, moins si le joueur revient dessus après l'avoir quittée.
+  const secQ = q.secondes || ccSecondes;
+
   html += '<div class="cc-chrono"><i id="cc-barre"></i></div>'
-        + '<div class="cc-sec" id="cc-sec">' + ccSecondes + ' s</div>';
+        + '<div class="cc-sec" id="cc-sec">' + secQ + ' s</div>';
+
+  if(q.reprise){
+    html += '<div class="cc-reprise">Tu avais déjà ouvert cette question. '
+          + 'Le chrono n\'est pas remis à zéro : il te reste ce qu\'il en restait.</div>';
+  }
 
   html += '<div class="cc-q">' + echapper(q.texte) + '</div>';
 
@@ -4730,14 +4786,14 @@ function ccAfficherQuestion(){
         + '1, 2 ou 3 points selon la difficulté · à égalité, le plus rapide passe devant</div>';
 
   corps.innerHTML = html;
-  ccLancerChrono();
+  ccLancerChrono(secQ);
 }
 
-function ccLancerChrono(){
+function ccLancerChrono(secondes){
   ccArreterChrono();
   const barre = document.getElementById('cc-barre');
   const sec = document.getElementById('cc-sec');
-  const total = ccSecondes * 1000;
+  const total = (secondes || ccSecondes) * 1000;
 
   ccChrono = setInterval(() => {
     const ecoule = Date.now() - ccDebut;
@@ -4773,16 +4829,27 @@ async function ccRepondre(choix){
   }catch(e){
     ccRepondu = false;
     document.querySelectorAll('#cc-corps .cc-rep').forEach(b => { b.disabled = false; });
-    ccLancerChrono();
+    // L'envoi a échoué : on rend la main au joueur avec le chrono de sa question.
+    ccLancerChrono(ccQuestion && ccQuestion.secondes);
   }
+}
+
+// Une pastille ronde collée à droite de la réponse : coche verte pour la bonne,
+// croix rouge pour celle que le joueur avait cochée à tort.
+function ccMarquer(bouton, signe, classe){
+  if(!bouton) return;
+  const i = document.createElement('i');
+  i.className = 'cc-marque ' + classe;
+  i.textContent = signe;
+  bouton.appendChild(i);
 }
 
 function ccVerdict(d, choix){
   const bonne = document.getElementById('cc-rep-' + d.bonneReponse);
-  if(bonne) bonne.classList.add('bonne');
+  if(bonne){ bonne.classList.add('bonne'); ccMarquer(bonne, '✓', 'ok'); }
   if(choix >= 0 && choix !== d.bonneReponse){
     const mien = document.getElementById('cc-rep-' + choix);
-    if(mien) mien.classList.add('mauvaise');
+    if(mien){ mien.classList.add('mauvaise'); ccMarquer(mien, '✕', 'ko'); }
   }
 
   // Le chrono a fini son office : il s'efface plutot que d'afficher un compte
@@ -4792,45 +4859,159 @@ function ccVerdict(d, choix){
   const sec = document.getElementById('cc-sec');
   if(sec) sec.style.display = 'none';
 
+  // La bonne réponse, écrite en toutes lettres. Sur un téléphone, le joueur a
+  // souvent les yeux sur le verdict et non sur les boutons : il doit repartir
+  // avec la réponse, pas seulement avec le constat de son échec.
+  const solution = (ccQuestion && ccQuestion.choix)
+    ? (ccQuestion.choix[d.bonneReponse] || '') : '';
+  const rappel = solution
+    ? '<br>La bonne réponse était : <span class="cc-sol">' + echapper(solution) + '</span>.'
+    : '';
+
+  const gagne = d.correct && !d.horsDelai;
   let texte;
-  if(d.correct && !d.horsDelai){
+  if(gagne){
     texte = '<b>Bonne réponse.</b> ' + d.points + ' point' + (d.points > 1 ? 's' : '')
           + ', en ' + ccTemps(d.tempsMs) + '.';
   } else if(d.correct && d.horsDelai){
     texte = '<b>Bonne réponse, mais hors délai.</b> Les 15 secondes étaient passées : '
           + 'aucun point pour celle-là.';
   } else if(choix < 0){
-    texte = '<b>Temps écoulé.</b> Aucun point.';
+    texte = '<b>Temps écoulé.</b> Aucun point.' + rappel;
   } else {
-    texte = '<b>Raté.</b> Aucun point.';
+    texte = '<b>Mauvaise réponse.</b> Aucun point.' + rappel;
   }
   texte += '<br>Ton total : ' + d.pointsTotal + ' point' + (d.pointsTotal > 1 ? 's' : '') + '.';
 
   const bloc = document.createElement('div');
-  bloc.className = 'cc-verdict' + ((d.correct && !d.horsDelai) ? '' : ' rate');
+  bloc.className = 'cc-verdict' + (gagne ? ' gagne' : ' rate');
   bloc.innerHTML = texte;
+
+  // On retire la question jouee de la file, et on met le total a jour : l'onglet
+  // Classement doit dire la meme chose que l'ecran qu'on vient de quitter.
+  const jourJoue = (ccQuestion && ccQuestion.jour) || '';
+  ccFile.shift();
+  ccEtat.pointsTotal = d.pointsTotal;
+  ccEtat.questionsJouees = (ccEtat.questionsJouees || 0) + 1;
+  ccEtat.tempsTotalMs = (ccEtat.tempsTotalMs || 0) + (d.tempsMs || 0);
+
+  // La journee est-elle bouclee ? Si plus aucune question de ce jour-la n'attend,
+  // le joueur a droit a son bilan avant de passer a la suite.
+  ccJourAcheve = ccFile.some(f => f.jour === jourJoue) ? null : jourJoue;
 
   const suite = document.createElement('button');
   suite.className = 'cta-play';
   suite.style.marginTop = '14px';
-  suite.textContent = (ccFile.length > 1) ? 'Question suivante' : 'Terminer';
+  suite.textContent = ccJourAcheve ? 'Voir mon résultat'
+                    : (ccFile.length ? 'Question suivante' : 'Terminer');
   suite.onclick = ccApresVerdict;
 
   const corps = document.getElementById('cc-corps');
   corps.appendChild(bloc);
   corps.appendChild(suite);
-
-  // On retire la question jouee de la file, et on met le total a jour : l'onglet
-  // Classement doit dire la meme chose que l'ecran qu'on vient de quitter.
-  ccFile.shift();
-  ccEtat.pointsTotal = d.pointsTotal;
-  ccEtat.questionsJouees = (ccEtat.questionsJouees || 0) + 1;
-  ccEtat.tempsTotalMs = (ccEtat.tempsTotalMs || 0) + (d.tempsMs || 0);
 }
 
 function ccApresVerdict(){
+  if(ccJourAcheve){ const j = ccJourAcheve; ccJourAcheve = null; ccBilanJour(j); return; }
   if(ccFile.length){ ccSuivante(); }
   else { ccRienAJouer(); }
+}
+
+// Le bilan d'une journee achevee. On relit l'etat aupres du serveur plutot que
+// de compter dans le navigateur : un joueur qui a repondu a deux questions ce
+// matin et a la troisieme ce soir doit voir ses trois reponses, pas la derniere.
+async function ccBilanJour(jour){
+  const corps = document.getElementById('cc-corps');
+  corps.innerHTML = '<div class="placeholder">Un instant…</div>';
+
+  try{
+    const res = await fetch(`${API_BASE}/UserMatch/Quiz/Etat/${getUserId()}`);
+    const json = await res.json();
+    if(json.success && json.data){
+      ccEtat = json.data;
+      ccFile = [];
+      (ccEtat.jours || []).forEach(j => {
+        if(!j.ouvert) return;
+        (j.questions || []).forEach(q => { if(!q.jouee) ccFile.push(q); });
+      });
+    }
+  }catch(e){ /* On se contentera de ce qu'on a deja en memoire. */ }
+
+  const bloc = (ccEtat.jours || []).find(j => j.date === jour);
+  const qs = bloc ? (bloc.questions || []) : [];
+  const jouees = qs.filter(q => q.jouee);
+  const bonnes = jouees.filter(q => q.correct && (q.pointsObtenus || 0) > 0).length;
+  const points = jouees.reduce((t, q) => t + (q.pointsObtenus || 0), 0);
+  const maxi = qs.reduce((t, q) => t + (q.points || 0), 0);
+  const duree = jouees.reduce((t, q) => t + (q.tempsMs || 0), 0);
+
+  let html = '<div class="cc-bilan">'
+    + '<div class="cc-bilan-h">' + ccJourLabel(jour) + '</div>'
+    + '<div class="cc-bilan-n">' + points + ' <span>/ ' + maxi + ' points</span></div>'
+    + '<div class="cc-bilan-s">';
+
+  // « aujourd'hui » ne vaut que pour la journee du jour : le retardataire qui
+  // rattrape le mardi un jeudi ne doit pas lire qu'il a raté sa journée.
+  const cEstAujourdhui = jour === ccEtat.aujourdhui;
+
+  if(bonnes === jouees.length && jouees.length > 0){
+    html += '<b>Sans faute.</b> '
+          + (jouees.length === 3 ? 'Les trois questions, les trois bonnes réponses, en '
+                                 : 'Aucune erreur, en ')
+          + ccTemps(duree) + '.';
+  } else if(bonnes === 0){
+    html += 'Aucune bonne réponse ' + (cEstAujourdhui ? 'aujourd\'hui' : 'ce jour-là')
+          + '. Les questions du PSG ne se laissent pas faire.';
+  } else {
+    html += bonnes + ' bonne' + (bonnes > 1 ? 's' : '') + ' réponse'
+          + (bonnes > 1 ? 's' : '') + ' sur ' + jouees.length
+          + ', en ' + ccTemps(duree) + '.';
+  }
+  html += '</div></div>';
+
+  html += '<div class="cc-verdict" style="border-left-color:var(--border);">'
+       + 'Ton total depuis le début du défi : <b>' + (ccEtat.pointsTotal || 0)
+       + ' point' + ((ccEtat.pointsTotal || 0) > 1 ? 's' : '') + '</b> en '
+       + (ccEtat.questionsJouees || 0) + ' question'
+       + ((ccEtat.questionsJouees || 0) > 1 ? 's' : '') + '.</div>';
+
+  // La suite : rattraper un jour en retard, revenir demain, ou rien si c'est fini.
+  const retard = ccFile.length;
+  if(!retard){
+    // C'est la journee en cours qui dit s'il reste des questions a venir, pas
+    // celle qu'on vient de boucler : le retardataire a deja joue celle du jour.
+    if(ccEtat.aujourdhui >= ccEtat.dernierJour){
+      html += '<div class="cc-verdict">Tu as joué la dernière journée du défi. '
+            + 'Le classement est figé : le tirage au sort peut avoir lieu.</div>';
+    } else {
+      html += '<div class="cc-verdict">Trois nouvelles questions t\'attendent demain.</div>';
+    }
+  }
+
+  html += ccBlocLot();
+  corps.innerHTML = html;
+
+  const barre = document.createElement('div');
+  barre.style.marginTop = '14px';
+
+  if(retard){
+    const rattraper = document.createElement('button');
+    rattraper.className = 'cta-play';
+    rattraper.textContent = (ccFile[0].jour === ccEtat.aujourdhui)
+      ? 'Jouer les questions du jour'
+      : 'Rattraper le ' + ccJourLabel(ccFile[0].jour);
+    rattraper.onclick = ccSuivante;
+    barre.appendChild(rattraper);
+  }
+
+  const voir = document.createElement('button');
+  voir.className = retard ? 'cc-second' : 'cta-play';
+  voir.style.marginTop = retard ? '10px' : '0';
+  voir.textContent = 'Voir le classement';
+  voir.onclick = () => ccOuvrirOnglet('classement');
+  barre.appendChild(voir);
+
+  corps.appendChild(barre);
 }
 
 async function ccChargerClassement(){
