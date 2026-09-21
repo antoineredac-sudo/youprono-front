@@ -4664,14 +4664,31 @@ function ccArreterChrono(){
 }
 
 // Plus rien a jouer : on dit ce qui reste a venir plutot que d'afficher un vide.
+// Ce qui attend le joueur une fois qu'il n'a plus rien a jouer. Trois cas, et
+// le premier n'existe que pendant les essais : les questions du 23 sont ouvertes
+// depuis le 21 au soir, on ne peut donc pas lui dire « reviens le 23 ».
+function ccSuite(){
+  if(ccEtat.aujourdhui < ccEtat.premierJour){
+    return 'Le défi ouvre officiellement le ' + ccJourLabel(ccEtat.premierJour)
+         + '. Tu as joué ses questions en avance.';
+  }
+  if(ccEtat.aujourdhui >= ccEtat.dernierJour){
+    return 'Tu as joué la dernière journée du défi. Le classement est figé : '
+         + 'le tirage au sort peut avoir lieu.';
+  }
+  return 'Trois nouvelles questions t\'attendent demain.';
+}
+
 function ccRienAJouer(){
   const corps = document.getElementById('cc-corps');
   const fini = !ccEtat.defiOuvert;
-  const restent = (ccEtat.questionsOuvertes || 0) - (ccEtat.questionsJouees || 0);
 
   // Avant le premier jour, il n'y a rien a jouer et rien a rattraper : on annonce
   // la date d'ouverture plutot que de feliciter quelqu'un qui n'a rien fait.
-  const pasEncore = ccEtat.aujourdhui < ccEtat.premierJour;
+  // Encore faut-il qu'aucune question ne soit ouverte : sinon le joueur vient
+  // justement d'y repondre, et cette phrase lui donnerait tort.
+  const pasEncore = ccEtat.aujourdhui < ccEtat.premierJour
+                 && (ccEtat.questionsOuvertes || 0) === 0;
   if(pasEncore){
     corps.innerHTML = '<div class="cc-verdict"><b>Le défi commence le '
       + ccJourLabel(ccEtat.premierJour) + '.</b><br>'
@@ -4684,9 +4701,7 @@ function ccRienAJouer(){
     + (fini ? 'Le défi est terminé.' : 'Tu es à jour.')
     + '</b><br>' + (fini
       ? 'Le classement est figé, le tirage au sort peut avoir lieu.'
-      : (ccEtat.aujourdhui === ccEtat.dernierJour
-          ? 'Tu as répondu à toutes les questions du défi.'
-          : 'Trois nouvelles questions t\'attendent demain.'))
+      : ccSuite())
     + '</div>';
 
   html += '<div class="cc-verdict" style="border-left-color:var(--border);">'
@@ -4980,12 +4995,7 @@ async function ccBilanJour(jour){
   if(!retard){
     // C'est la journee en cours qui dit s'il reste des questions a venir, pas
     // celle qu'on vient de boucler : le retardataire a deja joue celle du jour.
-    if(ccEtat.aujourdhui >= ccEtat.dernierJour){
-      html += '<div class="cc-verdict">Tu as joué la dernière journée du défi. '
-            + 'Le classement est figé : le tirage au sort peut avoir lieu.</div>';
-    } else {
-      html += '<div class="cc-verdict">Trois nouvelles questions t\'attendent demain.</div>';
-    }
+    html += '<div class="cc-verdict">' + ccSuite() + '</div>';
   }
 
   html += ccBlocLot();
