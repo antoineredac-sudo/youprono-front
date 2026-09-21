@@ -1775,6 +1775,36 @@
     font-family:'Oswald',sans-serif; color:var(--gold); font-size:16px;
     flex:0 0 auto; white-space:nowrap;
   }
+  .cc-affiche{
+    display:flex; align-items:center; gap:6px; overflow:hidden;
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:18px 0 18px 18px; margin:2px 0 16px;
+    background-image:linear-gradient(120deg,rgba(218,31,61,.24),rgba(218,31,61,0) 58%);
+  }
+  .cc-aff-txt{ flex:1; }
+  .cc-dates{
+    font-size:9.5px; font-weight:700; letter-spacing:1.6px; color:var(--gold);
+  }
+  .cc-nom{
+    font-family:'Oswald',sans-serif; font-weight:600;
+    font-size:clamp(16px,4.6vw,21px);
+    line-height:1.06; letter-spacing:.02em; margin-top:7px;
+  }
+  .cc-nom em{
+    font-style:normal; color:var(--red); display:block; margin:1px 0;
+    font-size:clamp(20px,6.2vw,26px); white-space:nowrap;
+  }
+  .cc-gain{ margin-top:11px; font-size:12px; font-weight:600; color:var(--gold); line-height:1.35; }
+  .cc-photo{ position:relative; flex:0 0 36%; max-width:142px; min-width:104px; }
+  .cc-photo::before{
+    content:''; position:absolute; left:46%; top:50%; transform:translate(-50%,-50%);
+    width:178px; height:170px; border-radius:50%;
+    background:radial-gradient(ellipse at center,rgba(232,185,35,.30),rgba(232,185,35,0) 68%);
+  }
+  .cc-photo img{
+    position:relative; width:100%; height:auto; display:block; margin-right:-8px;
+    filter:drop-shadow(0 8px 16px rgba(0,0,0,.45));
+  }
   .cc-titre{
     font-family:'Oswald',sans-serif; font-size:24px; letter-spacing:.02em;
     text-align:center; margin:4px 0 2px;
@@ -3084,8 +3114,17 @@
     </section>
     <section id="view-culture-club" class="view" style="display:none;">
       <div id="cc-vignette"></div>
-      <div class="cc-titre">CULTURE CLUB</div>
-      <div class="cc-sous" id="cc-sous">Le défi de la trêve</div>
+      <div class="cc-affiche">
+        <div class="cc-aff-txt">
+          <div class="cc-dates" id="cc-dates">DU 23 SEPT. AU 4 OCT.</div>
+          <div class="cc-nom">TESTE TA<em>CULTURE CLUB</em>DU PSG</div>
+          <div class="cc-gain">1 T-shirt du PSG<br>à gagner</div>
+        </div>
+        <div class="cc-photo">
+          <img src="maillot-psg.png" alt="T-shirt du PSG à gagner">
+        </div>
+      </div>
+      <div class="cc-sous" id="cc-sous">3 questions par jour</div>
 
       <div class="tab-switch">
         <button id="cc-onglet-defi" class="active" onclick="ccOuvrirOnglet('defi')">Le défi du jour</button>
@@ -4531,10 +4570,6 @@ async function goToCultureClub(){
     if(!json.success || !json.data) throw new Error('etat');
     ccEtat = json.data;
     ccSecondes = ccEtat.secondes || 15;
-
-    document.getElementById('cc-sous').textContent =
-      'Le défi de la trêve · 3 questions par jour du '
-      + ccJourLabel(ccEtat.premierJour) + ' au ' + ccJourLabel(ccEtat.dernierJour);
 
     // Les questions ouvertes et pas encore jouees, les plus anciennes d'abord :
     // le retardataire rattrape dans l'ordre, sans avoir a choisir son jour.
