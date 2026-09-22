@@ -1889,6 +1889,11 @@
   .cc-bilan-n span{ font-size:17px; font-weight:600; color:var(--text-dim); }
   .cc-bilan-s{ font-size:14px; color:var(--text); margin-top:10px; line-height:1.5; }
   .cc-bilan-s b{ color:var(--vert); }
+  .cc-presse{
+    text-align:center; font-size:12.5px; line-height:1.5; color:var(--text-dim);
+    margin:11px 4px 0;
+  }
+  .cc-presse b{ color:var(--red); font-weight:600; }
   button.cc-second{
     width:100%; background:transparent; border:1px solid var(--border);
     color:var(--text-dim); border-radius:10px; padding:14px; font-size:15px;
@@ -4588,7 +4593,9 @@ let ccFile = [];
 let ccQuestion = null;
 let ccChrono = null;
 let ccDebut = 0;
-let ccSecondes = 15;
+// La durée est donnée par le serveur : c'est lui qui tient le chrono. Cette
+// valeur n'est qu'un filet, le temps que l'état du défi arrive.
+let ccSecondes = 20;
 let ccRepondu = false;
 // La journee que le joueur vient de boucler, le temps d'un ecran : elle commande
 // le bouton du verdict et l'ecran de bilan qui suit.
@@ -4627,7 +4634,7 @@ async function goToCultureClub(){
     const json = await res.json();
     if(!json.success || !json.data) throw new Error('etat');
     ccEtat = json.data;
-    ccSecondes = ccEtat.secondes || 15;
+    ccSecondes = ccEtat.secondes || 20;
 
     // Les questions ouvertes et pas encore jouees, les plus anciennes d'abord :
     // le retardataire rattrape dans l'ordre, sans avoir a choisir son jour.
@@ -4773,6 +4780,14 @@ function ccAccueil(){
                              : 'Lancer la première question');
   go.onclick = ccSuivante;
   corps.appendChild(go);
+
+  // La dernière chose lue avant le clic. Elle prévient et elle explique
+  // pourquoi : le temps ne sert pas qu'à presser, il départage.
+  const presse = document.createElement('div');
+  presse.className = 'cc-presse';
+  presse.innerHTML = '<b>Attention, il faut être rapide.</b> À égalité de points, '
+                   + 'c\'est le chrono qui départage.';
+  corps.appendChild(presse);
 
   const lot = document.createElement('div');
   lot.innerHTML = ccBlocLot();
@@ -4995,8 +5010,8 @@ function ccVerdict(d, choix){
     texte = '<b>Bonne réponse.</b> ' + d.points + ' point' + (d.points > 1 ? 's' : '')
           + ', en ' + ccTemps(d.tempsMs) + '.';
   } else if(d.correct && d.horsDelai){
-    texte = '<b>Bonne réponse, mais hors délai.</b> Les 15 secondes étaient passées : '
-          + 'aucun point pour celle-là.';
+    texte = '<b>Bonne réponse, mais hors délai.</b> Les ' + ccSecondes
+          + ' secondes étaient passées : aucun point pour celle-là.';
   } else if(choix < 0){
     texte = '<b>Temps écoulé.</b> Aucun point.' + rappel;
   } else {
