@@ -4121,6 +4121,9 @@ async function loadHomeMatch(){
     document.getElementById('home-no-match').style.display = 'none';
     document.getElementById('home-match-card').style.display = 'block';
     currentMatch = match;
+    // Le prochain match vient d'arriver : si l'écran du défi est déjà ouvert,
+    // sa vignette était vide, on la redessine maintenant qu'on a de quoi.
+    try{ ccVignette(); }catch(e){}
     document.getElementById('match-home-name').textContent = match.homeTeam.name;
     document.getElementById('match-away-name').textContent = match.awayTeam.name;
     document.getElementById('match-home-maillot').innerHTML = maillotHtml(match.homeTeam.name);
@@ -4608,7 +4611,9 @@ async function goToCultureClub(){
   document.getElementById('cc-chargement').textContent = 'Chargement du défi…';
   document.getElementById('cc-corps').style.display = 'none';
   ccOuvrirOnglet('defi', true);
-  ccVignette();
+  // Ceinture et bretelles : rien de ce qui précède le chargement du défi ne doit
+  // pouvoir l'empêcher d'avoir lieu.
+  try{ ccVignette(); }catch(e){}
 
   try{
     const res = await fetch(`${API_BASE}/UserMatch/Quiz/Etat/${getUserId()}`);
@@ -4636,13 +4641,23 @@ async function goToCultureClub(){
 
 // La vignette du prochain match reste visible : le défi occupe la trêve, il ne
 // remplace pas le jeu.
+// Au rechargement de la page, le routeur peut ouvrir cet écran AVANT que la
+// ligne « let currentMatch » du bas du fichier n'ait été exécutée. Y toucher
+// lève alors une erreur, et comme goToCultureClub appelle la vignette avant son
+// try, le défi restait bloqué sur « Chargement du défi… ». La vignette n'est
+// qu'une décoration : elle ne doit jamais empêcher le jeu de s'afficher.
+function ccMatchCourant(){
+  try{ return currentMatch || null; }catch(e){ return null; }
+}
+
 function ccVignette(){
   const bloc = document.getElementById('cc-vignette');
   if(!bloc) return;
-  if(!currentMatch){ bloc.innerHTML = ''; return; }
-  const affiche = teamLabel(currentMatch.homeTeam, 'PSG') + ' – '
-                + teamLabel(currentMatch.awayTeam, 'Adversaire');
-  const kickoff = new Date(currentMatch.dateTime);
+  const m = ccMatchCourant();
+  if(!m){ bloc.innerHTML = ''; return; }
+  const affiche = teamLabel(m.homeTeam, 'PSG') + ' – '
+                + teamLabel(m.awayTeam, 'Adversaire');
+  const kickoff = new Date(m.dateTime);
   const jours = Math.max(0, Math.ceil((kickoff.getTime() - Date.now()) / 86400000));
   const quand = kickoff.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
   bloc.innerHTML = '<div class="cc-match"><span>Prochain match · <b>'
