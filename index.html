@@ -3171,7 +3171,7 @@
       <div id="cc-vignette"></div>
       <div class="cc-affiche">
         <div class="cc-aff-txt">
-          <div class="cc-dates" id="cc-dates">DU 23 SEPT. AU 4 OCT.</div>
+          <div class="cc-dates" id="cc-dates">DU 22 SEPT. AU 4 OCT.</div>
           <div class="cc-nom">TESTE TA<em>CULTURE CLUB</em>DU PSG</div>
           <div class="cc-gain">1 T-shirt du PSG<br>à gagner</div>
         </div>
@@ -3934,7 +3934,7 @@ function isPsgSide(t){
 }
 
 function formatMatchDate(d){
-  const jour = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  const jour = dateFr(d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' }));
   const heure = d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
   return jour + ' · ' + heure;
 }
@@ -4157,8 +4157,8 @@ async function loadHomeMatch(){
 
       predictionsDeadline = new Date(matchKickoff.getTime() - CLOTURE_AVANT_MS);
       // « à 18:45 » plutôt que « · 18:45 » : c'est une phrase, pas une fiche.
-      const jourCloture = predictionsDeadline.toLocaleDateString('fr-FR',
-        { weekday:'long', day:'numeric', month:'long' });
+      const jourCloture = dateFr(predictionsDeadline.toLocaleDateString('fr-FR',
+        { weekday:'long', day:'numeric', month:'long' }));
       const heureCloture = predictionsDeadline.toLocaleTimeString('fr-FR',
         { hour:'2-digit', minute:'2-digit' });
       document.getElementById('deadline-note').textContent =
@@ -4207,7 +4207,7 @@ async function loadHomeMatch(){
       document.getElementById('home-calendar-label').style.display = 'block';
       document.getElementById('home-calendar').innerHTML = rest.map(m => {
         const d = new Date(m.dateTime);
-        const dateLabel = d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+        const dateLabel = dateFr(d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' }));
         // L'heure du coup d'envoi : elle indique aussi au joueur quand ses pronos
         // fermeront, puisque la clôture tombe deux heures avant.
         const timeLabel = d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
@@ -4583,7 +4583,7 @@ function renderCompoNote(d, prediction){
 
 
 // ===== LE DEFI CULTURE CLUB DE LA TREVE (21 septembre 2026) =====
-// Trois questions par jour, du 23 septembre au 2 octobre. Le site ne connait
+// Trois questions par jour, du 22 septembre au 2 octobre. Le site ne connait
 // jamais la bonne reponse a l'avance : il demande la question au serveur, qui
 // declenche son chrono, et renvoie le verdict apres coup. Le compte a rebours
 // affiche ici n'est qu'un decor honnete : c'est l'horloge du serveur qui compte.
@@ -4605,11 +4605,20 @@ const CC_JOURS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','same
 const CC_MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août',
                  'septembre','octobre','novembre','décembre'];
 
+// En français, le premier jour du mois se dit « 1er » : Intl écrit « 1 ».
+// On rhabille sa sortie, sans toucher au 11, au 21 ni au 31.
+function dateFr(texte){
+  return String(texte).replace(/(^|[^0-9])1(?=\s)/, function(m, avant){
+    return avant + '1er';
+  });
+}
+
 function ccJourLabel(iso){
   const p = String(iso || '').split('-');
   if(p.length !== 3) return iso || '';
   const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
-  return CC_JOURS[d.getDay()] + ' ' + d.getDate() + ' ' + CC_MOIS[d.getMonth()];
+  return CC_JOURS[d.getDay()] + ' ' + (d.getDate() === 1 ? '1er' : d.getDate())
+       + ' ' + CC_MOIS[d.getMonth()];
 }
 
 function ccTemps(ms){
@@ -4684,7 +4693,7 @@ function ccVignette(){
   const jours = Math.max(0, Math.round((jourMatch - jourDit) / 86400000));
   const compte = jours === 0 ? 'Aujourd\'hui' : (jours === 1 ? 'Demain' : 'J-' + jours);
 
-  const quand = kickoff.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
+  const quand = dateFr(kickoff.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' }));
   bloc.innerHTML = '<div class="cc-match" role="button" onclick="switchView(\'home\')">'
     + '<span>Prochain match · <b>' + echapper(affiche) + '</b> · ' + quand + '</span>'
     + '<span class="j">' + compte + '</span><i class="fl">›</i></div>';
@@ -6777,8 +6786,8 @@ function messageInvitation(lien, code, nomGroupe){
   if(ouvert){
     const affiche = teamLabel(currentMatch.homeTeam, 'Domicile') + ' – '
                   + teamLabel(currentMatch.awayTeam, 'Extérieur');
-    const jour = predictionsDeadline.toLocaleDateString('fr-FR',
-      { weekday:'long', day:'numeric', month:'long' });
+    const jour = dateFr(predictionsDeadline.toLocaleDateString('fr-FR',
+      { weekday:'long', day:'numeric', month:'long' }));
     const heure = predictionsDeadline.toLocaleTimeString('fr-FR',
       { hour:'2-digit', minute:'2-digit' });
     phrase = `J'ai créé ${groupe} pour ${affiche}, tu peux jouer jusqu'au ${jour} `
@@ -7841,7 +7850,7 @@ async function loadGroupCalendar(seasonLength, played){
       const d = new Date(m.dateTime);
       return `
         <div class="calendar-row${joue ? ' calendar-joue' : ''}">
-          <span class="calendar-date">${d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' })}</span>
+          <span class="calendar-date">${dateFr(d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' }))}</span>
           <span class="calendar-teams">${m.homeTeam.name} – ${m.awayTeam.name}</span>
           <span class="calendar-time">${joue ? 'joué' : d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}</span>
         </div>`;
@@ -7859,14 +7868,14 @@ async function loadGroupCalendar(seasonLength, played){
         : manquants + ' autres matchs viendront clore le mini-championnat, leurs dates ne sont pas encore connues.';
     } else {
       const fin = new Date(matchs[matchs.length - 1].dateTime);
-      const finLong = fin.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+      const finLong = dateFr(fin.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' }));
       deadlineEl.innerHTML = (matchs.length === 1)
         ? 'Le classement sera définitif après ce match, le <strong>' + finLong + '</strong>.'
         : 'Le classement sera définitif le <strong>' + finLong + '</strong>, après le dernier match.';
 
       // La date de fin remonte dans la ligne de saison : elle reste visible
       // même quand l'onglet Calendrier est fermé.
-      const finCourt = fin.toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
+      const finCourt = dateFr(fin.toLocaleDateString('fr-FR', { day:'numeric', month:'long' }));
       // La date de fin est déjà dans l'onglet Calendrier : la répéter ici
       // alourdissait la ligne pour rien.
       seasonEl.textContent = groupSeasonBaseLabel;
@@ -7943,7 +7952,7 @@ async function chargerParticipation(g){
                   + teamLabel(ouvert.awayTeam, 'Extérieur');
 
     const cloture = new Date(new Date(ouvert.dateTime).getTime() - CLOTURE_AVANT_MS);
-    const jour = cloture.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+    const jour = dateFr(cloture.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' }));
     const heure = cloture.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
 
     let html = '<div class="part"><div class="part-head">'
@@ -8263,7 +8272,7 @@ async function loadDashboard(){
       historyEl.innerHTML = '<div class="placeholder">Aucun match pronostiqué pour l\'instant.</div>';
     } else {
       historyEl.innerHTML = history.map(h => {
-        const dateLabel = new Date(h.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+        const dateLabel = dateFr(new Date(h.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short' }));
         const scoreLabel = h.score ? fmtNote(h.score) : 'en attente';
         // On prend d'abord le nom trouvé dans le calendrier, puis celui livré
         // avec l'historique, et en dernier recours la date seule plutôt qu'un
