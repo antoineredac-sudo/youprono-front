@@ -6763,7 +6763,7 @@ function messageInvitation(lien, code, nomGroupe){
   const nom = (nomGroupe || '').trim();
   const groupe = nom ? ('le groupe « ' + nom + ' »') : 'un groupe';
 
-  const intro = `J'ai trouvé un petit jeu qui va animer nos soirées PSG. On pronostique `
+  const intro = `J'ai trouvé un super jeu pour animer nos soirées PSG. On pronostique `
               + `le onze d'Enrique, la possession, les tirs, les fautes, les centres et le `
               + `score. En fin de match, `
               + `tes prédictions sont comparées aux vraies stats pour te donner une note.`;
@@ -6788,7 +6788,7 @@ function messageInvitation(lien, code, nomGroupe){
   }
 
   return `${intro} ${phrase}\n`
-       + `${lien}\n\n`
+       + `${lien}\n`
        + `Code du groupe : ${code}`;
 }
 
