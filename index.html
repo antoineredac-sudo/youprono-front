@@ -1779,6 +1779,13 @@
     font-family:'Oswald',sans-serif; color:var(--gold); font-size:16px;
     flex:0 0 auto; white-space:nowrap;
   }
+  /* La vignette mène à l'accueil, où se trouve le match : elle doit se voir
+     cliquable, sinon personne ne l'essaie. */
+  .cc-match{ cursor:pointer; transition:border-color .15s, background .15s; }
+  .cc-match:hover{ border-color:var(--gold); background:var(--surface-raised); }
+  .cc-match:active{ background:var(--surface); }
+  .cc-match .fl{ color:var(--text-dim); font-size:17px; font-style:normal;
+    flex:0 0 auto; margin-left:-4px; }
   .cc-affiche{
     display:flex; align-items:center; gap:6px; overflow:hidden;
     background:var(--surface); border:1px solid var(--border); border-radius:14px;
@@ -4660,11 +4667,29 @@ function ccVignette(){
   const affiche = teamLabel(m.homeTeam, 'PSG') + ' – '
                 + teamLabel(m.awayTeam, 'Adversaire');
   const kickoff = new Date(m.dateTime);
-  const jours = Math.max(0, Math.ceil((kickoff.getTime() - Date.now()) / 86400000));
+
+  // On compte des jours de calendrier, pas des tranches de 24 heures. Un match
+  // le 10 octobre à 21 h vu le 22 septembre au matin, c'est J-18 : l'ancien
+  // calcul arrondissait les dix-huit jours et treize heures à dix-neuf.
+  const jourMatch = new Date(kickoff.getFullYear(), kickoff.getMonth(), kickoff.getDate());
+  const maintenant = new Date();
+  const jourDit = new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate());
+  const jours = Math.max(0, Math.round((jourMatch - jourDit) / 86400000));
+  const compte = jours === 0 ? 'Aujourd\'hui' : (jours === 1 ? 'Demain' : 'J-' + jours);
+
   const quand = kickoff.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
-  bloc.innerHTML = '<div class="cc-match"><span>Prochain match · <b>'
-    + echapper(affiche) + '</b> · ' + quand + '</span><span class="j">J-' + jours + '</span></div>';
+  bloc.innerHTML = '<div class="cc-match" role="button" onclick="switchView(\'home\')">'
+    + '<span>Prochain match · <b>' + echapper(affiche) + '</b> · ' + quand + '</span>'
+    + '<span class="j">' + compte + '</span><i class="fl">›</i></div>';
 }
+
+// Le compte à rebours vieillit si la page reste ouverte : on le redessine quand
+// le joueur revient à l'onglet, pour qu'il ne lise pas J-18 un jour plus tard.
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState !== 'visible') return;
+  const vue = document.getElementById('view-culture-club');
+  if(vue && getComputedStyle(vue).display !== 'none'){ try{ ccVignette(); }catch(e){} }
+});
 
 function ccOuvrirOnglet(nom, sansCharger){
   const defi = nom !== 'classement';
@@ -4761,9 +4786,12 @@ function ccRienAJouer(){
   // Avant le premier jour, il n'y a rien a jouer et rien a rattraper : on annonce
   // la date d'ouverture plutot que de feliciter quelqu'un qui n'a rien fait.
   // Encore faut-il qu'aucune question ne soit ouverte : sinon le joueur vient
-  // justement d'y repondre, et cette phrase lui donnerait tort.
-  const pasEncore = ccEtat.aujourdhui < ccEtat.premierJour
-                 && (ccEtat.questionsOuvertes || 0) === 0;
+  // justement d'y répondre, et cette phrase lui donnerait tort.
+  // On regarde les journées, pas le compteur « questionsOuvertes » : celui-ci
+  // compte les questions ouvertes ET NON JOUÉES, il retombe donc à zéro dès que
+  // le joueur a tout répondu — et la phrase « reviens le 23 » réapparaissait.
+  const riensOuvert = !(ccEtat.jours || []).some(j => j.ouvert);
+  const pasEncore = ccEtat.aujourdhui < ccEtat.premierJour && riensOuvert;
   if(pasEncore){
     corps.innerHTML = '<div class="cc-verdict"><b>Le défi commence le '
       + ccJourLabel(ccEtat.premierJour) + '.</b><br>'
