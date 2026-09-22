@@ -1687,9 +1687,12 @@
   .gplace.vide{ color:#4a63a8; }
   .ranking-rank.top{ color:var(--gold); }
 
-  /* Tout le monde figure au classement : la note de forfait a remplacé le seuil
-     de participation, un absent voit sa moyenne baisser et non son nom grisé. */
+  /* Tout le monde figure au classement, et personne n'en est sorti. Mais une
+     moyenne calculée sur un ou deux matchs ne vaut pas celle d'un joueur qui a
+     tenu la distance : sous trois matchs, le pseudo perd son or et la position
+     est dite virtuelle. L'absent, lui, est déjà puni par sa note de forfait. */
   .rt-name.assidu{ color:var(--gold); font-weight:600; }
+  .rt-name.virtuel{ color:#8b99d0; font-weight:500; }
   .ranking-name{ flex:1; font-size:15px; margin-right:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
   .ranking-score{ width:28px; text-align:right; font-family:'Oswald',sans-serif; font-size:16px; color:var(--gold); }
   .ranking-pas-joue{ font-size:13px; color:var(--text-dim); }
@@ -3381,7 +3384,7 @@
         <p class="profil-def" id="profil-def"></p>
 
         <div id="profil-voisinage"></div>
-        <p class="profil-def" id="profil-regle">Plus tu participes, plus tu augmentes tes chances de bien figurer au classement. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
+        <p class="profil-def" id="profil-regle">Il faut avoir joué au moins 3 matchs pour que ta position au classement ne soit plus virtuelle. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
         <button class="profil-tout" onclick="goToRanking()">Tout le classement</button>
 
         <div class="dash-history-label" style="margin-top:24px;">mon historique</div>
@@ -3444,7 +3447,7 @@
 
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div id="ranking-table"></div>
-      <p class="ranking-note" id="ranking-regle" style="display:none;">Plus tu participes, plus tu augmentes tes chances de bien figurer au classement. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
+      <p class="ranking-note" id="ranking-regle" style="display:none;">Il faut avoir joué au moins 3 matchs pour que ta position au classement ne soit plus virtuelle. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
     </section>
     <section id="view-match-ranking" class="view" style="display:none;">
       <h2 class="play-title">CLASSEMENT DU MATCH</h2>
@@ -3548,7 +3551,7 @@
 
         <div class="faq-item">
           <div class="faq-q">Puis-je m'inscrire en cours de jeu ?</div>
-          <p class="faq-a">Bien sûr, tu es le bienvenu à tout moment du jeu. Tu pourras prouver ta valeur au classement de la note record dès les premiers matchs. Tu peux te faire une place au classement général dès ta première participation, mais il faudra être assidu et régulier sur les matchs suivants pour maintenir ta position. N'oublie pas qu'il existe aussi une vraie compétition au sein des groupes qui permet de décrocher des trophées.</p>
+          <p class="faq-a">Bien sûr, tu es le bienvenu à tout moment du jeu. Tu pourras prouver ta valeur au classement de la note record dès les premiers matchs. Ta position au classement général reste virtuelle tant que tu n'as pas joué trois matchs — le temps que ta moyenne veuille dire quelque chose. Passé ce cap, ton pseudo s'affiche en doré et ta place est acquise, à toi de la tenir. N'oublie pas qu'il existe aussi une vraie compétition au sein des groupes qui permet de décrocher des trophées.</p>
         </div>
 
         <div class="faq-item">
@@ -7214,7 +7217,7 @@ async function chargerVoisinage(tab){
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
         <span class="rt-rank">${ordinal(u.rank)}</span>
-        <span class="rt-name assidu">${u.userName}</span>
+        <span class="${classePseudo(u, tab)}">${u.userName}</span>
         <span class="rt-mvt">${fleche(u)}</span>
         <span class="rt-games">${assiduite(u)}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
@@ -7539,6 +7542,23 @@ function courbeDesNotes(history){
 // « 3/3 » plutôt que « 3 » : le nombre de matchs joués ne dit rien sans le
 // nombre de matchs qu'il y avait à jouer depuis l'inscription du joueur. Si le
 // serveur ne renvoie pas le total, on retombe sur le compte seul.
+// Trois matchs : en dessous, une moyenne tient plus du coup de chance que de
+// l'expertise, et les premieres places reviendraient mecaniquement a ceux qui
+// ont le moins joue. Le seuil ne vaut que pour le coef expert : la note record
+// se gagne des le premier match, et les classements par categorie ne comptent
+// que les matchs reellement joues.
+const CLASSEMENT_MATCHS_MINI = 3;
+
+function positionAcquise(u){
+  return (u && typeof u.games === 'number') ? u.games >= CLASSEMENT_MATCHS_MINI : true;
+}
+
+// La classe du pseudo : or pour celui dont la place est acquise, gris pour
+// celui dont elle ne l'est pas encore.
+function classePseudo(u, tab){
+  return (tab === 'final' && !positionAcquise(u)) ? 'rt-name virtuel' : 'rt-name assidu';
+}
+
 function assiduite(u){
   const total = u.attendanceTotal;
   const joues = (u.attendancePlayed !== undefined && u.attendancePlayed !== null)
@@ -7653,7 +7673,7 @@ async function loadRanking(tab){
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
         <span class="rt-rank">${ordinal(u.rank)}</span>
-        <span class="rt-name assidu">${u.userName}</span>
+        <span class="${classePseudo(u, tab)}">${u.userName}</span>
         <span class="rt-mvt">${fleche(u)}</span>
         <span class="rt-games">${assiduite(u)}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
