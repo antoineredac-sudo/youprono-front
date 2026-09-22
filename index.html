@@ -7981,6 +7981,27 @@ let relanceEnAttente = null;
 // Le message part sur WhatsApp, la ou le capitaine a invite ses amis. On ne
 // nomme personne : le message atterrit dans la conversation de groupe, et
 // designer les retardataires par leur nom serait une humiliation publique.
+// L'adresse nue du site est en mémoire chez WhatsApp avec un aperçu vide —
+// constaté le 22 septembre 2026, souvenir du temps où elle affichait la page
+// d'attente d'OVH. La relance partait donc sans visuel, alors que c'est le
+// message qui en a le plus besoin : il s'adresse à des joueurs qui traînent, à
+// quelques heures de la clôture. On accroche la date de clôture à l'adresse :
+// une adresse différente à chaque match, donc un aperçu redemandé à chaque
+// fois. Le jeu ignore ce paramètre et personne ne le voit.
+// Les autres partages n'ont pas ce souci : ils portent déjà ?groupe=CODE.
+function lienRelance(){
+  let cle = '';
+  try{
+    if(predictionsDeadline){
+      cle = String(predictionsDeadline.getFullYear())
+          + String(predictionsDeadline.getMonth() + 1).padStart(2, '0')
+          + String(predictionsDeadline.getDate()).padStart(2, '0');
+    }
+  }catch(e){}
+  if(!cle){ cle = String(Date.now()).slice(-8); }
+  return siteBaseUrl() + '?r=' + cle;
+}
+
 function relancerLesAbsents(){
   const d = relanceEnAttente;
   if(!d) return;
@@ -7989,8 +8010,8 @@ function relancerLesAbsents(){
   // un de plus. Un ami qui s'y met ajoute donc vraiment un point a tous ceux
   // qui finissent devant lui — la phrase n'est pas une formule, elle est juste.
   const texte = 'Plus on est nombreux à jouer, plus on marque de points, '
-    + 'mais tu n\'as pas encore fait tes prédictions pour ' + d.affiche + ', '
-    + 'clôture ' + d.jour + ' à ' + d.heure + ' : ' + siteBaseUrl();
+    + 'sois cool, fais tes prédictions pour ' + d.affiche + ', '
+    + 'clôture ' + d.jour + ' à ' + d.heure + ' : ' + lienRelance();
   window.location.href = 'https://wa.me/?text=' + encodeURIComponent(texte);
 }
 
