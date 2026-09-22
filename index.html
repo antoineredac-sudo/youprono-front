@@ -4632,7 +4632,9 @@ async function goToCultureClub(){
 
     document.getElementById('cc-chargement').style.display = 'none';
     document.getElementById('cc-corps').style.display = 'block';
-    ccSuivante();
+    // On n'ouvre plus la première question tout seul : le chrono du serveur
+    // partait pendant que le joueur découvrait la page. Il la lance lui-même.
+    ccAccueil();
   }catch(e){
     document.getElementById('cc-chargement').textContent =
       "Le défi n'est pas disponible pour l'instant. Réessaie dans un instant.";
@@ -4692,6 +4694,64 @@ function ccSuite(){
          + 'le tirage au sort peut avoir lieu.';
   }
   return 'Trois nouvelles questions t\'attendent demain.';
+}
+
+// L'écran d'arrivée sur le défi. Il annonce la journée et ne lance rien : le
+// chrono du serveur démarre au clic sur le bouton, pas à l'ouverture de la page.
+function ccAccueil(){
+  const corps = document.getElementById('cc-corps');
+  if(!ccEtat || !ccEtat.defiOuvert || !ccFile.length){ ccRienAJouer(); return; }
+
+  const q = ccFile[0];
+  // Trois situations, et non deux : le jour même, le rattrapage d'un jour passé,
+  // et l'avance — les questions du 23 sont ouvertes depuis le 21 au soir.
+  const duJour = q.jour === ccEtat.aujourdhui;
+  const enRetard = q.jour < ccEtat.aujourdhui;
+  const jour = (ccEtat.jours || []).find(j => j.date === q.jour);
+  const toutes = jour ? (jour.questions || []) : [];
+  const restantes = ccFile.filter(f => f.jour === q.jour).length;
+  const total = toutes.length || restantes;
+  const dejaFaites = total - restantes;
+  const enJeu = toutes.filter(x => !x.jouee).reduce((t, x) => t + (x.points || 0), 0);
+
+  const titre = ccJourLabel(q.jour);
+  let html = '<div class="cc-bilan">'
+    + '<div class="cc-bilan-h">' + titre + '</div>'
+    + '<div class="cc-bilan-n">' + restantes + ' <span>question'
+    + (restantes > 1 ? 's' : '') + (dejaFaites ? ' de plus' : '') + '</span></div>'
+    + '<div class="cc-bilan-s">'
+    + (dejaFaites
+        ? 'Tu en as déjà joué ' + dejaFaites + ' sur ' + total + '. '
+        : '')
+    + ccSecondes + ' secondes chacune, ' + enJeu + ' point'
+    + (enJeu > 1 ? 's' : '') + ' en jeu.</div></div>';
+
+  if(enRetard){
+    html += '<div class="cc-retard">Tu rattrapes le ' + ccJourLabel(q.jour)
+          + '. Ces questions comptent autant que celles du jour.</div>';
+  } else if(!duJour){
+    html += '<div class="cc-retard">Ce sont les questions du ' + ccJourLabel(q.jour)
+          + ', ouvertes en avance.</div>';
+  }
+
+  html += '<div class="cc-verdict" style="border-left-color:var(--border);">'
+       + 'Le chrono ne part qu\'au moment où tu appuies. Une fois lancé, il ne '
+       + 's\'arrête plus : réponds sans quitter la page.</div>';
+
+  corps.innerHTML = html;
+
+  const go = document.createElement('button');
+  go.className = 'cta-play';
+  go.style.marginTop = '14px';
+  go.textContent = dejaFaites ? 'Reprendre le défi'
+                 : (enRetard ? 'Rattraper le ' + ccJourLabel(q.jour)
+                             : 'Lancer la première question');
+  go.onclick = ccSuivante;
+  corps.appendChild(go);
+
+  const lot = document.createElement('div');
+  lot.innerHTML = ccBlocLot();
+  corps.appendChild(lot);
 }
 
 function ccRienAJouer(){
@@ -4807,9 +4867,12 @@ function ccAfficherQuestion(){
   for(let i = 1; i <= 3; i++){ html += '<i class="' + (i <= rang ? 'on' : '') + '"></i>'; }
   html += '</div>';
 
-  if(!jourDuJour){
+  if(q.jour < ccEtat.aujourdhui){
     html += '<div class="cc-retard">Tu rattrapes les questions du '
           + ccJourLabel(q.jour) + '. Elles comptent autant que celles du jour.</div>';
+  } else if(!jourDuJour){
+    html += '<div class="cc-retard">Question du ' + ccJourLabel(q.jour)
+          + ', ouverte en avance.</div>';
   }
 
   html += '<div class="cc-regle">' + ccSecondes + ' secondes par question · '
@@ -5022,9 +5085,11 @@ async function ccBilanJour(jour){
   if(retard){
     const rattraper = document.createElement('button');
     rattraper.className = 'cta-play';
-    rattraper.textContent = (ccFile[0].jour === ccEtat.aujourdhui)
-      ? 'Jouer les questions du jour'
-      : 'Rattraper le ' + ccJourLabel(ccFile[0].jour);
+    rattraper.textContent = (ccFile[0].jour < ccEtat.aujourdhui)
+      ? 'Rattraper le ' + ccJourLabel(ccFile[0].jour)
+      : (ccFile[0].jour === ccEtat.aujourdhui
+          ? 'Jouer les questions du jour'
+          : 'Jouer les questions du ' + ccJourLabel(ccFile[0].jour));
     rattraper.onclick = ccSuivante;
     barre.appendChild(rattraper);
   }
