@@ -2275,7 +2275,12 @@
      L'en-tete reprend au pixel pres les gouttieres et les largeurs de la ligne,
      sinon l'icone flotte a cote de sa colonne au lieu de la coiffer. */
   .rt-entete{ display:flex; align-items:center; gap:3px; padding:0 8px 5px;
-              pointer-events:none; }
+              pointer-events:none; font-family:'Oswald',sans-serif; font-size:9px;
+              font-weight:500; letter-spacing:1px; text-transform:uppercase;
+              color:var(--text-dim); }
+  /* Chaque titre est centre sur sa case, donc sur la colonne de chiffres qui
+     tombe dessous. La note, elle, se cale a droite comme ses nombres. */
+  .rt-entete .titre{ text-align:center; }
   .rt-entete .creux{ flex:1; }
   .rt-entete .rt-badges{ display:flex; justify-content:center; }
   .rt-entete svg{ display:block; }
@@ -3483,10 +3488,10 @@
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div class="rt-entete" id="ranking-entete" style="display:none;">
         <span class="creux"></span>
-        <span style="width:26px"></span>
-        <span class="rt-badges" aria-label="badges débloqués"><svg width="12" height="16" viewBox="0 0 76 100" aria-hidden="true"><path d="M38 6 70 19v28c0 20-13 35-32 43C19 84 6 67 6 47V19z" fill="#6EC1B4"/></svg></span>
-        <span style="width:30px"></span>
-        <span style="width:48px"></span>
+        <span class="titre" style="width:26px" aria-label="ballons remportés">B</span>
+        <span class="rt-badges" id="entete-badges" aria-label="badges débloqués"><svg width="12" height="16" viewBox="0 0 76 100" aria-hidden="true"><path d="M38 6 70 19v28c0 20-13 35-32 43C19 84 6 67 6 47V19z" fill="#6EC1B4"/></svg></span>
+        <span class="titre" style="width:30px" aria-label="matchs joués">M</span>
+        <span class="titre" style="width:48px">Coef</span>
       </div>
       <div id="ranking-table"></div>
       <p class="ranking-note" id="ranking-regle" style="display:none;">Il faut avoir joué au moins 3 matchs pour que ta position au classement ne soit plus virtuelle. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
@@ -7761,12 +7766,15 @@ async function loadRanking(tab){
     document.getElementById('ranking-regle').style.display =
       (tab === 'final') ? 'block' : 'none';
 
-    // Seul le coef expert porte le compte des badges : les classements par
-    // categorie et la note record n'en renvoient pas.
+    // L'en-tete ne sert qu'au coef expert : les classements par categorie et
+    // la note record n'ont ni ballons, ni badges.
     const entete = document.getElementById('ranking-entete');
-    if(entete){
-      entete.style.display = (tab === 'final' && liste.some(u => u.badges > 0))
-        ? 'flex' : 'none';
+    if(entete){ entete.style.display = (tab === 'final') ? 'flex' : 'none'; }
+    // L'ecusson ne coiffe la colonne des badges que s'il y a des badges a
+    // coiffer -- tant que le serveur ne les renvoie pas, la case reste nue.
+    const ecusson = document.getElementById('entete-badges');
+    if(ecusson){
+      ecusson.style.visibility = liste.some(u => u.badges > 0) ? 'visible' : 'hidden';
     }
 
     cadrerClassement(boite);
