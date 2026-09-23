@@ -1117,6 +1117,17 @@
     cursor:pointer;
   }
   .salon-choix-ligne span{ color:var(--red); font-weight:600; }
+  /* Le tournoi qui accepte encore du monde : une mention discrète, en doré,
+     sous son nom. C'est lui qu'on met en tête (23 septembre 2026). */
+  .salon-choix-ligne small{
+    display:block; color:var(--gold); font-size:11px;
+    font-weight:400; margin-top:2px;
+  }
+  .salon-choix-tous{
+    display:block; text-align:center; padding:10px 0 4px;
+    border-top:1px solid var(--border);
+    color:var(--text-dim); font-size:13px; cursor:pointer;
+  }
 
   .salon-entete{
     background:var(--surface);
@@ -5470,6 +5481,32 @@ async function salonEtatDuMatch(match){
   }catch(e){ return 'closed'; }
 }
 
+// Combien de tournois tiennent sur la page du prochain match. Au-delà, la page
+// du match disparaissait sous la liste des tournois (23 septembre 2026).
+const SALON_MAX_TOURNOIS = 3;
+
+// Un tournoi accepte encore du monde tant que les prédictions de son prochain
+// match ne sont pas closes. Le serveur donne l'heure, le site la compare.
+function inscriptionsOuvertes(g){
+  if(!g || !g.inscriptionsFermeture) return false;
+  const t = Date.parse(g.inscriptionsFermeture.endsWith('Z')
+    ? g.inscriptionsFermeture : g.inscriptionsFermeture + 'Z');
+  return !isNaN(t) && t > Date.now();
+}
+
+// En tête, le tournoi qui accepte encore des inscriptions : c'est celui dont on
+// veut partager le code maintenant, et il serait absurde qu'il soit le seul
+// invisible. Derrière, les plus anciens d'abord : cinq matchs pour tous, donc
+// le plus vieux est le plus près de son dénouement.
+function classerPourAccueil(liste){
+  return liste.slice().sort((a, b) => {
+    const oa = inscriptionsOuvertes(a) ? 0 : 1;
+    const ob = inscriptionsOuvertes(b) ? 0 : 1;
+    if(oa !== ob) return oa - ob;
+    return (Date.parse(a.createdDate) || 0) - (Date.parse(b.createdDate) || 0);
+  });
+}
+
 async function refreshHomeSalon(courant, precedent){
   const bloc = document.getElementById('home-salon');
   if(!bloc) return;
@@ -5514,8 +5551,15 @@ async function refreshHomeSalon(courant, precedent){
       </div>`;
   }
 
-  if(salonMesGroupes.length === 1){
-    const g = salonMesGroupes[0];
+  // L'ordre de l'accueil : celui qui accepte encore des inscriptions d'abord,
+  // puis les plus anciens -- les plus avancés dans leurs cinq matchs, donc ceux
+  // dont l'issue se rapproche. On n'en garde que trois (Antoine, 23 septembre).
+  const montrables = classerPourAccueil(salonMesGroupes);
+  const visibles = montrables.slice(0, SALON_MAX_TOURNOIS);
+  const caches = montrables.length - visibles.length;
+
+  if(visibles.length === 1){
+    const g = visibles[0];
     bloc.innerHTML = perso + `
       <div class="salon-cta${dore}" onclick="goToSalon('${g.id}','${cible.id}')">
         <div class="salon-cta-info">
@@ -5525,16 +5569,22 @@ async function refreshHomeSalon(courant, precedent){
         <span class="salon-cta-fleche">Voir →</span>
       </div>`;
   } else {
-    const lignes = salonMesGroupes.map(g => `
+    const lignes = visibles.map(g => `
       <div class="salon-choix-ligne" onclick="goToSalon('${g.id}','${cible.id}')">
-        <em style="font-style:normal;">${g.name}</em>
+        <em style="font-style:normal;">${g.name}${
+          inscriptionsOuvertes(g) ? '<small>Inscriptions ouvertes</small>' : ''}</em>
         <span>Voir →</span>
       </div>`).join('');
+
+    const tous = caches > 0
+      ? `<span class="salon-choix-tous" onclick="goToGroups()">Voir tous mes tournois (${montrables.length})</span>`
+      : '';
 
     bloc.innerHTML = perso + `
       <div class="salon-choix${dore}">
         <div class="salon-choix-titre">${libelle}</div>
         ${lignes}
+        ${tous}
       </div>`;
   }
 
@@ -6964,7 +7014,7 @@ function messageRefusInscription(code, pseudo){
   if(code === -5) return pseudo + ' est déjà dans ce tournoi.';
   if(code === -6) return 'Ton tournoi est au complet : onze joueurs, pas un de plus.';
   if(code === -7) return 'Trop tard : les inscriptions de ce tournoi sont fermées.';
-  if(code === -3) return 'Seul le créateur du tournoi peut inscrire des joueurs.';
+  if(code === -3) return 'Il faut être membre du tournoi pour y inscrire quelqu\'un.';
   return "On n'a pas réussi à inscrire " + pseudo + '.';
 }
 
@@ -8579,17 +8629,18 @@ async function openGroupDetail(groupId){
     document.getElementById('group-complet-box').style.display = complet ? 'block' : 'none';
 
     // Le bouton qui ouvre le classement general pour y choisir des joueurs :
-    // au createur seul, et tant que la table n'est pas pleine. Le serveur
-    // revérifie les deux, plus la clôture, à chaque inscription.
-    const jeSuisLeCreateur = g.creatorId && getUserId()
-      && String(g.creatorId).toLowerCase() === String(getUserId()).toLowerCase();
+    // a tous les membres du tournoi, et tant que la table n'est pas pleine.
+    // (23 septembre 2026 : il etait reserve au createur. Un tournoi prive est
+    // une table d'amis -- chacun y amene qui il veut, la porte n'est fermee
+    // qu'aux inconnus de la liste publique.) Le serveur reverifie l'appartenance
+    // et la cloture a chaque inscription.
     tournoiAInscrire = {
       id: g.id || groupId,
       name: g.name,
       membres: (g.ranking || []).map(m => m.userId || m.id)
     };
     const btnIns = document.getElementById('btn-inscrire');
-    if(btnIns){ btnIns.style.display = (jeSuisLeCreateur && !complet) ? 'block' : 'none'; }
+    if(btnIns){ btnIns.style.display = complet ? 'none' : 'block'; }
 
     // Un tournoi d'une seule personne n'a ni classement, ni record, ni calendrier
     // qui vaillent : on affichait un classement d'un joueur, un « record du
