@@ -4032,9 +4032,11 @@ function restoreRoute(brut){
     // les afficher sans elle laissait une vitrine vide au rafraîchissement.
     else if(nom === 'trophies'){ goToTrophies(); }
     else if(nom === 'faq' || nom === 'group-join' || nom === 'legal'){ switchView(nom); }
-    // Le bouton « Créer un tournoi » du courriel de résultat (20 septembre 2026) :
-    // l'écran de nommage, puis WhatsApp avec l'invitation une fois le tournoi créé.
-    else if(nom === 'creer-groupe'){ goToGroups(); }
+    // La salle des tournois, ou mene le bouton des courriels. Deux chemins pour
+    // une seule page : « tournois », qu'on ecrit desormais, et « creer-groupe »,
+    // qui dort dans les courriels partis le 21 septembre et qu'on honore sans
+    // plus jamais l'ecrire (23 septembre 2026).
+    else if(nom === 'tournois' || nom === 'creer-groupe'){ goToGroups(); }
     // L'accueil est une destination comme les autres : sans cette ligne, le
     // bouton « précédent » qui y ramène ne faisait rien, et le clic suivant
     // sortait du site.
