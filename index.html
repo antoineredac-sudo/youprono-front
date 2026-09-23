@@ -1349,6 +1349,56 @@
   .tn-prive{ color:#8b99d0; font-size:11px; font-family:'Oswald',sans-serif;
              letter-spacing:1px; text-transform:uppercase; }
 
+  /* La liste des joueurs a inscrire : le classement general, en plus sobre.
+     Une ligne, un bouton, et la ligne du createur soulignee de rouge pour qu'il
+     se repere sans compter. */
+  .ins-ligne{
+    display:flex; align-items:center; gap:9px; background:var(--surface);
+    border:1px solid var(--border); border-radius:10px; padding:10px 12px;
+    margin-bottom:7px;
+  }
+  .ins-ligne.moi{ border-color:var(--red); }
+  .ins-rang{ width:34px; color:var(--text-dim); font-family:'Oswald',sans-serif;
+             font-size:13px; flex:0 0 auto; }
+  .ins-nom{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;
+            white-space:nowrap; font-size:14.5px; }
+  .ins-note{ color:var(--gold); font-family:'Oswald',sans-serif; font-size:14px;
+             flex:0 0 auto; }
+  .ins-bouton{
+    background:var(--red); color:#fff; border:none; border-radius:8px;
+    padding:8px 13px; font-family:'Oswald',sans-serif; font-size:12.5px;
+    font-weight:600; text-transform:uppercase; letter-spacing:.04em;
+    flex:0 0 auto; cursor:pointer;
+  }
+  .ins-bouton:disabled{ opacity:.55; }
+  .ins-etat{ flex:0 0 auto; color:#8b99d0; font-size:11px;
+             font-family:'Oswald',sans-serif; letter-spacing:1px;
+             text-transform:uppercase; }
+  /* La confirmation, en place de la ligne : on ne quitte pas la liste pour
+     repondre a une question de cinq mots. */
+  .ins-demande{
+    border:1.5px solid var(--gold); border-radius:10px; padding:13px 14px;
+    margin-bottom:7px; text-align:center;
+  }
+  .ins-demande p{ color:var(--text); font-size:14px; line-height:1.5;
+                  margin-bottom:11px; }
+  .ins-choix{ display:flex; gap:9px; }
+  .ins-choix button{ flex:1; border-radius:8px; padding:11px;
+    font-family:'Oswald',sans-serif; font-size:13.5px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.04em; cursor:pointer; border:none; }
+  .ins-oui{ background:var(--red); color:#fff; }
+  .ins-non{ background:transparent; border:1.5px solid var(--border) !important;
+            color:var(--text-dim); }
+
+  /* Le bandeau qui annonce une inscription faite par quelqu'un d'autre. */
+  .annonce-tournoi{
+    border:1px solid var(--gold); border-radius:12px; padding:15px 16px;
+    margin-bottom:16px; text-align:center;
+  }
+  .annonce-tournoi p{ color:var(--text); font-size:14.5px; line-height:1.55; }
+  .annonce-tournoi .lien{ display:block; color:var(--text-dim); font-size:13px;
+                          margin-top:11px; cursor:pointer; }
+
   /* ===== LA SALLE DES TOURNOIS ===== */
   .tn-sect{
     font-family:'Oswald',sans-serif; font-size:12px; letter-spacing:1.6px;
@@ -2766,6 +2816,10 @@
     <section id="view-home" class="view">
       <div class="kop-rappel" id="home-kop-rappel" style="display:none;" onclick="ouvrirMonKop()"></div>
 
+      <!-- Quelqu'un l'a inscrit a un tournoi pendant son absence : on le lui dit
+           ici, une fois, et on n'y revient plus (23 septembre 2026). -->
+      <div id="annonces-tournois"></div>
+
       <!-- Celui qui vient d'entrer dans un tournoi par un lien d'invitation :
            il atterrit sur le match, pas sur la liste de ses coequipiers, et ce
            bandeau lui dit qu'il est bien dans le tournoi (18 septembre 2026). -->
@@ -3161,6 +3215,14 @@
       <span class="small-link" style="margin-top:14px;"
             onclick="switchView('group-join')">J'ai un code d'invitation</span>
     </section>
+    <section id="view-inscrire" class="view" style="display:none;">
+      <h2 class="play-title" id="inscrire-titre">INSCRIRE DES JOUEURS</h2>
+      <span class="back-link" onclick="retourDuTournoi()">← Retour au tournoi</span>
+      <p class="groups-intro" id="inscrire-intro">Le classement général, à ta place.
+        Choisis qui tu veux voir à ta table : le joueur est inscrit aussitôt et
+        l'apprendra à sa prochaine visite.</p>
+      <div id="inscrire-liste"><div class="placeholder">Chargement…</div></div>
+    </section>
     <section id="view-group-create" class="view" style="display:none;">
       <h2 class="play-title">CRÉER UN TOURNOI</h2>
       <div class="groupe-complet-note" id="group-create-notice" style="display:none;"></div>
@@ -3264,6 +3326,8 @@
           <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01c-1.52 0-3.01-.41-4.31-1.18l-.31-.18-3.2.84.85-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.23-8.23 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.75.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29"/></svg>
           <span>Partager sur WhatsApp</span>
         </button>
+        <button class="cta-play" id="btn-inscrire" style="margin-top:11px;display:none;"
+                onclick="ouvrirInscription()">Inscrire des joueurs du jeu</button>
         <button class="cta-x" onclick="shareGroupOnX()">
           <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           <span>Partager sur X</span>
@@ -6795,6 +6859,158 @@ async function goToGroups(){
   await enterGroupsScreen();
 }
 
+// ===== INSCRIRE DES JOUEURS DU JEU =====
+// Le createur va chercher quelqu'un dans le classement general. L'inscrit n'a
+// rien a accepter : il l'apprend a sa prochaine visite et peut partir d'un
+// doigt. Demander une autorisation aurait mis le createur en position de se
+// faire refuser, et l'autre en attente d'une reponse qui ne vient pas.
+let tournoiAInscrire = null;   // { id, name, membres:[ids] }
+
+function retourDuTournoi(){
+  if(tournoiAInscrire){ openGroupDetail(tournoiAInscrire.id); }
+  else { goToGroups(); }
+}
+
+async function ouvrirInscription(){
+  if(!tournoiAInscrire) return;
+  switchView('inscrire');
+  const cible = document.getElementById('inscrire-liste');
+  cible.innerHTML = '<div class="placeholder">Chargement…</div>';
+  document.getElementById('inscrire-titre').textContent =
+    (tournoiAInscrire.name || 'Inscrire des joueurs').toUpperCase();
+
+  try{
+    const liste = await ensureRanking('final');
+    const moi = getUserId();
+    const dedans = new Set((tournoiAInscrire.membres || [])
+      .map(x => (x || '').toLowerCase()));
+
+    cible.innerHTML = liste.map(u => {
+      const estMoi = (u.id || '').toLowerCase() === (moi || '').toLowerCase();
+      const dejaLa = dedans.has((u.id || '').toLowerCase());
+      const action = (estMoi || dejaLa)
+        ? '<span class="ins-etat">' + (estMoi ? 'Toi' : 'Inscrit') + '</span>'
+        : '<button class="ins-bouton" onclick="demanderInscription(this, \''
+          + u.id + '\', \'' + echapper(u.userName).replace(/'/g, "&#39;") + '\')">Inscrire</button>';
+      return '<div class="ins-ligne' + (estMoi ? ' moi' : '') + '" id="ins-' + u.id + '">'
+           + '<span class="ins-rang">' + ordinal(u.rank) + '</span>'
+           + '<span class="ins-nom">' + echapper(u.userName) + '</span>'
+           + '<span class="ins-note">' + fmtNote(u.score) + '</span>'
+           + action + '</div>';
+    }).join('');
+
+    // Centre sur sa propre place : c'est autour d'elle qu'il choisit.
+    const maLigne = document.getElementById('ins-' + moi);
+    if(maLigne){ maLigne.scrollIntoView({ block:'center' }); }
+  }catch(e){
+    cible.innerHTML = '<div class="placeholder">Impossible de charger le classement.</div>';
+  }
+}
+
+// La question se pose a la place de la ligne : on ne quitte pas la liste pour
+// repondre par oui ou non.
+function demanderInscription(bouton, id, pseudo){
+  const ligne = document.getElementById('ins-' + id);
+  if(!ligne) return;
+  ligne.dataset.avant = ligne.innerHTML;
+  ligne.className = 'ins-demande';
+  ligne.innerHTML = '<p>Inscrire <strong>' + pseudo + '</strong> à ton tournoi ?</p>'
+    + '<div class="ins-choix">'
+    + '<button class="ins-non" onclick="annulerInscription(\'' + id + '\')">Non</button>'
+    + '<button class="ins-oui" onclick="confirmerInscription(\'' + id + '\', \''
+    + pseudo.replace(/'/g, "&#39;") + '\')">Inscrire</button></div>';
+}
+
+function annulerInscription(id){
+  const ligne = document.getElementById('ins-' + id);
+  if(!ligne || !ligne.dataset.avant) return;
+  ligne.className = 'ins-ligne';
+  ligne.innerHTML = ligne.dataset.avant;
+}
+
+async function confirmerInscription(id, pseudo){
+  const ligne = document.getElementById('ins-' + id);
+  if(!ligne || !tournoiAInscrire) return;
+  ligne.innerHTML = '<p>Un instant…</p>';
+
+  try{
+    const res = await fetch(`${API_BASE}/Group/Inscrire/${tournoiAInscrire.id}/`
+                          + `${getUserId()}/${id}`, { method:'POST' });
+    const json = await res.json();
+    if(json.success && json.data){
+      (tournoiAInscrire.membres = tournoiAInscrire.membres || []).push(id);
+      ligne.className = 'ins-ligne';
+      ligne.innerHTML = '<span class="ins-rang"></span>'
+        + '<span class="ins-nom">' + pseudo + '</span>'
+        + '<span class="ins-etat">Inscrit</span>';
+      return;
+    }
+    const code = (json.data && json.data.code) || json.code;
+    ligne.className = 'ins-demande';
+    ligne.innerHTML = '<p>' + messageRefusInscription(code, pseudo) + '</p>'
+      + '<div class="ins-choix"><button class="ins-non" '
+      + 'onclick="ouvrirInscription()">Fermer</button></div>';
+  }catch(e){
+    ligne.className = 'ins-demande';
+    ligne.innerHTML = '<p>On n\'a pas réussi à l\'inscrire. Réessaie dans un instant.</p>'
+      + '<div class="ins-choix"><button class="ins-non" '
+      + 'onclick="ouvrirInscription()">Fermer</button></div>';
+  }
+}
+
+function messageRefusInscription(code, pseudo){
+  if(code === -5) return pseudo + ' est déjà dans ce tournoi.';
+  if(code === -6) return 'Ton tournoi est au complet : onze joueurs, pas un de plus.';
+  if(code === -7) return 'Trop tard : les inscriptions de ce tournoi sont fermées.';
+  if(code === -3) return 'Seul le créateur du tournoi peut inscrire des joueurs.';
+  return "On n'a pas réussi à inscrire " + pseudo + '.';
+}
+
+// ===== CE QU'ON ANNONCE AU JOUEUR QUI REVIENT =====
+// Quelqu'un l'a inscrit a un tournoi pendant son absence. On le lui dit une
+// fois, sur l'accueil, et on n'y revient plus.
+async function annoncerLesInscriptions(){
+  const userId = getUserId();
+  if(!userId) return;
+  const cible = document.getElementById('annonces-tournois');
+  if(!cible) return;
+
+  try{
+    const res = await fetch(`${API_BASE}/Group/Annonces/${userId}`);
+    const json = await res.json();
+    const liste = (json.success && json.data) ? json.data : [];
+    if(liste.length === 0){ cible.innerHTML = ''; return; }
+
+    cible.innerHTML = liste.map(a =>
+      '<div class="annonce-tournoi" id="annonce-' + a.groupId + '">'
+      + '<p><strong>' + echapper(a.parrainName) + '</strong> t\'a inscrit au tournoi '
+      + '<strong>' + echapper(a.groupName) + '</strong>'
+      + (a.memberCount > 1 ? ' — vous êtes ' + a.memberCount + ' à la table.' : '.')
+      + '</p>'
+      + '<button class="cta-play" onclick="voirTournoiAnnonce(\'' + a.groupId + '\')">'
+      + 'Voir le tournoi</button>'
+      + '<span class="lien" onclick="fermerAnnonce(\'' + a.groupId + '\')">Plus tard</span>'
+      + '</div>').join('');
+  }catch(e){ cible.innerHTML = ''; }
+}
+
+async function marquerAnnonceVue(groupId){
+  try{
+    await fetch(`${API_BASE}/Group/AnnonceVue/${getUserId()}/${groupId}`, { method:'POST' });
+  }catch(e){}
+}
+
+function fermerAnnonce(groupId){
+  const el = document.getElementById('annonce-' + groupId);
+  if(el) el.remove();
+  marquerAnnonceVue(groupId);
+}
+
+function voirTournoiAnnonce(groupId){
+  marquerAnnonceVue(groupId);
+  openGroupDetail(groupId);
+}
+
 // ===== LA SALLE DES TOURNOIS =====
 // Deux listes : ceux qu'on peut encore rejoindre, avec l'heure a laquelle la
 // porte se ferme, et ceux qui se jouent deja, avec leur meneur. Les seconds ne
@@ -7217,6 +7433,10 @@ async function createNamedGroup(){
 // Le bloc se montre des que l'accueil est en mode normal : le joueur qui vient
 // de jouer est justement celui qui a le plus envie d'entrainer ses amis.
 function majInvitationAccueil(){
+  // Les inscriptions faites par d'autres s'annoncent a chaque passage sur
+  // l'accueil : le serveur ne renvoie que celles qu'il n'a pas encore lues.
+  try{ annoncerLesInscriptions(); }catch(e){}
+
   const boite = document.getElementById('home-invite-box');
   if(!boite) return;
   boite.style.display = (homeMode === 'normal') ? 'block' : 'none';
@@ -8355,6 +8575,19 @@ async function openGroupDetail(groupId){
     const complet = (g.ranking || []).length >= GROUPE_MAX_MEMBRES;
     document.getElementById('group-invite-box').style.display = complet ? 'none' : 'block';
     document.getElementById('group-complet-box').style.display = complet ? 'block' : 'none';
+
+    // Le bouton qui ouvre le classement general pour y choisir des joueurs :
+    // au createur seul, et tant que la table n'est pas pleine. Le serveur
+    // revérifie les deux, plus la clôture, à chaque inscription.
+    const jeSuisLeCreateur = g.creatorId && getUserId()
+      && String(g.creatorId).toLowerCase() === String(getUserId()).toLowerCase();
+    tournoiAInscrire = {
+      id: g.id || groupId,
+      name: g.name,
+      membres: (g.ranking || []).map(m => m.userId || m.id)
+    };
+    const btnIns = document.getElementById('btn-inscrire');
+    if(btnIns){ btnIns.style.display = (jeSuisLeCreateur && !complet) ? 'block' : 'none'; }
 
     // Un tournoi d'une seule personne n'a ni classement, ni record, ni calendrier
     // qui vaillent : on affichait un classement d'un joueur, un « record du
