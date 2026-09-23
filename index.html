@@ -1921,6 +1921,8 @@
   }
   .cc-row.moi{ border-color:var(--gold); }
   .cc-r{ font-family:'Oswald',sans-serif; font-size:16px; width:24px; color:var(--text-dim); }
+  /* Les cinq premiers du defi entrent au tirage au sort : c'est cette regle,
+     et non un podium, que l'or doit dire ici (23 septembre 2026). */
   .cc-r.top{ color:var(--gold); }
   .cc-n{ flex:1; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .cc-row.moi .cc-n{ font-weight:600; }
@@ -4614,6 +4616,10 @@ let ccRepondu = false;
 // le bouton du verdict et l'ecran de bilan qui suit.
 let ccJourAcheve = null;
 
+// Les cinq premiers du classement entrent au tirage au sort du T-shirt : le
+// chiffre de leur rang s'affiche en dore, les suivants restent en gris.
+const CC_PLACES_TIRAGE = 5;
+
 const CC_JOURS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 const CC_MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août',
                  'septembre','octobre','novembre','décembre'];
@@ -5190,7 +5196,7 @@ async function ccChargerClassement(){
 
     d.lignes.forEach(l => {
       html += '<div class="cc-row' + (l.moi ? ' moi' : '') + '">'
-            + '<span class="cc-r' + (l.rang <= 3 ? ' top' : '') + '">' + l.rang + '</span>'
+            + '<span class="cc-r' + (l.rang <= CC_PLACES_TIRAGE ? ' top' : '') + '">' + l.rang + '</span>'
             + '<span class="cc-n">' + echapper(l.displayName) + '</span>'
             + '<span class="cc-t">' + ccTemps(l.tempsMs) + '</span>'
             + '<span class="cc-s">' + l.points + '</span></div>';
