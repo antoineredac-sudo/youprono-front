@@ -3156,6 +3156,7 @@
     </section>
     <section id="view-group-detail" class="view" style="display:none;">
       <h2 class="play-title" id="group-detail-name">GROUPE</h2>
+      <span class="back-link" onclick="goToGroups()">← Retour aux tournois</span>
       <!-- Seul le créateur du groupe peut le renommer : le lien n'apparaît
            qu'à lui, et le serveur revérifie de son côté. -->
       <span class="small-link" id="group-rename-link" style="display:none;margin-top:12px;"
@@ -3226,7 +3227,7 @@
           <span>Partager sur X</span>
         </button>
       </div>
-      <span class="small-link" id="group-back-link" onclick="goToGroups()">← Retour à mes groupes</span>
+      <span class="small-link" id="group-back-link" onclick="goToGroups()">← Retour aux tournois</span>
       <span class="small-link" style="margin-top:8px;" onclick="leaveGroup()">Quitter le groupe</span>
     </section>
     <section id="view-compo" class="view" style="display:none;">
@@ -6728,6 +6729,8 @@ function majLibelleGroupes(n){
   if(titre){ titre.textContent = "TOURNOIS"; }
   const retour = document.getElementById('group-back-link');
   if(retour){ retour.textContent = '← Retour aux tournois'; }
+  // pluriel ne sert plus au libelle du retour : il reste lu ailleurs.
+  void pluriel;
 }
 
 // Compte ses groupes d'amis, kops exclus. Appele a l'entree dans le jeu pour que
