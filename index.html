@@ -1642,7 +1642,7 @@
 
   .picto{ width:18px; height:18px; vertical-align:-4px; }
   .picto-titre{ width:22px; height:22px; vertical-align:-4px; margin-right:4px; opacity:.85; }
-  .rt-mvt{ width:30px; text-align:right; flex:0 0 auto; }
+  .rt-mvt{ width:22px; text-align:right; flex:0 0 auto; }
   /* Le classement d'un groupe. Les marges ont ete resserrees le 17 septembre
      2026 pour loger les cinq colonnes des places : 8px aux deux bords de
      l'encadre, 4px entre le rang et le pseudo. */
@@ -2229,8 +2229,8 @@
     position:relative;
     display:flex;
     align-items:center;
-    gap:10px;
-    padding:10px 12px;
+    gap:4px;
+    padding:10px 8px;
     border-radius:8px;
     background:var(--bg);
     border:1px solid var(--border);
@@ -2249,25 +2249,32 @@
   .ranking-table-row.me{ border-color:var(--red); }
   /* Trente pixels depuis le 17 septembre 2026 : le rang s'ecrit en ordinal
      (1er, 2e, 3e) et « 12e » ne tenait pas dans vingt-six. */
-  .rt-rank{ width:30px; color:var(--text-dim); font-family:'Oswald',sans-serif; }
-  .rt-rank .ord{ font-size:10px; }
+  .rt-rank{ width:23px; color:var(--text-dim); font-family:'Oswald',sans-serif; }
+  .rt-rank .ord{ font-size:9px; }
   .rt-name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .rt-games{ width:50px; text-align:right; color:var(--text-dim); font-size:12px; }
+  .rt-games{ width:32px; text-align:right; color:var(--text-dim); font-size:12px; }
+
+  /* Le ballon du mini-championnat : le plus precieux metal remporte, et le
+     nombre de ballons dans le disque. Rien tant que le joueur n'en a aucun --
+     une case vide vaut mieux qu'un zero, qui soulignerait ce qui manque. */
+  .rt-ballon{ width:26px; flex:0 0 auto; display:flex; align-items:center;
+              justify-content:center; }
+  .rt-ballon svg{ display:block; }
 
   /* Les badges debloques. Le turquoise est celui du premier niveau de la
      vitrine : il ne se confondra pas avec l'or, l'argent ou le bronze des
      ballons, qui prendront place dans cette meme ligne. */
-  .rt-badges{ width:38px; text-align:right; color:#6EC1B4; font-size:12px;
+  .rt-badges{ width:40px; text-align:right; color:#6EC1B4; font-size:12px;
               font-variant-numeric:tabular-nums; }
   /* L'ecusson ne se repete pas a chaque ligne : il coiffe la colonne, une fois.
      L'en-tete reprend au pixel pres les gouttieres et les largeurs de la ligne,
      sinon l'icone flotte a cote de sa colonne au lieu de la coiffer. */
-  .rt-entete{ display:flex; align-items:center; gap:10px; padding:0 13px 5px;
+  .rt-entete{ display:flex; align-items:center; gap:4px; padding:0 9px 5px;
               pointer-events:none; }
   .rt-entete .creux{ flex:1; }
   .rt-entete .rt-badges{ display:flex; justify-content:flex-end; }
   .rt-entete svg{ display:block; }
-  .rt-score{ width:60px; text-align:right; font-family:'Oswald',sans-serif; color:var(--gold); }
+  .rt-score{ width:50px; text-align:right; font-family:'Oswald',sans-serif; color:var(--gold); }
 
   /* --- FAQ --- */
   .faq-list{ margin-top:16px; }
@@ -3471,10 +3478,11 @@
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div class="rt-entete" id="ranking-entete" style="display:none;">
         <span class="creux"></span>
-        <span style="width:30px"></span>
+        <span style="width:23px"></span>
+        <span style="width:22px"></span>
         <span class="rt-badges" aria-label="badges débloqués"><svg width="12" height="16" viewBox="0 0 76 100" aria-hidden="true"><path d="M38 6 70 19v28c0 20-13 35-32 43C19 84 6 67 6 47V19z" fill="#6EC1B4"/></svg></span>
+        <span style="width:32px"></span>
         <span style="width:50px"></span>
-        <span style="width:60px"></span>
       </div>
       <div id="ranking-table"></div>
       <p class="ranking-note" id="ranking-regle" style="display:none;">Il faut avoir joué au moins 3 matchs pour que ta position au classement ne soit plus virtuelle. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
@@ -7578,6 +7586,39 @@ function classePseudo(u, tab){
 // encore. Le serveur ne renvoie ce compte que pour le coef expert.
 const BADGES_TOTAL = 24;
 
+// ===== LE BALLON DU CLASSEMENT =====
+// Un seul ballon par joueur : celui du metal le plus precieux qu'il ait
+// remporte, avec le nombre de ballons ecrit dedans. Les teintes sont celles
+// de la vitrine des trophees -- elles doivent rester identiques, c'est a ce
+// metal que le joueur reconnait son propre palmares.
+const BALLON_METAUX = {
+  or:        { teinte:'#E8B923', ombre:'#A87F12' },
+  argent:    { teinte:'#C9CDD4', ombre:'#8B929C' },
+  bronze:    { teinte:'#B87333', ombre:'#7A4A1C' },
+  cuir:      { teinte:'#8A5A2B', ombre:'#5E3C1B' },
+  baudruche: { teinte:'#D98CA8', ombre:'#A55C78' }
+};
+
+function ballonHtml(u){
+  const n = (u && typeof u.balls === 'number') ? u.balls : 0;
+  const metal = BALLON_METAUX[(u && u.ballMetal) ? u.ballMetal : ''];
+  if(n <= 0 || !metal) return '';
+
+  // Le chiffre se pose sur le metal. Le bronze et le cuir sont sombres : on y
+  // ecrit en clair, sinon le nombre se perd dans le ballon.
+  const sombre = (u.ballMetal === 'bronze' || u.ballMetal === 'cuir');
+  const encre = sombre ? '#FFF6E0' : '#0b2265';
+  return '<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">'
+       + '<circle cx="12" cy="12" r="11" fill="' + metal.teinte + '"/>'
+       + '<path d="M12 4.8l4.2 3.1-1.6 5H9.4l-1.6-5z" fill="' + metal.ombre + '" fill-opacity="0.55"/>'
+       + '<path d="M3.4 13.1l3 2.2-.8 3" fill="none" stroke="' + metal.ombre
+       + '" stroke-opacity="0.5" stroke-width="1.2"/>'
+       + '<path d="M20.6 13.1l-3 2.2.8 3" fill="none" stroke="' + metal.ombre
+       + '" stroke-opacity="0.5" stroke-width="1.2"/>'
+       + '<text x="12" y="16.4" text-anchor="middle" font-family="Oswald" '
+       + 'font-size="12.5" font-weight="700" fill="' + encre + '">' + n + '</text></svg>';
+}
+
 function badgesTexte(u){
   const n = (u && typeof u.badges === 'number') ? u.badges : 0;
   return n > 0 ? (n + '/' + BADGES_TOTAL) : '';
@@ -7699,6 +7740,7 @@ async function loadRanking(tab){
         <span class="rt-rank">${ordinal(u.rank)}</span>
         <span class="${classePseudo(u, tab)}">${u.userName}</span>
         <span class="rt-mvt">${fleche(u)}</span>
+        <span class="rt-ballon">${ballonHtml(u)}</span>
         <span class="rt-badges">${badgesTexte(u)}</span>
         <span class="rt-games">${assiduite(u)}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
