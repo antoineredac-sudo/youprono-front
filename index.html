@@ -1326,6 +1326,29 @@
   .group-card-name{ font-family:'Oswald',sans-serif; font-size:17px; font-weight:600; }
   .group-card-meta{ color:var(--text-dim); font-size:13px; margin-top:2px; }
 
+  /* Le choix de la porte, a la creation : deux cases qu'on prend d'un doigt.
+     Une liste deroulante aurait cache la seconde option. */
+  .tn-portes{ display:flex; flex-direction:column; gap:9px; margin-top:6px; }
+  .tn-porte{
+    display:flex; align-items:flex-start; gap:11px; text-align:left;
+    background:var(--surface); border:1.5px solid var(--border);
+    border-radius:11px; padding:13px 14px; cursor:pointer; width:100%;
+    color:var(--text); font-family:inherit;
+  }
+  .tn-porte.choisie{ border-color:var(--gold); background:var(--surface-raised); }
+  .tn-porte .coche{
+    flex:0 0 auto; width:18px; height:18px; border-radius:50%;
+    border:2px solid var(--text-dim); margin-top:2px;
+  }
+  .tn-porte.choisie .coche{ border-color:var(--gold); background:var(--gold);
+                            box-shadow:inset 0 0 0 3px var(--surface-raised); }
+  .tn-porte-titre{ display:block; font-weight:600; font-size:14.5px; }
+  .tn-porte-dit{ display:block; color:var(--text-dim); font-size:12.5px;
+                 line-height:1.45; margin-top:3px; }
+  /* Le cadenas des tournois prives, dans la liste. */
+  .tn-prive{ color:#8b99d0; font-size:11px; font-family:'Oswald',sans-serif;
+             letter-spacing:1px; text-transform:uppercase; }
+
   /* ===== LA SALLE DES TOURNOIS ===== */
   .tn-sect{
     font-family:'Oswald',sans-serif; font-size:12px; letter-spacing:1.6px;
@@ -3138,11 +3161,29 @@
             onclick="switchView('group-join')">J'ai un code d'invitation</span>
     </section>
     <section id="view-group-create" class="view" style="display:none;">
-      <h2 class="play-title">CRÉER UN GROUPE</h2>
+      <h2 class="play-title">CRÉER UN TOURNOI</h2>
       <div class="groupe-complet-note" id="group-create-notice" style="display:none;"></div>
-      <label>Nom du groupe</label>
+      <label>Nom du tournoi</label>
       <input type="text" id="group-create-name" placeholder="Les Copains du Parc">
       <div class="field-error" id="group-create-error"></div>
+
+      <label style="margin-top:20px;">Qui peut s'y inscrire ?</label>
+      <div class="tn-portes">
+        <button type="button" class="tn-porte choisie" id="porte-ouvert"
+                onclick="choisirPorte(true)">
+          <span class="coche"></span>
+          <span><span class="tn-porte-titre">Ouvert à tous</span>
+            <span class="tn-porte-dit">Il apparaît dans la liste des tournois :
+              n'importe quel joueur peut s'y inscrire jusqu'à la clôture.</span></span>
+        </button>
+        <button type="button" class="tn-porte" id="porte-prive"
+                onclick="choisirPorte(false)">
+          <span class="coche"></span>
+          <span><span class="tn-porte-titre">Réservé à ceux qui ont le code</span>
+            <span class="tn-porte-dit">Il n'apparaît nulle part. Seuls ceux à qui
+              tu envoies le lien peuvent entrer.</span></span>
+        </button>
+      </div>
       <button class="cta-play" id="group-create-submit" style="margin-top:24px;" onclick="createNamedGroup()">Créer</button>
       <span class="small-link" onclick="switchView('groups')">Annuler</span>
     </section>
@@ -6786,6 +6827,10 @@ function carteTournoi(t, ouvert){
          + (t.meneur ? ' · en tête <span class="h">' + echapper(t.meneur) + '</span>' : '');
   }
 
+  // Le cadenas ne s'affiche que sur les siens : les tournois prives des autres
+  // ne figurent pas dans la salle.
+  if(!t.public){ meta += ' · <span class="tn-prive">privé</span>'; }
+
   let action;
   if(t.member){
     action = '<button class="tn-bouton voir" onclick="openGroupDetail(\'' + t.id + '\')">Voir</button>';
@@ -6850,7 +6895,8 @@ async function enterGroupsScreen(){
     const versLigne = (t) => ({
       id: t.id, nom: t.name, code: t.inviteCode, joueurs: t.memberCount,
       complet: !!t.full, member: !!t.member, ferme: t.closesAt,
-      matchs: t.matchesPlayed || 0, meneur: t.leader || ''
+      matchs: t.matchesPlayed || 0, meneur: t.leader || '',
+      public: t.public !== false
     });
 
     const ouverts = (d2.open || []).map(versLigne);
@@ -6944,13 +6990,25 @@ async function mesGroupesCrees(){
   }
 }
 
+// La porte du tournoi qu'on est en train de creer. Ouverte par defaut : le jeu
+// cherche du monde, et c'est l'ouverture qui remplit la salle.
+let tournoiOuvert = true;
+
+function choisirPorte(ouvert){
+  tournoiOuvert = !!ouvert;
+  const o = document.getElementById('porte-ouvert');
+  const p = document.getElementById('porte-prive');
+  if(o) o.classList.toggle('choisie', tournoiOuvert);
+  if(p) p.classList.toggle('choisie', !tournoiOuvert);
+}
+
 async function creerGroupe(nom){
   const userId = getUserId();
   try{
     const res = await fetch(`${API_BASE}/Group/Create/${userId}`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name: nom })
+      body: JSON.stringify({ name: nom, isPublic: tournoiOuvert })
     });
     const json = await res.json();
     if(!json.success || !json.data) return null;
@@ -7052,6 +7110,9 @@ function verrouille(btnId, labelId, texte){
 // boutons attendent : WhatsApp et X. Aucun depart force vers l'un des deux
 // (23 septembre 2026) -- c'est au createur de choisir.
 function creerUnGroupe(){
+  // Chaque creation repart du meme etat : sinon le choix fait la fois d'avant
+  // s'appliquerait en silence a un tournoi qui n'a rien a voir.
+  choisirPorte(true);
   document.getElementById('group-create-name').value = '';
   document.getElementById('group-create-error').classList.remove('show');
   document.getElementById('group-create-notice').style.display = 'none';
