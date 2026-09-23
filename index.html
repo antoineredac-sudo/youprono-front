@@ -1326,6 +1326,49 @@
   .group-card-name{ font-family:'Oswald',sans-serif; font-size:17px; font-weight:600; }
   .group-card-meta{ color:var(--text-dim); font-size:13px; margin-top:2px; }
 
+  /* ===== LA SALLE DES TOURNOIS ===== */
+  .tn-sect{
+    font-family:'Oswald',sans-serif; font-size:12px; letter-spacing:1.6px;
+    text-transform:uppercase; color:var(--muted, #8b99d0); font-weight:500;
+    margin:24px 0 10px; display:flex; align-items:baseline; gap:7px;
+  }
+  .tn-sect b{ color:var(--gold); font-weight:600; }
+  .tn-carte{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:13px 14px; margin-bottom:9px; display:flex; align-items:center; gap:12px;
+  }
+  /* Un tournoi commencé ne se rejoint plus : il s'efface d'un ton, sans
+     disparaître. Il dit que le jeu tourne. */
+  .tn-carte.clos{ background:rgba(20,48,111,.45); border-color:#20407f; }
+  .tn-carte.mien{ border-color:var(--gold); }
+  .tn-info{ flex:1; min-width:0; }
+  .tn-nom{
+    font-family:'Oswald',sans-serif; font-size:17px; font-weight:600;
+    color:var(--text); letter-spacing:.03em; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap;
+  }
+  .tn-carte.clos .tn-nom{ color:var(--text-dim); }
+  .tn-meta{ font-size:12.5px; color:#8b99d0; margin-top:3px; line-height:1.4; }
+  .tn-meta .h{ color:var(--gold); }
+  .tn-carte.clos .tn-meta .h{ color:var(--text-dim); }
+  .tn-bouton{
+    background:var(--red); color:#fff; border:none; border-radius:9px;
+    padding:10px 15px; font-family:'Oswald',sans-serif; font-size:13.5px;
+    font-weight:600; text-transform:uppercase; letter-spacing:.04em; flex:0 0 auto;
+    cursor:pointer;
+  }
+  .tn-bouton.voir{ background:transparent; border:1.5px solid var(--gold); color:var(--gold); }
+  .tn-bouton:disabled{ opacity:.6; }
+  .tn-etat{
+    flex:0 0 auto; color:#8b99d0; font-size:11px; font-family:'Oswald',sans-serif;
+    letter-spacing:1px; text-transform:uppercase;
+  }
+  .tn-vide{
+    border:1px solid var(--gold); border-radius:12px; padding:18px 16px;
+    text-align:center; margin-top:18px;
+  }
+  .tn-vide p{ color:var(--text); font-size:14.5px; line-height:1.6; }
+
   .group-invite-box .cta-play{ margin-top:18px; }
   .group-invite-box{
     background:var(--surface);
@@ -2667,7 +2710,7 @@
       <button data-view="culture-club" onclick="navFromMenu('culture-club')" id="menu-culture-club">Culture club</button>
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="profile" onclick="navFromMenu('profile')">Tableau de bord</button>
-      <button data-view="groups" onclick="navFromMenu('groups')" id="menu-groupes">Groupes d'amis</button>
+      <button data-view="groups" onclick="navFromMenu('groups')" id="menu-groupes">Tournois</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
       <button data-view="kops" onclick="navFromMenu('kops')" id="menu-kops">Rejoins un kop</button>
       <button data-view="trophies" onclick="navFromMenu('trophies')">Trophées</button>
@@ -3077,21 +3120,22 @@
       </div>
     </section>
     <section id="view-groups" class="view" style="display:none;">
-      <h2 class="play-title" id="groups-title">MES GROUPES D'AMIS</h2>
+      <h2 class="play-title" id="groups-title">TOURNOIS</h2>
 
-      <p class="groups-intro">Dans un groupe comme au foot, c'est 11 joueurs maximum. Cinq matchs, des points qui se cumulent rencontre après rencontre et des trophées à remporter à la fin. Plus vous êtes nombreux, plus le trophée est précieux.</p>
+      <p class="groups-intro">Cinq matchs, un vainqueur. On s'inscrit jusqu'à la clôture
+        des prédictions du prochain match — ensuite, le tournoi est fermé. Onze joueurs
+        au maximum : plus vous êtes nombreux, plus le trophée est précieux.</p>
 
-      <div id="groups-list"></div>
+      <div id="tournois-ouverts"></div>
+      <div id="tournois-encours"></div>
 
-      <div class="group-invite-box">
-        <p class="groups-pitch">The Golden Fan est un jeu entre experts du PSG, mais surtout entre amis. Invite-les via WhatsApp ou sur X et découvre une nouvelle façon de participer au jeu.</p>
-        <button class="cta-play" id="group-invite-btn" onclick="creerUnGroupe()">Créer un groupe</button>
-      </div>
+      <div id="groups-list" style="display:none;"></div>
 
-      <div class="group-invite-box">
-        <p class="groups-pitch">J'ai un code d'invitation</p>
-        <button class="cta-play" onclick="switchView('group-join')">Rejoindre un groupe</button>
-      </div>
+      <button class="cta-play" id="group-invite-btn" style="margin-top:20px;"
+              onclick="creerUnGroupe()">Créer un tournoi</button>
+
+      <span class="small-link" style="margin-top:14px;"
+            onclick="switchView('group-join')">J'ai un code d'invitation</span>
     </section>
     <section id="view-group-create" class="view" style="display:none;">
       <h2 class="play-title">CRÉER UN GROUPE</h2>
@@ -6678,12 +6722,12 @@ function majLibelleGroupes(n){
   // vaut pour celui qui n'a encore rien comme pour celui qui a cinq groupes,
   // et le menu annonce exactement ce que la page propose.
   const menu = document.getElementById('menu-groupes');
-  if(menu){ menu.textContent = "Défis entre amis"; }
+  if(menu){ menu.textContent = "Tournois"; }
 
   const titre = document.getElementById('groups-title');
-  if(titre){ titre.textContent = "DÉFIS ENTRE AMIS"; }
+  if(titre){ titre.textContent = "TOURNOIS"; }
   const retour = document.getElementById('group-back-link');
-  if(retour){ retour.textContent = pluriel ? '← Retour à mes groupes' : '← Retour à mon groupe'; }
+  if(retour){ retour.textContent = '← Retour aux tournois'; }
 }
 
 // Compte ses groupes d'amis, kops exclus. Appele a l'entree dans le jeu pour que
@@ -6704,11 +6748,133 @@ async function goToGroups(){
   await enterGroupsScreen();
 }
 
+// ===== LA SALLE DES TOURNOIS =====
+// Deux listes : ceux qu'on peut encore rejoindre, avec l'heure a laquelle la
+// porte se ferme, et ceux qui se jouent deja, avec leur meneur. Les seconds ne
+// se rejoignent pas ; ils sont la pour montrer que le jeu tourne, et pour que
+// le joueur retrouve les siens.
+function heureDeFermeture(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return '';
+  const jours = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  const maintenant = new Date();
+  const heure = d.getHours() + ' h ' + String(d.getMinutes()).padStart(2, '0');
+
+  // Dans la semaine qui vient, le jour suffit : « samedi a 17 h 00 » se situe
+  // sans effort. Au-dela, on donne la date.
+  const ecart = (d - maintenant) / 86400000;
+  if(ecart < 7){ return jours[d.getDay()] + ' à ' + heure; }
+  return dateFr(d.toLocaleDateString('fr-FR', { day:'numeric', month:'long' })) + ' à ' + heure;
+}
+
+function carteTournoi(t, ouvert){
+  const classes = 'tn-carte' + (ouvert ? '' : ' clos') + (t.member ? ' mien' : '');
+  const nom = echapper(t.nom);
+
+  let meta;
+  if(ouvert){
+    meta = t.joueurs + (t.joueurs > 1 ? ' joueurs' : ' joueur')
+         + (t.complet ? ' · complet' : '')
+         + ' · ferme <span class="h">' + heureDeFermeture(t.ferme) + '</span>';
+  } else {
+    meta = t.joueurs + (t.joueurs > 1 ? ' joueurs' : ' joueur')
+         + ' · ' + t.matchs + (t.matchs > 1 ? ' matchs joués' : ' match joué')
+         + (t.meneur ? ' · en tête <span class="h">' + echapper(t.meneur) + '</span>' : '');
+  }
+
+  let action;
+  if(t.member){
+    action = '<button class="tn-bouton voir" onclick="openGroupDetail(\'' + t.id + '\')">Voir</button>';
+  } else if(ouvert && !t.complet){
+    action = '<button class="tn-bouton" onclick="rejoindreTournoi(this, \'' + t.code + '\')">Rejoindre</button>';
+  } else if(ouvert){
+    action = '<span class="tn-etat">Complet</span>';
+  } else {
+    action = '<span class="tn-etat">Fermé</span>';
+  }
+
+  return '<div class="' + classes + '"><div class="tn-info">'
+       + '<div class="tn-nom">' + nom + '</div>'
+       + '<div class="tn-meta">' + meta + '</div></div>' + action + '</div>';
+}
+
+async function rejoindreTournoi(bouton, code){
+  const relache = verrouiller(bouton, 'Un instant…');
+  try{
+    const userId = getUserId();
+    const res = await fetch(`${API_BASE}/Group/Join/${encodeURIComponent(code)}/${userId}`,
+                            { method:'POST' });
+    const json = await res.json();
+    if(json.success && json.data){
+      openGroupDetail(json.data.id);
+      return;
+    }
+    // -4 : plus de place. -6 : la porte s'est fermée entre l'affichage et le clic.
+    const code2 = (json.data && json.data.code) || json.code;
+    relache();
+    alert(code2 === -6
+      ? "Trop tard : les inscriptions de ce tournoi viennent de fermer."
+      : "Ce tournoi n'a plus de place.");
+    enterGroupsScreen();
+  }catch(e){
+    relache();
+    alert("On n'a pas réussi à t'inscrire. Réessaie dans un instant.");
+  }
+}
+
+// Un bouton qui attend le serveur ne doit pas pouvoir être cliqué deux fois.
+function verrouiller(bouton, texte){
+  if(!bouton) return function(){};
+  const avant = bouton.textContent;
+  bouton.disabled = true;
+  bouton.textContent = texte;
+  return function(){ bouton.disabled = false; bouton.textContent = avant; };
+}
+
 async function enterGroupsScreen(){
   const userId = getUserId();
-  const list = document.getElementById('groups-list');
-  list.innerHTML = '<div class="placeholder">Chargement…</div>';
+  const zoneO = document.getElementById('tournois-ouverts');
+  const zoneC = document.getElementById('tournois-encours');
+  if(zoneO) zoneO.innerHTML = '<div class="placeholder">Chargement…</div>';
+  if(zoneC) zoneC.innerHTML = '';
 
+  try{
+    const res2 = await fetch(`${API_BASE}/Group/Tournois/${userId}`);
+    const j2 = await res2.json();
+    const d2 = (j2.success && j2.data) ? j2.data : { open:[], running:[] };
+
+    const versLigne = (t) => ({
+      id: t.id, nom: t.name, code: t.inviteCode, joueurs: t.memberCount,
+      complet: !!t.full, member: !!t.member, ferme: t.closesAt,
+      matchs: t.matchesPlayed || 0, meneur: t.leader || ''
+    });
+
+    const ouverts = (d2.open || []).map(versLigne);
+    const encours = (d2.running || []).map(versLigne);
+
+    if(zoneO){
+      zoneO.innerHTML = ouverts.length
+        ? '<div class="tn-sect">Ouverts aux inscriptions <b>' + ouverts.length + '</b></div>'
+          + ouverts.map(t => carteTournoi(t, true)).join('')
+        : '<div class="tn-vide"><p>Aucun tournoi n\'est ouvert pour l\'instant.<br>'
+          + 'Ouvre le tien : les autres joueurs pourront s\'y inscrire jusqu\'à la '
+          + 'clôture du prochain match.</p></div>';
+    }
+    if(zoneC){
+      zoneC.innerHTML = encours.length
+        ? '<div class="tn-sect">En cours <b>' + encours.length + '</b></div>'
+          + encours.map(t => carteTournoi(t, false)).join('')
+        : '';
+    }
+
+    majLibelleGroupes(ouverts.concat(encours).filter(t => t.member).length);
+  }catch(e){
+    if(zoneO) zoneO.innerHTML = '<div class="placeholder">Impossible de charger les tournois.</div>';
+  }
+
+  // Le bouton d'invitation doit connaître le tournoi du joueur avant son
+  // premier clic : on garde cette lecture, qui alimente « monGroupe ».
   try{
     const res = await fetch(`${API_BASE}/Group/ByUserId/${userId}`);
     const json = await res.json();
@@ -6721,20 +6887,11 @@ async function enterGroupsScreen(){
       .sort((a, b) => new Date(a.createdDate) - new Date(b.createdDate));
     if(crees.length){ monGroupe = versGroupe(crees[0]); }
 
-    majLibelleGroupes(groups.length);
-
-    if(groups.length === 0){
-      list.innerHTML = '';
-      return;
-    }
-
-    list.innerHTML = groups.map(g => `
-      <div class="group-card" onclick="openGroupDetail('${g.id}')">
-        <div class="group-card-name">${g.name}</div>
-        <div class="group-card-meta">${g.memberCount} membre${g.memberCount > 1 ? 's' : ''}</div>
-      </div>`).join('');
+    // La liste des tournois du joueur n'est plus dessinee ici : ses tournois
+    // apparaissent dans les deux listes de la salle, marques et cliquables.
+    // Cette lecture ne sert plus qu'a connaitre son tournoi le plus ancien.
   }catch(e){
-    list.innerHTML = '<div class="placeholder">Impossible de charger tes groupes.</div>';
+    // Sans consequence visible : la salle est deja affichee.
   }
 }
 
