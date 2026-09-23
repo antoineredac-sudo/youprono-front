@@ -2818,7 +2818,7 @@
       </div>
 
       <div class="group-invite-box" id="home-invite-box" style="display:none;">
-        <p class="confirm-pitch" id="home-invite-pitch">The Golden Fan est un jeu entre experts du PSG, mais surtout entre amis. Invite-les via WhatsApp ou sur X et découvre une nouvelle façon de participer au jeu.</p>
+        <p class="confirm-pitch" id="home-invite-pitch">Passe en mode tournoi et découvre une nouvelle façon de jouer en défiant tes amis sur WhatsApp, sur X ou parmi les membres du jeu.</p>
         <button class="cta-play" id="home-invite-btn" onclick="goToGroups()"><span id="home-invite-label">Créer ou rejoindre un tournoi</span></button>
       </div>
 
@@ -3481,7 +3481,7 @@
       </div>
 
       <div class="group-invite-box" style="margin-top:20px;">
-        <p class="confirm-pitch">The Golden Fan est un jeu entre experts du PSG, mais surtout entre amis. Invite-les via WhatsApp ou sur X et découvre une nouvelle façon de participer au jeu.</p>
+        <p class="confirm-pitch">Passe en mode tournoi et découvre une nouvelle façon de jouer en défiant tes amis sur WhatsApp, sur X ou parmi les membres du jeu.</p>
         <button class="cta-play" id="confirm-invite-btn" onclick="goToGroups()"><span id="confirm-invite-label">Créer ou rejoindre un tournoi</span></button>
       </div>
 
@@ -4034,7 +4034,7 @@ function restoreRoute(brut){
     else if(nom === 'faq' || nom === 'group-join' || nom === 'legal'){ switchView(nom); }
     // Le bouton « Créer un tournoi » du courriel de résultat (20 septembre 2026) :
     // l'écran de nommage, puis WhatsApp avec l'invitation une fois le tournoi créé.
-    else if(nom === 'creer-groupe'){ creerUnGroupe(); }
+    else if(nom === 'creer-groupe'){ goToGroups(); }
     // L'accueil est une destination comme les autres : sans cette ligne, le
     // bouton « précédent » qui y ramène ne faisait rien, et le clic suivant
     // sortait du site.
@@ -6113,7 +6113,7 @@ function messagesDuMatch(d, matchId){
 // la comparer. C'est le meilleur moment pour lui proposer d'inviter ses amis.
 function blocInviteSansGroupe(){
   return '<div class="invite-apres-note">'
-       + '<div class="invite-apres-texte">The Golden Fan est un jeu entre experts du PSG, mais surtout entre amis. Invite-les via WhatsApp ou sur X et découvre une nouvelle façon de participer au jeu.</div>'
+       + '<div class="invite-apres-texte">Passe en mode tournoi et découvre une nouvelle façon de jouer en défiant tes amis sur WhatsApp, sur X ou parmi les membres du jeu.</div>'
        // Bouton rouge, comme sur la page des defis entre amis (23 septembre
        // 2026) : il fait nommer le tournoi, puis depose le createur sur la page
        // de son tournoi, ou il choisit WhatsApp ou X.
