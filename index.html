@@ -1081,7 +1081,7 @@
     margin-right:6px;
   }
 
-  /* --- Le salon du groupe --- */
+  /* --- Le salon du tournoi --- */
   .salon-cta{
     display:flex;
     justify-content:space-between;
@@ -1265,7 +1265,7 @@
   .salon-rate{ color:var(--text-dim); text-decoration:line-through; }
   .salon-cat{ color:var(--text-dim); }
 
-  /* --- Écrans Groupes --- */
+  /* --- Écrans Tournois --- */
   .small-link{
     display:block;
     text-align:center;
@@ -2511,7 +2511,7 @@
 }
 .x-icon{ width:17px; height:17px; flex:0 0 auto; }
 
-/* --- Le record du groupe --- */
+/* --- Le record du tournoi --- */
 .rec-card{
   background:var(--surface); border:1px solid var(--border);
   border-radius:12px; padding:14px 12px 8px; text-align:center;
@@ -2766,9 +2766,9 @@
     <section id="view-home" class="view">
       <div class="kop-rappel" id="home-kop-rappel" style="display:none;" onclick="ouvrirMonKop()"></div>
 
-      <!-- Celui qui vient d'entrer dans un groupe par un lien d'invitation :
+      <!-- Celui qui vient d'entrer dans un tournoi par un lien d'invitation :
            il atterrit sur le match, pas sur la liste de ses coequipiers, et ce
-           bandeau lui dit qu'il est bien dans le groupe (18 septembre 2026). -->
+           bandeau lui dit qu'il est bien dans le tournoi (18 septembre 2026). -->
       <div id="groupe-rejoint-banner" class="groupe-rejoint-banner" style="display:none;">
         <div class="grb-titre" id="groupe-rejoint-titre"></div>
         <div class="grb-texte">Commence par faire tes prédictions sur le prochain match&nbsp;: c'est là que tout se joue.</div>
@@ -2819,7 +2819,7 @@
 
       <div class="group-invite-box" id="home-invite-box" style="display:none;">
         <p class="confirm-pitch" id="home-invite-pitch">The Golden Fan est un jeu entre experts du PSG, mais surtout entre amis. Invite-les via WhatsApp ou sur X et découvre une nouvelle façon de participer au jeu.</p>
-        <button class="cta-play" id="home-invite-btn" onclick="inviteFromHome()"><span id="home-invite-label">Créer un groupe</span></button>
+        <button class="cta-play" id="home-invite-btn" onclick="goToGroups()"><span id="home-invite-label">Créer ou rejoindre un tournoi</span></button>
       </div>
 
       <div id="home-calendar-label" class="dash-history-label" style="display:none; margin-top:24px;">Calendrier</div>
@@ -3147,7 +3147,8 @@
 
       <p class="groups-intro">Cinq matchs, un vainqueur. On s'inscrit jusqu'à la clôture
         des prédictions du prochain match — ensuite, le tournoi est fermé. Onze joueurs
-        au maximum : plus vous êtes nombreux, plus le trophée est précieux.</p>
+        au maximum, comme sur un terrain de foot : plus vous êtes nombreux, plus les
+        trophées sont précieux.</p>
 
       <div id="tournois-ouverts"></div>
       <div id="tournois-encours"></div>
@@ -3188,7 +3189,7 @@
       <span class="small-link" onclick="switchView('groups')">Annuler</span>
     </section>
     <section id="view-group-join" class="view" style="display:none;">
-      <h2 class="play-title">REJOINDRE UN GROUPE</h2>
+      <h2 class="play-title">REJOINDRE UN TOURNOI</h2>
       <label>Code d'invitation</label>
       <input type="text" id="group-join-code" placeholder="ABC123">
       <div class="field-error" id="group-join-error"></div>
@@ -3196,16 +3197,16 @@
       <span class="small-link" onclick="switchView('groups')">Annuler</span>
     </section>
     <section id="view-group-detail" class="view" style="display:none;">
-      <h2 class="play-title" id="group-detail-name">GROUPE</h2>
+      <h2 class="play-title" id="group-detail-name">TOURNOI</h2>
       <span class="back-link" onclick="goToGroups()">← Retour aux tournois</span>
-      <!-- Seul le créateur du groupe peut le renommer : le lien n'apparaît
+      <!-- Seul le créateur du tournoi peut le renommer : le lien n'apparaît
            qu'à lui, et le serveur revérifie de son côté. -->
       <span class="small-link" id="group-rename-link" style="display:none;margin-top:12px;"
-            onclick="ouvrirRenommage()">Renommer le groupe</span>
+            onclick="ouvrirRenommage()">Renommer le tournoi</span>
 
       <div id="group-rename-bloc" style="display:none;margin-top:10px;">
         <label>Nouveau nom</label>
-        <input type="text" id="group-rename-input" maxlength="30" placeholder="Le nom de ton groupe">
+        <input type="text" id="group-rename-input" maxlength="30" placeholder="Le nom de ton tournoi">
         <div class="field-error" id="group-rename-error"></div>
         <button class="cta-play" id="group-rename-submit" style="margin-top:12px;"
                 onclick="validerRenommage()">Enregistrer</button>
@@ -3222,10 +3223,10 @@
       <div id="gtab-ranking">
         <div id="group-detail-ranking"></div>
 
-        <!-- Le record du groupe : la meilleure note jamais obtenue par un membre,
+        <!-- Le record du tournoi : la meilleure note jamais obtenue par un membre,
              avec la forme de ce match-là et la note au centre de l'hexagone. -->
         <div id="group-record-block" style="display:none;">
-          <div class="dash-history-label" style="margin-top:20px;">Record du groupe</div>
+          <div class="dash-history-label" style="margin-top:20px;">Record du tournoi</div>
           <div class="rec-card">
             <div class="rec-nom" id="group-record-nom"></div>
             <div class="rec-sous" id="group-record-match"></div>
@@ -3238,7 +3239,7 @@
 
       <div id="gtab-calendar" style="display:none;">
         <!-- Qui a joue le prochain match, et le bouton de relance pour celui qui a
-             cree le groupe (18 septembre 2026, deplace ici le 20 : sa place est
+             cree le tournoi (18 septembre 2026, deplace ici le 20 : sa place est
              aupres du calendrier, pas dans le classement. L'onglet Classement dit
              ou en est la saison, l'onglet Calendrier ce qui vient. -->
         <div id="group-participation"></div>
@@ -3252,11 +3253,11 @@
       </div>
 
       <div class="group-invite-box" id="group-complet-box" style="margin-top:28px;display:none;">
-        <div class="group-invite-title">Ton groupe est au complet</div>
+        <div class="group-invite-title">Ton tournoi est au complet</div>
         <div class="group-invite-label">Tes autres amis peuvent créer le leur : ils seront prévenus en cliquant sur ton lien.</div>
       </div>
       <div class="group-invite-box" id="group-invite-box" style="margin-top:28px;">
-        <div class="group-invite-title" id="group-invite-title">Invite un nouveau membre dans le groupe</div>
+        <div class="group-invite-title" id="group-invite-title">Invite un nouveau membre dans le tournoi</div>
         <div class="group-invite-label" id="group-invite-label">Code d'invitation à partager</div>
         <div class="group-invite-code" id="group-detail-code"></div>
         <button class="cta-whatsapp wa-btn" style="margin-top:16px;" onclick="shareGroupOnWhatsApp()">
@@ -3269,7 +3270,7 @@
         </button>
       </div>
       <span class="small-link" id="group-back-link" onclick="goToGroups()">← Retour aux tournois</span>
-      <span class="small-link" style="margin-top:8px;" onclick="leaveGroup()">Quitter le groupe</span>
+      <span class="small-link" style="margin-top:8px;" onclick="leaveGroup()">Quitter le tournoi</span>
     </section>
     <section id="view-compo" class="view" style="display:none;">
       <div id="compo-loading" class="placeholder">Chargement de la composition…</div>
@@ -3452,7 +3453,7 @@
       </div>
     </section>
     <section id="view-salon" class="view" style="display:none;">
-      <h2 class="play-title" id="salon-titre">LES PRÉDICTIONS DU GROUPE</h2>
+      <h2 class="play-title" id="salon-titre">LES PRÉDICTIONS DU TOURNOI</h2>
       <span class="back-link" onclick="switchView('home')">← Retour à l'accueil</span>
 
       <div id="salon-loading" class="placeholder">Chargement du salon…</div>
@@ -3481,7 +3482,7 @@
 
       <div class="group-invite-box" style="margin-top:20px;">
         <p class="confirm-pitch">The Golden Fan est un jeu entre experts du PSG, mais surtout entre amis. Invite-les via WhatsApp ou sur X et découvre une nouvelle façon de participer au jeu.</p>
-        <button class="cta-play" id="confirm-invite-btn" onclick="inviteFromConfirm()"><span id="confirm-invite-label">Créer un groupe</span></button>
+        <button class="cta-play" id="confirm-invite-btn" onclick="goToGroups()"><span id="confirm-invite-label">Créer ou rejoindre un tournoi</span></button>
       </div>
 
       <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
@@ -3598,7 +3599,7 @@
     <section id="view-trophies" class="view" style="display:none;">
       <h2 class="play-title">MES TROPHÉES</h2>
 
-      <p class="trophy-pitch">Finis haut dans les classements de groupe pour remplir ta vitrine de trophées.</p>
+      <p class="trophy-pitch">Finis haut dans les classements de tournoi pour remplir ta vitrine de trophées.</p>
 
       <div class="verdict" id="trophy-verdict" style="display:none;"></div>
 
@@ -3608,7 +3609,7 @@
         </div>
       </div>
 
-      <p class="trophy-note">À chaque fin de mini-championnat, les mieux classés de chaque groupe remportent un ballon. Il existe 5 niveaux de récompense selon le nombre de points obtenus. Plus vous êtes nombreux à jouer au sein d'un groupe, plus vous marquez de points.</p>
+      <p class="trophy-note">À chaque fin de mini-championnat, les mieux classés de chaque tournoi remportent un ballon. Il existe 5 niveaux de récompense selon le nombre de points obtenus. Plus vous êtes nombreux à jouer au sein d'un tournoi, plus vous marquez de points.</p>
 
       <span class="small-link" onclick="switchView('home')">← Retour à l'accueil</span>
     </section>
@@ -3677,12 +3678,12 @@
           <div class="faq-q">Si je loupe un match, est-ce que j'aurais 0/100 ?</div>
           <p class="faq-a">Non, mais tu ne pars pas indemne. On t'attribue une note en dessous de la moyenne des participants à ce match, et elle entre dans ton Coef Expert comme une vraie note.</p>
           <p class="faq-a">C'est une note basse, mais jamais la pire : tu passes devant ceux qui ont joué et se sont trompés. Et elle s'adapte au match — un soir où tout le monde a vu juste, elle te coûte peu ; un soir où les écarts se creusent, elle te coûte cher.</p>
-          <p class="faq-a">Dans les compétitions de groupe, en revanche, un forfait vaut toujours 0 point. C'est difficile à rattraper.</p>
+          <p class="faq-a">Dans les compétitions de tournoi, en revanche, un forfait vaut toujours 0 point. C'est difficile à rattraper.</p>
         </div>
 
         <div class="faq-item">
           <div class="faq-q">Puis-je m'inscrire en cours de jeu ?</div>
-          <p class="faq-a">Bien sûr, tu es le bienvenu à tout moment du jeu. Tu pourras prouver ta valeur au classement de la note record dès les premiers matchs. Ta position au classement général reste virtuelle tant que tu n'as pas joué trois matchs — le temps que ta moyenne veuille dire quelque chose. Passé ce cap, ton pseudo s'affiche en doré et ta place est acquise, à toi de la tenir. N'oublie pas qu'il existe aussi une vraie compétition au sein des groupes qui permet de décrocher des trophées.</p>
+          <p class="faq-a">Bien sûr, tu es le bienvenu à tout moment du jeu. Tu pourras prouver ta valeur au classement de la note record dès les premiers matchs. Ta position au classement général reste virtuelle tant que tu n'as pas joué trois matchs — le temps que ta moyenne veuille dire quelque chose. Passé ce cap, ton pseudo s'affiche en doré et ta place est acquise, à toi de la tenir. N'oublie pas qu'il existe aussi une vraie compétition au sein des tournois qui permet de décrocher des trophées.</p>
         </div>
 
         <div class="faq-item">
@@ -3710,8 +3711,8 @@
         </div>
 
         <div class="faq-item">
-          <div class="faq-q">Comment fonctionne le classement des groupes ?</div>
-          <p class="faq-a">Un groupe est composé de 2 à 11 joueurs. Ici pas de moyenne : chacun cumule des points en fonction de sa note globale match après match pendant une période de 5 matchs. Plus vous êtes nombreux dans le groupe, plus le ballon à décrocher est précieux : baudruche, cuir, bronze, argent, puis le ballon d'or.</p>
+          <div class="faq-q">Comment fonctionne le classement des tournois ?</div>
+          <p class="faq-a">Un tournoi réunit de 2 à 11 joueurs. Ici pas de moyenne : chacun cumule des points en fonction de sa note globale match après match pendant une période de 5 matchs. Plus vous êtes nombreux dans le tournoi, plus le ballon à décrocher est précieux : baudruche, cuir, bronze, argent, puis le ballon d'or.</p>
         </div>
       </div>
     </section>
@@ -4031,8 +4032,8 @@ function restoreRoute(brut){
     // les afficher sans elle laissait une vitrine vide au rafraîchissement.
     else if(nom === 'trophies'){ goToTrophies(); }
     else if(nom === 'faq' || nom === 'group-join' || nom === 'legal'){ switchView(nom); }
-    // Le bouton « Créer un groupe » du courriel de résultat (20 septembre 2026) :
-    // l'écran de nommage, puis WhatsApp avec l'invitation une fois le groupe créé.
+    // Le bouton « Créer un tournoi » du courriel de résultat (20 septembre 2026) :
+    // l'écran de nommage, puis WhatsApp avec l'invitation une fois le tournoi créé.
     else if(nom === 'creer-groupe'){ creerUnGroupe(); }
     // L'accueil est une destination comme les autres : sans cette ligne, le
     // bouton « précédent » qui y ramène ne faisait rien, et le clic suivant
@@ -4360,7 +4361,7 @@ async function loadHomeMatch(){
       document.getElementById('home-calendar').innerHTML = '';
     }
 
-    // Le salon du groupe prend la place de l'ancien bandeau « Ta note est tombée ».
+    // Le salon du tournoi prend la place de l'ancien bandeau « Ta note est tombée ».
     // Il s'accroche au dernier match dont les pronos sont fermés : celui qui est
     // affiché au-dessus quand sa clôture est passée, sinon le précédent, qui reste
     // consultable jusqu'à la clôture suivante.
@@ -5344,7 +5345,7 @@ async function ccChargerClassement(){
   }
 }
 
-// ===== LE SALON DU GROUPE =====
+// ===== LE SALON DU TOURNOI =====
 // Une seule page, trois états, décidés par le serveur : les pronostics bruts à la
 // clôture, les notes de composition dès que le onze officiel tombe, tout le reste
 // après la saisie des statistiques.
@@ -5355,9 +5356,9 @@ async function ccChargerClassement(){
 // de céder la place au match suivant à sa propre clôture, et pas avant.
 
 const SALON_ETATS = {
-  closed:      { titre:'LES PRÉDICTIONS DU GROUPE',            cta:'Les prédictions du groupe' },
-  composition: { titre:'LES COMPOS DU GROUPE',            cta:'Les compos du groupe sont notées' },
-  results:     { titre:'LES RÉSULTATS DU GROUPE',         cta:'Les résultats de groupe' }
+  closed:      { titre:'LES PRÉDICTIONS DU TOURNOI',            cta:'Les prédictions du tournoi' },
+  composition: { titre:'LES COMPOS DU TOURNOI',            cta:'Les compos du tournoi sont notées' },
+  results:     { titre:'LES RÉSULTATS DU TOURNOI',         cta:'Les résultats de tournoi' }
 };
 
 let salonMesGroupes = [];
@@ -5419,7 +5420,7 @@ async function refreshHomeSalon(courant, precedent){
 
   const etat = await salonEtatDuMatch(cible);
 
-  // Sans groupe, le même bouton, la même temporalité, mais des destinations
+  // Sans tournoi, le même bouton, la même temporalité, mais des destinations
   // personnelles : sa feuille de match, sa note de composition, son résultat.
   if(salonMesGroupes.length === 0){
     await renderHomeSolo(bloc, cible, etat);
@@ -5430,9 +5431,9 @@ async function refreshHomeSalon(courant, precedent){
   const dore = (etat !== 'closed') ? ' dore' : '';
   const affiche = teamLabel(cible.homeTeam, 'PSG') + ' / ' + teamLabel(cible.awayTeam, 'Adversaire');
 
-  // Le joueur qui a un groupe garde son verdict personnel : sans ce lien, sa note
+  // Le joueur qui a un tournoi garde son verdict personnel : sans ce lien, sa note
   // de composition n'existait que dans le salon, noyée dans le classement du
-  // groupe, et celui qui n'a pas de groupe n'y avait pas accès du tout.
+  // tournoi, et celui qui n'a pas de tournoi n'y avait pas accès du tout.
   let perso = '';
   if(etat === 'composition' && await aPronostiqueSur(cible)){
     perso = `
@@ -5550,7 +5551,7 @@ async function goToSalon(groupId, matchId){
   }
 }
 
-// Un titulaire trouvé par la moitié du groupe ou moins est une trouvaille rare.
+// Un titulaire trouvé par la moitié du tournoi ou moins est une trouvaille rare.
 function salonEstRare(pick, nbJoueurs){
   if(!pick.found || nbJoueurs <= 0) return false;
   return (pick.choiceCount / nbJoueurs) <= 0.5;
@@ -5573,8 +5574,8 @@ function renderSalon(){
   // Le joueur d'abord, les autres dans l'ordre renvoyé par le serveur.
   const membres = d.members.slice().sort((a,b) => (b.isMe ? 1 : 0) - (a.isMe ? 1 : 0));
   // Le dénominateur des choix est celui de tous les participants du site, pas
-  // celui du groupe : « 6/8 » pèse plus lourd que « 6/6 ». On retombe sur le
-  // compte du groupe si le serveur ne renvoie pas encore le chiffre global.
+  // celui du tournoi : « 6/8 » pèse plus lourd que « 6/6 ». On retombe sur le
+  // compte du tournoi si le serveur ne renvoie pas encore le chiffre global.
   const nbJoueurs = d.participantCount || d.predictionCount;
 
   let html = '';
@@ -5635,7 +5636,7 @@ function renderSalon(){
         .sort((a, b) => a.cycleRank - b.cycleRank);
 
       if(cumul.length){
-        html += `<div class="salon-legende">le nouveau classement du groupe</div><div class="salon-liste">`;
+        html += `<div class="salon-legende">le nouveau classement du tournoi</div><div class="salon-liste">`;
         cumul.forEach(m => {
           const moi = m.isMe ? ' salon-moi' : '';
           const avant = m.cycleRankBefore || 0;
@@ -5649,12 +5650,12 @@ function renderSalon(){
         html += `</div>`;
       }
 
-      // --- Les silhouettes du groupe ---
+      // --- Les silhouettes du tournoi ---
       // Une forme par membre noté, deux par ligne. Le tableau des pronostics
       // garde les chiffres bruts ; ceci montre où chacun a été juste.
       const notés = d.members.filter(m => m.noteTotal !== null && m.noteTotal !== undefined);
       if(notés.length){
-        html += `<div class="salon-legende">les silhouettes du groupe</div><div class="silhouettes">`;
+        html += `<div class="salon-legende">les silhouettes du tournoi</div><div class="silhouettes">`;
         notés.forEach(m => {
           const notes = {
             'Composition': m.noteComposition || 0,
@@ -5676,7 +5677,7 @@ function renderSalon(){
   }
 
   // --- Le tableau des pronostics ---
-  const legendeTableau = (d.state === 'results') ? 'les prédictions face au réel' : 'les prédictions du groupe';
+  const legendeTableau = (d.state === 'results') ? 'les prédictions face au réel' : 'les prédictions du tournoi';
   html += `<div class="salon-legende">${legendeTableau}</div>
     <div class="salon-tableau"><table>
       <tr><th class="nom"></th><th>Poss.</th><th>Tirs</th><th>Fautes</th><th>Centres</th><th>Score</th></tr>`;
@@ -6007,7 +6008,7 @@ function renderMyProno(match, prediction){
 // ===== ÉCRAN RÉSULTATS =====
 // Les messages affichés avec la note. Le serveur renvoie des faits, on les met
 // en phrases ici. Trois messages au maximum, du plus rare au plus courant :
-// première note, record, podium de groupe, progression, échec de peu.
+// première note, record, podium de tournoi, progression, échec de peu.
 // Quand rien ne s'est passé, on n'écrit rien : la félicitation du vainqueur ne
 // vaut que parce qu'elle est rare.
 const EVENEMENTS_MAX = 4;
@@ -6058,14 +6059,14 @@ function messagesDuMatch(d, matchId){
 
   // --- Son rang sur ce match, parmi tous les joueurs notés ---
   if(d.matchRank > 0 && d.scoredCount > 1){
-    // La ligne ouvre le classement complet du match, comme les lignes de groupe
+    // La ligne ouvre le classement complet du match, comme les lignes de tournoi
     // ouvrent le salon : on annonce un rang, on doit pouvoir voir les autres.
     msg.push('<span class="evenement-lien" onclick="goToMatchRanking(\'' + matchId + '\')">'
       + d.matchRank + 'ᵉ/' + d.scoredCount + ' sur ce match, tous joueurs confondus.'
       + ' <b>Voir →</b></span>');
   }
 
-  // --- Une ligne par groupe d'amis, toujours ---
+  // --- Une ligne par tournoi d'amis, toujours ---
   // Le joueur veut savoir où il finit dans chacun, pas seulement là où il est
   // sur le podium. La ligne est cliquable et ouvre les résultats du groupe.
   (d.podiums || []).slice(0, 3).forEach(function(p){
@@ -6077,13 +6078,13 @@ function messagesDuMatch(d, matchId){
         ? 'Tu as battu ' + echapper(p.opponentName || 'ton adversaire') + ' sur ce match.'
         : echapper(p.opponentName || 'Ton adversaire') + ' t\'a battu sur ce match.';
     }else if(p.rank === 1){
-      texte = 'Meilleure note du groupe ' + g + ' sur ce match.';
+      texte = 'Meilleure note du tournoi ' + g + ' sur ce match.';
     }else if(p.rank === 2){
-      texte = 'Deuxième meilleure note du groupe ' + g + ' sur ce match.';
+      texte = 'Deuxième meilleure note du tournoi ' + g + ' sur ce match.';
     }else if(p.rank === 3 && p.memberCount >= 7){
-      texte = 'Sur le podium du groupe ' + g + ' sur ce match.';
+      texte = 'Sur le podium du tournoi ' + g + ' sur ce match.';
     }else{
-      texte = p.rank + 'ᵉ sur ' + p.memberCount + ' dans le groupe ' + g + ' sur ce match.';
+      texte = p.rank + 'ᵉ sur ' + p.memberCount + ' dans le tournoi ' + g + ' sur ce match.';
     }
 
     msg.push('<span class="evenement-lien" onclick="ouvrirSalonDepuisMessage(\'' + p.groupId
@@ -6108,16 +6109,16 @@ function messagesDuMatch(d, matchId){
   return msg.slice(0, EVENEMENTS_MAX + 2);
 }
 
-// Le joueur sans aucun groupe vient de recevoir sa note et n'a personne à qui
+// Le joueur sans aucun tournoi vient de recevoir sa note et n'a personne à qui
 // la comparer. C'est le meilleur moment pour lui proposer d'inviter ses amis.
 function blocInviteSansGroupe(){
   return '<div class="invite-apres-note">'
        + '<div class="invite-apres-texte">The Golden Fan est un jeu entre experts du PSG, mais surtout entre amis. Invite-les via WhatsApp ou sur X et découvre une nouvelle façon de participer au jeu.</div>'
        // Bouton rouge, comme sur la page des defis entre amis (23 septembre
-       // 2026) : il fait nommer le groupe, puis depose le createur sur la page
-       // de son groupe, ou il choisit WhatsApp ou X.
-       + '<button class="cta-play" style="margin-top:0;" onclick="creerUnGroupe()">'
-       + 'Créer un groupe</button></div>';
+       // 2026) : il fait nommer le tournoi, puis depose le createur sur la page
+       // de son tournoi, ou il choisit WhatsApp ou X.
+       + '<button class="cta-play" style="margin-top:0;" onclick="goToGroups()">'
+       + 'Créer ou rejoindre un tournoi</button></div>';
 }
 
 // Le repère du débutant. Sous chaque curseur du tunnel, on rappelle le chiffre
@@ -6353,7 +6354,7 @@ async function afficherEvenementsDuMatch(matchId){
     if(!json.success || !json.data) return;
 
     const msg = messagesDuMatch(json.data, matchId);
-    // L'invitation à créer un groupe s'affiche pour tous les joueurs, groupe ou
+    // L'invitation à créer un tournoi s'affiche pour tous les joueurs, tournoi ou
     // pas (décision d'Antoine, 20 septembre 2026).
     bloc.innerHTML = msg.map(function(m){ return '<div class="evenement">' + m + '</div>'; }).join('')
                    + blocInviteSansGroupe();
@@ -6755,13 +6756,13 @@ function renderResults(prediction, stats, matchDetail){
 }
 
 // ===== ÉCRANS GROUPES =====
-// Le mot « groupe » s'accorde partout ou le joueur le lit : menu, titre de la
-// page, lien de retour. Zero ou un groupe, on parle au singulier -- « Mon groupe
+// Le mot « tournoi » s'accorde partout ou le joueur le lit : menu, titre de la
+// page, lien de retour. Zero ou un tournoi, on parle au singulier -- « Mon tournoi
 // d'amis » nomme alors celui qu'il va creer.
 function majLibelleGroupes(n){
   const pluriel = (n > 1);
   // « Defis entre amis » pour tout le monde (23 septembre 2026) : la formule
-  // vaut pour celui qui n'a encore rien comme pour celui qui a cinq groupes,
+  // vaut pour celui qui n'a encore rien comme pour celui qui a cinq tournois,
   // et le menu annonce exactement ce que la page propose.
   const menu = document.getElementById('menu-groupes');
   if(menu){ menu.textContent = "Tournois"; }
@@ -6774,7 +6775,7 @@ function majLibelleGroupes(n){
   void pluriel;
 }
 
-// Compte ses groupes d'amis, kops exclus. Appele a l'entree dans le jeu pour que
+// Compte ses tournois d'amis, kops exclus. Appele a l'entree dans le jeu pour que
 // le menu soit deja accorde avant qu'il l'ouvre.
 async function compterMesGroupes(){
   const userId = getUserId();
@@ -6944,7 +6945,7 @@ async function enterGroupsScreen(){
   }
 }
 
-// Le groupe personnel est celui que le joueur a cree lui-meme, reconnu par le
+// Le tournoi personnel est celui que le joueur a cree lui-meme, reconnu par le
 // creatorId renvoye par le serveur -- et non plus devine d'apres son nom. S'il en
 // a cree plusieurs, on retient le plus ancien : c'est le seul choix qui ne change
 // jamais dans son dos.
@@ -6973,7 +6974,7 @@ function versGroupe(g){
   return { id: g.id, name: g.name, inviteCode: g.inviteCode, memberCount: g.memberCount };
 }
 
-// Les groupes qu'il a crees, du plus ancien au plus recent.
+// Les tournois qu'il a crees, du plus ancien au plus recent.
 async function mesGroupesCrees(){
   const userId = getUserId();
   if(!userId) return [];
@@ -7013,7 +7014,7 @@ async function creerGroupe(nom){
     const json = await res.json();
     if(!json.success || !json.data) return null;
     const g = versGroupe(json.data);
-    // Le tout premier cree devient le groupe personnel ; les suivants ne le
+    // Le tout premier cree devient le tournoi personnel ; les suivants ne le
     // remplacent pas.
     if(!monGroupe){ monGroupe = g; }
     return g;
@@ -7033,7 +7034,7 @@ async function assureMonGroupe(creerSiAbsent){
 
 function messageInvitation(lien, code, nomGroupe){
   const nom = (nomGroupe || '').trim();
-  const groupe = nom ? ('le groupe « ' + nom + ' »') : 'un groupe';
+  const groupe = nom ? ('le tournoi « ' + nom + ' »') : 'un tournoi';
 
   const intro = `J'ai trouvé un super jeu pour animer nos soirées PSG. On annonce `
               + `le onze d'Enrique, la possession, les tirs, les fautes, les centres et le `
@@ -7061,7 +7062,7 @@ function messageInvitation(lien, code, nomGroupe){
 
   return `${intro} ${phrase}\n`
        + `${lien}\n`
-       + `Code du groupe : ${code}`;
+       + `Code du tournoi : ${code}`;
 }
 
 // Le message du tweet. Il se termine sur une question pour que le joueur
@@ -7104,9 +7105,9 @@ function verrouille(btnId, labelId, texte){
   };
 }
 
-// --- Bouton « Creer un groupe » ---
-// Tout groupe porte un nom choisi par son createur, le premier comme les
-// suivants. Le partage ne vient qu'apres, depuis l'ecran du groupe, ou les deux
+// --- Bouton « Creer un tournoi » ---
+// Tout tournoi porte un nom choisi par son createur, le premier comme les
+// suivants. Le partage ne vient qu'apres, depuis l'ecran du tournoi, ou les deux
 // boutons attendent : WhatsApp et X. Aucun depart force vers l'un des deux
 // (23 septembre 2026) -- c'est au createur de choisir.
 function creerUnGroupe(){
@@ -7119,7 +7120,7 @@ function creerUnGroupe(){
   switchView('group-create');
 }
 
-// Le groupe visé est complet (code -4 du serveur) : plutôt que de laisser
+// Le tournoi visé est complet (code -4 du serveur) : plutôt que de laisser
 // l'invité devant une erreur, on l'emmène créer le sien, avec l'explication.
 async function ouvrirNommageGroupeComplet(code){
   creerUnGroupe();
@@ -7130,7 +7131,7 @@ async function ouvrirNommageGroupeComplet(code){
     if(json.success && json.data){ nom = (json.data.name || '').trim(); }
   }catch(e){}
   const note = document.getElementById('group-create-notice');
-  note.innerHTML = (nom ? 'Le groupe « <strong>' + echapper(nom) + '</strong> » affiche complet.' : 'Ce groupe affiche complet.')
+  note.innerHTML = (nom ? 'Le tournoi « <strong>' + echapper(nom) + '</strong> » affiche complet.' : 'Ce tournoi affiche complet.')
     + ' Lance le tien : choisis un nom, puis envoie ton lien à celui qui t\'a invité.';
   note.style.display = 'block';
 }
@@ -7176,7 +7177,7 @@ async function inviteFromGroupsScreenSurX(){
   switchView('group-create');
 }
 
-// --- Ecran de nommage, a partir du deuxieme groupe ---
+// --- Ecran de nommage, a partir du deuxieme tournoi ---
 async function createNamedGroup(){
   const champ = document.getElementById('group-create-name');
   const errEl = document.getElementById('group-create-error');
@@ -7199,16 +7200,16 @@ async function createNamedGroup(){
     return;
   }
   champ.value = '';
-  // On l'amene dans son groupe tout neuf : c'est la qu'il trouve le code et les
+  // On l'amene dans son tournoi tout neuf : c'est la qu'il trouve le code et les
   // deux boutons de partage, et il voit a quoi ressemble ce qu'il vient de creer.
   openGroupDetail(g.id);
 }
 
 // --- Bouton de fin de pronostic ---
-// On prend le plus ancien groupe cree. S'il n'en a aucun, on l'envoie le nommer.
+// On prend le plus ancien tournoi cree. S'il n'en a aucun, on l'envoie le nommer.
 // S'il est plein, on le renvoie a la liste, ou il pourra en ouvrir un second.
 // ===== L'INVITATION DE L'ACCUEIL =====
-// Meme mecanique qu'en fin de tunnel : si le joueur a deja un groupe ouvert on
+// Meme mecanique qu'en fin de tunnel : si le joueur a deja un tournoi ouvert on
 // partage son lien, sinon on en cree un au vol. Seuls les identifiants des
 // boutons changent, pour que le verrou « Un instant… » agisse sur les bons.
 // Le bloc se montre des que l'accueil est en mode normal : le joueur qui vient
@@ -7220,12 +7221,12 @@ function majInvitationAccueil(){
 
 }
 
-// Le bouton de l'accueil ne partage plus rien tout seul. Sans groupe, il ouvre
+// Le bouton de l'accueil ne partage plus rien tout seul. Sans tournoi, il ouvre
 // le nommage : le joueur baptise le sien avant de choisir qui il invite, et il
-// arrive ensuite sur la page du groupe, ou l'attendent le code et les deux
-// boutons de partage. Avec un ou plusieurs groupes, il ouvre la page des defis :
+// arrive ensuite sur la page du tournoi, ou l'attendent le code et les deux
+// boutons de partage. Avec un ou plusieurs tournois, il ouvre la page des defis :
 // c'est la qu'il choisit dans lequel il invite, ou qu'il en cree un autre.
-// (23 septembre 2026 : avant, le bouton ouvrait WhatsApp avec le premier groupe
+// (23 septembre 2026 : avant, le bouton ouvrait WhatsApp avec le premier tournoi
 // venu, sans que le joueur ait choisi quoi que ce soit.)
 async function inviteFromHome(){
   const relache = verrouille('home-invite-btn', 'home-invite-label', 'Un instant…');
@@ -7238,9 +7239,9 @@ async function inviteFromHome(){
 }
 
 // Meme regle que sur l'accueil (23 septembre 2026) : ce bouton ne partage plus
-// rien tout seul. Sans groupe il ouvre le nommage, sinon la page des defis, ou
+// rien tout seul. Sans tournoi il ouvre le nommage, sinon la page des defis, ou
 // le joueur choisit dans lequel il invite. Le canal se choisit ensuite, sur la
-// page du groupe, une fois qu'on sait quel lien on partage.
+// page du tournoi, une fois qu'on sait quel lien on partage.
 async function inviteFromConfirm(){
   const relache = verrouille('confirm-invite-btn', 'confirm-invite-label', 'Un instant…');
   let combien = 0;
@@ -7272,7 +7273,7 @@ async function joinGroup(){
       return;
     }
     if(!json.success){
-      errEl.textContent = json.message || "Ce code n'est pas valide, ou le groupe est déjà complet.";
+      errEl.textContent = json.message || "Ce code n'est pas valide, ou le tournoi est déjà complet.";
       errEl.classList.add('show');
       return;
     }
@@ -7287,7 +7288,7 @@ async function joinGroup(){
 
 let currentGroupId = null;
 let currentGroupName = '';
-// Le plafond d'un groupe d'amis, le même qu'au serveur (MaxMembers).
+// Le plafond d'un tournoi d'amis, le même qu'au serveur (MaxMembers).
 // Onze membres depuis le 17 septembre 2026, comme une équipe de foot.
 const GROUPE_MAX_MEMBRES = 11;
 
@@ -7296,7 +7297,7 @@ const GROUPE_MAX_MEMBRES = 11;
 // pour revenir sans passer par un autre membre.
 async function leaveGroup(){
   const code = document.getElementById('group-detail-code').textContent;
-  const ok = confirm("Tu veux vraiment quitter le groupe ?\n\nPour revenir, conserve le code " + code + ".");
+  const ok = confirm("Tu veux vraiment quitter le tournoi ?\n\nPour revenir, conserve le code " + code + ".");
   if(!ok){ return; }
 
   try{
@@ -7304,7 +7305,7 @@ async function leaveGroup(){
     const res = await fetch(`${API_BASE}/Group/Leave/${currentGroupId}/${userId}`, { method:'POST' });
     const json = await res.json();
     if(!json.success){
-      alert("Impossible de quitter le groupe : " + (json.message || 'erreur inconnue'));
+      alert("Impossible de quitter le tournoi : " + (json.message || 'erreur inconnue'));
       return;
     }
     switchView('groups');
@@ -7336,7 +7337,7 @@ function shareGroupOnWhatsApp(){
   window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank');
 }
 
-// Invitation au jeu, et non à un groupe : le lien ne porte aucun code, la
+// Invitation au jeu, et non à un tournoi : le lien ne porte aucun code, la
 // personne arrive donc sur l'inscription et s'arrête là. C'est toute la
 // différence avec shareGroupOnWhatsApp, qui l'embarque dans un groupe.
 // ===== LE VOISINAGE AU CLASSEMENT, SUR « MON PROFIL » =====
@@ -7983,7 +7984,7 @@ async function loadRanking(tab){
 }
 
 // ===== RENOMMER SON GROUPE =====
-// Un groupe créé sous « Les amis de X » finit par prendre une identité. Seul
+// Un tournoi créé sous « Les amis de X » finit par prendre une identité. Seul
 // son créateur peut changer le nom ; le code d'invitation, lui, ne bouge pas.
 let groupeAffiche = null;
 
@@ -8049,7 +8050,7 @@ function switchGroupTab(tab){
   document.getElementById('gtab-calendar').style.display = ranking ? 'none' : 'block';
 }
 
-// Le lien vers les pronos du groupe, sous le classement. Même destination que
+// Le lien vers les pronos du tournoi, sous le classement. Même destination que
 // le bloc de l'accueil, même libellé selon l'état du match : les pronos bruts,
 // les compos notées, ou tous les résultats.
 async function loadGroupSalonLien(groupId){
@@ -8072,8 +8073,8 @@ async function loadGroupSalonLien(groupId){
     if(!cible) return;
 
     const etat = await salonEtatDuMatch(cible);
-    // Sur la page d'un groupe, le lien parle du match, pas du groupe : on est
-    // déjà chez soi, « du groupe » ne dit rien de plus.
+    // Sur la page d'un tournoi, le lien parle du match, pas du tournoi : on est
+    // déjà chez soi, « du tournoi » ne dit rien de plus.
     const libelle = (etat === 'results') ? 'Le dernier match' : SALON_ETATS[etat].cta;
     const dore = (etat !== 'closed') ? ' dore' : '';
     const affiche = teamLabel(cible.homeTeam, 'PSG') + ' / ' + teamLabel(cible.awayTeam, 'Adversaire');
@@ -8095,7 +8096,7 @@ async function loadGroupSalonLien(groupId){
 let groupSeasonBaseLabel = '';
 
 // Affiche les matchs du PSG qu'il reste à disputer dans le mini-championnat du
-// groupe, et la date à laquelle le classement sera définitivement figé.
+// tournoi, et la date à laquelle le classement sera définitivement figé.
 // Hypothèse : les matchs comptabilisés sont les prochains matchs du PSG dans
 // l'ordre chronologique, à hauteur de (seasonLength - matchesPlayed).
 async function loadGroupCalendar(seasonLength, played){
@@ -8187,14 +8188,14 @@ async function loadGroupCalendar(seasonLength, played){
 
     block.style.display = 'block';
   }catch(e){
-    // Le calendrier est un bonus : s'il échoue, l'écran du groupe reste utilisable.
+    // Le calendrier est un bonus : s'il échoue, l'écran du tournoi reste utilisable.
     emptyEl.textContent = 'Impossible de charger le calendrier des matchs.';
     emptyEl.style.display = 'block';
   }
 }
 
 // ===== QUI A JOUE LE PROCHAIN MATCH (18 septembre 2026) =====
-// Le capitaine voyait son groupe decrocher sans rien pour le retenir : deux amis
+// Le capitaine voyait son tournoi decrocher sans rien pour le retenir : deux amis
 // inscrits le meme soir, aucun prono, et aucun moyen de leur secouer les puces
 // depuis le jeu. Ce bloc dit qui manque, et lui seul peut les relancer sur
 // WhatsApp, la ou il les a invites.
@@ -8209,7 +8210,7 @@ async function chargerParticipation(g){
   bloc.innerHTML = '';
 
   const membres = (g && Array.isArray(g.ranking)) ? g.ranking : [];
-  // Seul dans son groupe : il n'y a personne a relancer.
+  // Seul dans son tournoi : il n'y a personne a relancer.
   if(membres.length < 2) return;
 
   try{
@@ -8282,7 +8283,7 @@ async function chargerParticipation(g){
       html += '<button class="cta-whatsapp" onclick="relancerLesAbsents()">'
         + '<svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01c-1.52 0-3.01-.41-4.31-1.18l-.31-.18-3.2.84.85-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.23-8.23 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.75.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29"/></svg>'
         + '<span>Relancer ' + (absents.length > 1 ? ('les ' + absents.length + ' absents') : "l'absent") + '</span></button>'
-        + '<p class="part-note">Tu as créé ce groupe : toi seul peux les relancer.</p>';
+        + '<p class="part-note">Tu as créé ce tournoi : toi seul peux les relancer.</p>';
     }
 
     bloc.innerHTML = html + '</div>';
@@ -8292,7 +8293,7 @@ async function chargerParticipation(g){
 let relanceEnAttente = null;
 
 // Le message part sur WhatsApp, la ou le capitaine a invite ses amis. On ne
-// nomme personne : le message atterrit dans la conversation de groupe, et
+// nomme personne : le message atterrit dans la conversation de tournoi, et
 // designer les retardataires par leur nom serait une humiliation publique.
 // L'adresse nue du site est en mémoire chez WhatsApp avec un aperçu vide —
 // constaté le 22 septembre 2026, souvenir du temps où elle affichait la page
@@ -8318,7 +8319,7 @@ function lienRelance(){
 function relancerLesAbsents(){
   const d = relanceEnAttente;
   if(!d) return;
-  // Le barème des points de groupe est ancre sur le nombre de participants du
+  // Le barème des points de tournoi est ancre sur le nombre de participants du
   // soir : le dernier present marque 2 points, chaque place au-dessus en vaut
   // un de plus. Un ami qui s'y met ajoute donc vraiment un point a tous ceux
   // qui finissent devant lui — la phrase n'est pas une formule, elle est juste.
@@ -8347,15 +8348,15 @@ async function openGroupDetail(groupId){
     document.getElementById('group-detail-name').textContent = g.name.toUpperCase();
     document.getElementById('group-detail-code').textContent = g.inviteCode;
 
-    // Un groupe d'amis plein n'invite plus : le bloc de partage laisse place à
-    // « Ton groupe est au complet » (16 septembre 2026).
+    // Un tournoi d'amis plein n'invite plus : le bloc de partage laisse place à
+    // « Ton tournoi est au complet » (16 septembre 2026).
     const complet = (g.ranking || []).length >= GROUPE_MAX_MEMBRES;
     document.getElementById('group-invite-box').style.display = complet ? 'none' : 'block';
     document.getElementById('group-complet-box').style.display = complet ? 'block' : 'none';
 
-    // Un groupe d'une seule personne n'a ni classement, ni record, ni calendrier
+    // Un tournoi d'une seule personne n'a ni classement, ni record, ni calendrier
     // qui vaillent : on affichait un classement d'un joueur, un « record du
-    // groupe » qui était son propre score et le bouton d'invitation tout en bas.
+    // tournoi » qui était son propre score et le bouton d'invitation tout en bas.
     // Tant qu'il est seul, la page ne dit plus qu'une chose : invite tes amis.
     // Le reste revient de lui-même au premier membre qui entre.
     const seul = (g.ranking || []).length <= 1;
@@ -8367,7 +8368,7 @@ async function openGroupDetail(groupId){
     const titreInvite = document.getElementById('group-invite-title');
     const labelInvite = document.getElementById('group-invite-label');
     if(titreInvite && labelInvite){
-      titreInvite.textContent = seul ? 'Ton groupe est créé' : 'Invite un nouveau membre dans le groupe';
+      titreInvite.textContent = seul ? 'Ton tournoi est créé' : 'Invite un nouveau membre dans le tournoi';
       labelInvite.innerHTML = seul
         ? 'Il n\'attend plus que tes amis. Partage-leur ce code, ou envoie-leur '
           + 'l\'invitation directement.<br><br>Code d\'invitation'
@@ -8383,7 +8384,7 @@ async function openGroupDetail(groupId){
     }
     fermerRenommage();
 
-    // Seul dans son groupe : on s'arrête ici. Le lien « Renommer » est déjà posé
+    // Seul dans son tournoi : on s'arrête ici. Le lien « Renommer » est déjà posé
     // juste au-dessus — c'est le moment où l'on veut le plus corriger un nom.
     // Rien d'autre à charger : ni participation, ni calendrier, ni salon, ni
     // record. Trois appels au serveur en moins, et la page s'ouvre d'un coup.
@@ -8442,7 +8443,7 @@ async function openGroupDetail(groupId){
       return html;
     };
 
-    // Un membre qui n'a encore joué aucun match du groupe — nouvel arrivé ou
+    // Un membre qui n'a encore joué aucun match du tournoi — nouvel arrivé ou
     // absent de tous les matchs — reste dans la liste, sans rang, avec
     // « aucun match joué » à la place du score (16 septembre 2026).
     rankingEl.innerHTML = `
@@ -8464,7 +8465,7 @@ async function openGroupDetail(groupId){
         <span class="ranking-score">${fmtNum(r.totalScore)}</span>
       </div>`).join('')
       + ligneSommeil(g.sleepingCount)
-      + '<p class="ranking-note">À égalité, c\'est le coef expert sur les matchs du groupe qui départage.</p>';
+      + '<p class="ranking-note">À égalité, c\'est le coef expert sur les matchs du tournoi qui départage.</p>';
   }catch(e){
     rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce groupe.</div>';
   }
@@ -8850,8 +8851,8 @@ document.addEventListener('keydown', function(e){
 });
 
 
-// Un kop n'est pas un groupe d'amis : il ne remonte ni sur l'accueil, ni dans
-// « Mes groupes d'amis », et il ne peut jamais servir de groupe personnel pour
+// Un kop n'est pas un tournoi d'amis : il ne remonte ni sur l'accueil, ni dans
+// « Mes tournois d'amis », et il ne peut jamais servir de tournoi personnel pour
 // l'invitation WhatsApp de fin de pronostic. On ne l'atteint que par le menu.
 function estUnKop(g){
   const t = String((g && g.type) || '').toLowerCase();
@@ -8918,7 +8919,7 @@ function installerLeJeu(){
 
 // ===== RETROUVER SON KOP =====
 // Un nouveau venu arrive dans un kop sans jamais le voir : l'accueil affiche les
-// groupes d'amis, pas les kops, et le menu est le seul chemin. On le lui montre
+// tournois d'amis, pas les kops, et le menu est le seul chemin. On le lui montre
 // deux fois — après son premier prono, et sur l'accueil tant qu'il n'y est pas allé.
 // Le rappel ne s'adresse qu'à celui qui vient de créer son compte depuis un
 // lien d'invitation : il a été mis dans un kop sans jamais le voir. Un joueur
@@ -10111,7 +10112,7 @@ async function checkMatchNotification(){
       fresh = BADGES.filter(b => badgeKey(b) === '1re|prédiction').concat(fresh);
     }
 
-    // Les messages de la soirée : podiums de groupe, record, progression.
+    // Les messages de la soirée : podiums de tournoi, record, progression.
     // Ils s'affichent dans la même notification, qui ne s'ouvre qu'une fois
     // par match noté et sur n'importe quel écran.
     let evenements = [];
@@ -10120,7 +10121,7 @@ async function checkMatchNotification(){
         .then(r => r.json());
       if(evJson.success && evJson.data){
         evenements = messagesDuMatch(evJson.data, last.matchId);
-        // Plus d'invitation a creer un groupe dans l'annonce : a ce moment-la,
+        // Plus d'invitation a creer un tournoi dans l'annonce : a ce moment-la,
         // le joueur veut voir son resultat, personne ne clique ailleurs. Elle
         // reste sur l'ecran du resultat, ou il a le temps (19 septembre 2026).
       }
@@ -10225,7 +10226,7 @@ function navFromMenu(name){
 
 // ===== MES TROPHÉES =====
 // Le palmarès n'est stocké nulle part : le serveur rejoue les cycles clos de tous
-// les groupes du joueur et renvoie les médailles, le total et l'état de la coupe.
+// les tournois du joueur et renvoie les médailles, le total et l'état de la coupe.
 // Les seuils vivent côté serveur — ne jamais les recopier ici, ils divergeraient.
 const METAUX = [
   { cle:'or', niveau:5, dessin:'panneaux', teinte:'#E8B923', ombre:'#A87F12', bord:'#C79A2E',
@@ -10319,12 +10320,12 @@ function busteMedaille(m, nb){
 // nombre de joueurs qu'à partir du bronze, et ce n'est pas une flatterie : le
 // barème est positionnel, on ne peut marquer 9 points sur un match que s'il y a
 // au moins 9 joueurs actifs. Un ballon d'or est donc mathématiquement impossible
-// dans un petit groupe — alors qu'une baudruche, à 12 points, s'obtient à trois.
+// dans un petit tournoi — alors qu'une baudruche, à 12 points, s'obtient à trois.
 const VERDICT_METAUX = {
   5: { annonce: "Tu as remporté le Ballon d'Or des experts du PSG.",
-       mot: "La plus haute récompense du jeu. Tu as été le plus fort d'un groupe d'experts pendant cinq matchs. Félicitations." },
+       mot: "La plus haute récompense du jeu. Tu as été le plus fort d'un tournoi d'experts pendant cinq matchs. Félicitations." },
   4: { annonce: "Tu as remporté le Ballon d'Argent des experts du PSG.",
-       mot: "Une récompense rare. Tu as été aux meilleures places à chaque match, dans un groupe fourni. Tu peux être fier de toi." },
+       mot: "Une récompense rare. Tu as été aux meilleures places à chaque match, dans un tournoi fourni. Tu peux être fier de toi." },
   3: { annonce: "Tu as remporté le Ballon de Bronze des experts du PSG.",
        mot: "Plus haut, il n'y a que l'argent et l'or. Tu as été performant et régulier, et il y avait du monde dans ton groupe. Bravo à toi." },
   2: { annonce: "Tu as gagné le Ballon de Cuir des experts du PSG.",
@@ -10338,7 +10339,7 @@ function verdictHtml(m, d){
   const grand = '<div class="verdict-groupe">' + echapper(m.groupName)
               + ' · championnat n°' + m.cycleNumber + '</div>';
 
-  // Un groupe de deux ne donne pas de ballon : c'est un duel, il a ses textes.
+  // Un tournoi de deux ne donne pas de ballon : c'est un duel, il a ses textes.
   if(m.memberCount === 2){
     const autre = echapper(m.opponentName || 'ton adversaire');
     const corps = m.isChampion
@@ -10357,7 +10358,7 @@ function verdictHtml(m, d){
   }
 
   let rang;
-  if(m.rank === 1){ rang = 'Champion du groupe'; }
+  if(m.rank === 1){ rang = 'Champion du tournoi'; }
   else if(m.rank <= 3){ rang = 'Sur le podium'; }
   else { rang = m.rank + 'ᵉ sur ' + m.memberCount; }
 
@@ -10413,7 +10414,7 @@ async function goToTrophies(){
     dessinerVitrine(d.medalCounts);
   }catch(e){ /* la vitrine vide reste affichée */ }
 
-  // Le dernier cycle achevé, tous groupes confondus : le serveur les renvoie
+  // Le dernier cycle achevé, tous tournois confondus : le serveur les renvoie
   // du plus récent au plus ancien.
   try{
     const dernier = (d.medals && d.medals.length) ? d.medals[0] : null;
@@ -10427,7 +10428,7 @@ async function goToTrophies(){
 // ===== INVITATION PAR LIEN =====
 // Un lien de partage ressemble à : .../youprono-app.html?groupe=ABC123
 // On récupère le code au chargement, on le garde de côté, et on fait rejoindre
-// le groupe dès que la personne est connectée (ou dès qu'elle vient de s'inscrire).
+// le tournoi dès que la personne est connectée (ou dès qu'elle vient de s'inscrire).
 var pendingInviteCode = null;
 var venaitDeSInscrire = false;
 
@@ -10453,7 +10454,7 @@ noteBascule();
 (function captureInviteFromUrl(){
   var code = '';
   try{
-    code = (new URLSearchParams(window.location.search).get('groupe') || '').trim().toUpperCase();
+    code = (new URLSearchParams(window.location.search).get('tournoi') || '').trim().toUpperCase();
   }catch(e){ return; }
   if(!code) return;
 
@@ -10469,7 +10470,7 @@ noteBascule();
   if(!getAuth()){
     var banner = document.getElementById('auth-invite-banner');
     if(banner){
-      banner.innerHTML = 'On t\'invite à rejoindre un groupe sur The Golden Fan (code <strong>'
+      banner.innerHTML = 'On t\'invite à rejoindre un tournoi sur The Golden Fan (code <strong>'
         + code + '</strong>).<br>Crée ton compte et on t\'y ajoute tout de suite.';
       banner.style.display = 'block';
       personnaliserBandeauInvitation(code, banner);
@@ -10492,15 +10493,15 @@ async function personnaliserBandeauInvitation(code, banner){
 
     // Un kop de média (« kopmedia ») est un kop : même texte, même parcours.
     // Tester le seul type « kop » envoyait les invités de Mookie vers les
-    // groupes d'amis (corrigé le 16 septembre 2026).
+    // tournois d'amis (corrigé le 16 septembre 2026).
     if(estUnKop(json.data)){
       banner.innerHTML = 'On t\'invite à rejoindre ' + nomDuKopAvecArticle(nom).replace(/^le /, 'le <strong>')
         + '</strong> sur The Golden Fan.<br>Choisis ton pseudo, fais tes prédictions et retrouve ton kop dans le menu principal';
     }else if(json.data.isFull){
-      // Groupe complet (16 septembre 2026) : on le dit avant l'inscription, pour
+      // Tournoi complet (16 septembre 2026) : on le dit avant l'inscription, pour
       // que la mauvaise nouvelle ne tombe pas après, et on offre la suite.
-      banner.innerHTML = 'Le groupe <strong>' + echapper(nom)
-        + '</strong> est complet.<br>Crée ton compte et lance ton propre groupe en deux minutes.';
+      banner.innerHTML = 'Le tournoi <strong>' + echapper(nom)
+        + '</strong> est complet.<br>Crée ton compte et lance ton propre tournoi en deux minutes.';
     }else{
       banner.innerHTML = 'On t\'invite à rejoindre <strong>' + nom
         + '</strong> sur The Golden Fan.<br>Crée ton compte et on t\'y ajoute tout de suite.';
@@ -10517,8 +10518,8 @@ function nomDuKopAvecArticle(nom){
   return 'le ' + (/\bkops?\b/i.test(nom) ? nom : ('kop ' + nom));
 }
 
-// Un lien partage peut mener a un groupe d'amis ou a un kop. On demande d'abord
-// au serveur ce que le code designe : un groupe d'amis se rejoint d'office,
+// Un lien partage peut mener a un tournoi d'amis ou a un kop. On demande d'abord
+// au serveur ce que le code designe : un tournoi d'amis se rejoint d'office,
 // comme avant, mais on n'entre jamais dans un kop sans l'avoir voulu — on
 // n'en a qu'un, et y entrer par megarde ferme la porte de tous les autres.
 async function acceptPendingInvite(){
@@ -10607,17 +10608,17 @@ async function accepterInvitationKop(){
   }
 }
 
-// Un groupe d'amis se rejoint d'office, et celui qui vient d'entrer atterrit
+// Un tournoi d'amis se rejoint d'office, et celui qui vient d'entrer atterrit
 // sur le match, pas sur la liste de ses coequipiers.
 //
 // CORRECTION DU 18 SEPTEMBRE 2026. Cette fonction commencait par
 // switchView('groups') : l'invite qui venait de creer son compte tombait sur la
-// page de son groupe — deux pseudos et un code d'invitation — sans avoir jamais
+// page de son tournoi — deux pseudos et un code d'invitation — sans avoir jamais
 // vu le match a pronostiquer, ni le bouton pour le jouer. Il fallait qu'il
 // ouvre le menu de lui-meme. Le parcours des kops avait ete corrige le
-// 16 septembre pour cette raison exacte ; celui des groupes d'amis ne l'avait
-// pas ete. Le bandeau lui dit qu'il est bien dans le groupe, le match est
-// juste en dessous, son groupe l'attend dans le menu.
+// 16 septembre pour cette raison exacte ; celui des tournois d'amis ne l'avait
+// pas ete. Le bandeau lui dit qu'il est bien dans le tournoi, le match est
+// juste en dessous, son tournoi l'attend dans le menu.
 async function rejoindreGroupeDAmis(code){
   try{
     const userId = getUserId();
@@ -10631,7 +10632,7 @@ async function rejoindreGroupeDAmis(code){
     }
 
     if(json.success){
-      // Le nom du groupe pour le bandeau : le serveur vient de le renvoyer.
+      // Le nom du tournoi pour le bandeau : le serveur vient de le renvoyer.
       let nom = (json.data && json.data.name) ? String(json.data.name).trim() : '';
       if(!nom){
         try{
@@ -10644,13 +10645,13 @@ async function rejoindreGroupeDAmis(code){
       return;
     }
 
-    // Échec (code périmé, groupe complet, déjà membre…) : on ne laisse pas
+    // Échec (code périmé, tournoi complet, déjà membre…) : on ne laisse pas
     // l'invité dans le vide, on prérenseigne le code et on affiche la raison.
     switchView('groups');
     await enterGroupsScreen();
     document.getElementById('group-join-code').value = code;
     const errEl = document.getElementById('group-join-error');
-    errEl.textContent = json.message || "On n'a pas pu te faire rejoindre ce groupe automatiquement.";
+    errEl.textContent = json.message || "On n'a pas pu te faire rejoindre ce tournoi automatiquement.";
     errEl.classList.add('show');
   }catch(e){
     switchView('groups');
@@ -10662,9 +10663,9 @@ async function rejoindreGroupeDAmis(code){
   }
 }
 
-// Il est dans le groupe : on l'emmene devant le match, avec un bandeau qui le
+// Il est dans le tournoi : on l'emmene devant le match, avec un bandeau qui le
 // lui dit. Le libelle du menu se met a jour au passage, pour qu'il retrouve son
-// groupe quand il le voudra.
+// tournoi quand il le voudra.
 async function annoncerGroupeRejoint(nom){
   switchView('home');
   try{ majLibelleGroupes(await compterMesGroupes()); }catch(e){}
@@ -10674,7 +10675,7 @@ async function annoncerGroupeRejoint(nom){
   if(!banner || !titre) return;
   titre.innerHTML = nom
     ? ('Bienvenue dans <strong>' + echapper(nom) + '</strong>')
-    : 'Tu es bien dans le groupe';
+    : 'Tu es bien dans le tournoi';
   banner.style.display = 'block';
 }
 
@@ -11328,7 +11329,7 @@ async function submitPrediction(){
       switchView('confirm');
       rappelKopSurConfirmation();
       proposerInstallation('prono', 'install-invite-confirm');
-      // On regarde s'il a deja un groupe, sans en creer : si oui, le bouton
+      // On regarde s'il a deja un tournoi, sans en creer : si oui, le bouton
       // d'invitation ouvrira WhatsApp sans attente et sans quitter le jeu.
       assureMonGroupe(false);
     } else {
