@@ -1642,7 +1642,7 @@
 
   .picto{ width:18px; height:18px; vertical-align:-4px; }
   .picto-titre{ width:22px; height:22px; vertical-align:-4px; margin-right:4px; opacity:.85; }
-  .rt-mvt{ width:22px; text-align:right; flex:0 0 auto; }
+  .rt-mvt{ flex:0 0 auto; }
   /* Le classement d'un groupe. Les marges ont ete resserrees le 17 septembre
      2026 pour loger les cinq colonnes des places : 8px aux deux bords de
      l'encadre, 4px entre le rang et le pseudo. */
@@ -2229,8 +2229,8 @@
     position:relative;
     display:flex;
     align-items:center;
-    gap:4px;
-    padding:10px 8px;
+    gap:3px;
+    padding:10px 7px;
     border-radius:8px;
     background:var(--bg);
     border:1px solid var(--border);
@@ -2251,8 +2251,13 @@
      (1er, 2e, 3e) et « 12e » ne tenait pas dans vingt-six. */
   .rt-rank{ width:23px; color:var(--text-dim); font-family:'Oswald',sans-serif; }
   .rt-rank .ord{ font-size:9px; }
-  .rt-name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .rt-games{ width:32px; text-align:right; color:var(--text-dim); font-size:12px; }
+  /* Le pseudo et sa fleche forment un seul bloc : la fleche se colle au nom
+     au lieu de flotter dans une colonne a l'autre bout de la ligne. Le bloc
+     prend la place restante, le pseudo se tronque avant la fleche. */
+  .rt-nom-bloc{ flex:1; min-width:0; display:flex; align-items:baseline; gap:5px; }
+  .rt-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rt-games{ width:30px; text-align:center; color:var(--text-dim); font-size:12px;
+             font-variant-numeric:tabular-nums; }
 
   /* Le ballon du mini-championnat : le plus precieux metal remporte, et le
      nombre de ballons dans le disque. Rien tant que le joueur n'en a aucun --
@@ -2264,17 +2269,17 @@
   /* Les badges debloques. Le turquoise est celui du premier niveau de la
      vitrine : il ne se confondra pas avec l'or, l'argent ou le bronze des
      ballons, qui prendront place dans cette meme ligne. */
-  .rt-badges{ width:40px; text-align:right; color:#6EC1B4; font-size:12px;
+  .rt-badges{ width:30px; text-align:center; color:#6EC1B4; font-size:12px;
               font-variant-numeric:tabular-nums; }
   /* L'ecusson ne se repete pas a chaque ligne : il coiffe la colonne, une fois.
      L'en-tete reprend au pixel pres les gouttieres et les largeurs de la ligne,
      sinon l'icone flotte a cote de sa colonne au lieu de la coiffer. */
-  .rt-entete{ display:flex; align-items:center; gap:4px; padding:0 9px 5px;
+  .rt-entete{ display:flex; align-items:center; gap:3px; padding:0 8px 5px;
               pointer-events:none; }
   .rt-entete .creux{ flex:1; }
-  .rt-entete .rt-badges{ display:flex; justify-content:flex-end; }
+  .rt-entete .rt-badges{ display:flex; justify-content:center; }
   .rt-entete svg{ display:block; }
-  .rt-score{ width:50px; text-align:right; font-family:'Oswald',sans-serif; color:var(--gold); }
+  .rt-score{ width:48px; text-align:right; font-family:'Oswald',sans-serif; color:var(--gold); }
 
   /* --- FAQ --- */
   .faq-list{ margin-top:16px; }
@@ -3478,11 +3483,10 @@
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div class="rt-entete" id="ranking-entete" style="display:none;">
         <span class="creux"></span>
-        <span style="width:23px"></span>
-        <span style="width:22px"></span>
+        <span style="width:26px"></span>
         <span class="rt-badges" aria-label="badges débloqués"><svg width="12" height="16" viewBox="0 0 76 100" aria-hidden="true"><path d="M38 6 70 19v28c0 20-13 35-32 43C19 84 6 67 6 47V19z" fill="#6EC1B4"/></svg></span>
-        <span style="width:32px"></span>
-        <span style="width:50px"></span>
+        <span style="width:30px"></span>
+        <span style="width:48px"></span>
       </div>
       <div id="ranking-table"></div>
       <p class="ranking-note" id="ranking-regle" style="display:none;">Il faut avoir joué au moins 3 matchs pour que ta position au classement ne soit plus virtuelle. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
@@ -7239,8 +7243,7 @@ async function chargerVoisinage(tab){
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
         <span class="rt-rank">${ordinal(u.rank)}</span>
-        <span class="${classePseudo(u, tab)}">${u.userName}</span>
-        <span class="rt-mvt">${fleche(u)}</span>
+        <span class="rt-nom-bloc"><span class="${classePseudo(u, tab)}">${u.userName}</span><span class="rt-mvt">${fleche(u)}</span></span>
         <span class="rt-games">${assiduite(u)}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`).join('');
@@ -7738,8 +7741,7 @@ async function loadRanking(tab){
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
         <span class="rt-rank">${ordinal(u.rank)}</span>
-        <span class="${classePseudo(u, tab)}">${u.userName}</span>
-        <span class="rt-mvt">${fleche(u)}</span>
+        <span class="rt-nom-bloc"><span class="${classePseudo(u, tab)}">${u.userName}</span><span class="rt-mvt">${fleche(u)}</span></span>
         <span class="rt-ballon">${ballonHtml(u)}</span>
         <span class="rt-badges">${badgesTexte(u)}</span>
         <span class="rt-games">${assiduite(u)}</span>
