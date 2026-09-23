@@ -1594,6 +1594,15 @@
     pointer-events:none;
   }
   .groups-pitch,
+  /* L'invitation de l'accueil est plus ramassée que celle de la confirmation :
+     elle s'intercale entre le bouton JOUER et le calendrier, et ne doit pas
+     repousser ce dernier sous la ligne de flottaison. */
+  #home-invite-box{ padding:14px 16px; margin:14px 0; }
+  #home-invite-pitch{ font-size:14px; line-height:1.45; margin-bottom:12px; }
+  #home-invite-box .cta-whatsapp,
+  #home-invite-box .cta-x{ padding-top:11px; padding-bottom:11px;
+                           font-size:14px; margin-top:8px; }
+
   .confirm-pitch{
     margin:0 0 4px 0;
     font-size:16px;
@@ -2708,6 +2717,18 @@
         <button class="cta-play" id="home-play-btn" onclick="goToComposition()">Jouer</button>
 
         <p class="deadline-note" id="deadline-note"></p>
+      </div>
+
+      <div class="group-invite-box" id="home-invite-box" style="display:none;">
+        <p class="confirm-pitch" id="home-invite-pitch">The Golden Fan est un jeu entre experts du PSG, mais surtout entre amis. Invite-les et découvre une nouvelle façon de participer au jeu.</p>
+        <button class="cta-whatsapp wa-btn" id="home-invite-btn" onclick="inviteFromHome()">
+          <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2m0 18.15h-.01c-1.52 0-3.01-.41-4.31-1.18l-.31-.18-3.2.84.85-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.23-8.23 8.23m4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.79.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.75.59.25 1.05.4 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29"/></svg>
+          <span id="home-invite-label">Défie tes amis</span>
+        </button>
+        <button class="cta-x" id="home-invite-x-btn" onclick="inviteFromHomeSurX()">
+          <svg class="x-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          <span id="home-invite-x-label">Défie tes amis</span>
+        </button>
       </div>
 
       <div id="home-calendar-label" class="dash-history-label" style="display:none; margin-top:24px;">Calendrier</div>
@@ -4199,6 +4220,9 @@ async function loadHomeMatch(){
 
     await checkExistingPrediction();
     scheduleHomeRefresh();
+
+    // L'invitation à défier ses amis, entre le bouton et le calendrier.
+    majInvitationAccueil();
 
     // Calendrier des prochains matchs, sous la carte principale. En mode normal,
     // la carte occupe déjà le premier match : on affiche les suivants. En LIVE,
@@ -6958,6 +6982,63 @@ async function createNamedGroup(){
 // --- Bouton de fin de pronostic ---
 // On prend le plus ancien groupe cree. S'il n'en a aucun, on l'envoie le nommer.
 // S'il est plein, on le renvoie a la liste, ou il pourra en ouvrir un second.
+// ===== L'INVITATION DE L'ACCUEIL =====
+// Meme mecanique qu'en fin de tunnel : si le joueur a deja un groupe ouvert on
+// partage son lien, sinon on en cree un au vol. Seuls les identifiants des
+// boutons changent, pour que le verrou « Un instant… » agisse sur les bons.
+// Le bloc se montre des que l'accueil est en mode normal : le joueur qui vient
+// de jouer est justement celui qui a le plus envie d'entrainer ses amis.
+function majInvitationAccueil(){
+  const boite = document.getElementById('home-invite-box');
+  if(!boite) return;
+  boite.style.display = (homeMode === 'normal') ? 'block' : 'none';
+
+}
+
+async function inviteFromHome(){
+  canalInvitation = 'whatsapp';
+  if(monGroupe && monGroupe.inviteCode && monGroupe.memberCount < MAX_MEMBRES_GROUPE){
+    ouvrirWhatsApp(monGroupe, true);
+    return;
+  }
+  const relache = verrouille('home-invite-btn', 'home-invite-label', 'Un instant…');
+  const groupe = await assureMonGroupe(false);
+  relache();
+  if(!groupe){ creerUnGroupe(); return; }
+  if(!groupe.inviteCode){
+    alert("Impossible de contacter le serveur. Réessaie dans un instant.");
+    return;
+  }
+  if(groupe.memberCount >= MAX_MEMBRES_GROUPE){
+    alert("Désolé, un groupe d'amis ne peut pas dépasser 11 membres, mais tu peux en créer un 2ème.");
+    goToGroups();
+    return;
+  }
+  ouvrirWhatsApp(groupe, false);
+}
+
+async function inviteFromHomeSurX(){
+  canalInvitation = 'x';
+  if(monGroupe && monGroupe.inviteCode && monGroupe.memberCount < MAX_MEMBRES_GROUPE){
+    ouvrirX(monGroupe, true);
+    return;
+  }
+  const relache = verrouille('home-invite-x-btn', 'home-invite-x-label', 'Un instant…');
+  const groupe = await assureMonGroupe(false);
+  relache();
+  if(!groupe){ creerUnGroupe(); return; }
+  if(!groupe.inviteCode){
+    alert("Impossible de contacter le serveur. Réessaie dans un instant.");
+    return;
+  }
+  if(groupe.memberCount >= MAX_MEMBRES_GROUPE){
+    alert("Désolé, un groupe d'amis ne peut pas dépasser 11 membres, mais tu peux en créer un 2ème.");
+    goToGroups();
+    return;
+  }
+  ouvrirX(groupe, false);
+}
+
 async function inviteFromConfirm(){
   canalInvitation = 'whatsapp';
   if(monGroupe && monGroupe.inviteCode && monGroupe.memberCount < MAX_MEMBRES_GROUPE){
