@@ -2253,6 +2253,20 @@
   .rt-rank .ord{ font-size:10px; }
   .rt-name{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .rt-games{ width:50px; text-align:right; color:var(--text-dim); font-size:12px; }
+
+  /* Les badges debloques. Le turquoise est celui du premier niveau de la
+     vitrine : il ne se confondra pas avec l'or, l'argent ou le bronze des
+     ballons, qui prendront place dans cette meme ligne. */
+  .rt-badges{ width:38px; text-align:right; color:#6EC1B4; font-size:12px;
+              font-variant-numeric:tabular-nums; }
+  /* L'ecusson ne se repete pas a chaque ligne : il coiffe la colonne, une fois.
+     L'en-tete reprend au pixel pres les gouttieres et les largeurs de la ligne,
+     sinon l'icone flotte a cote de sa colonne au lieu de la coiffer. */
+  .rt-entete{ display:flex; align-items:center; gap:10px; padding:0 13px 5px;
+              pointer-events:none; }
+  .rt-entete .creux{ flex:1; }
+  .rt-entete .rt-badges{ display:flex; justify-content:flex-end; }
+  .rt-entete svg{ display:block; }
   .rt-score{ width:60px; text-align:right; font-family:'Oswald',sans-serif; color:var(--gold); }
 
   /* --- FAQ --- */
@@ -3455,6 +3469,13 @@
       <p class="ranking-note" id="ranking-def-coef" style="display:none;">Le Coef Expert est la moyenne des résultats obtenus match après match.</p>
 
       <div id="ranking-loading" class="placeholder">Chargement…</div>
+      <div class="rt-entete" id="ranking-entete" style="display:none;">
+        <span class="creux"></span>
+        <span style="width:30px"></span>
+        <span class="rt-badges" aria-label="badges débloqués"><svg width="12" height="16" viewBox="0 0 76 100" aria-hidden="true"><path d="M38 6 70 19v28c0 20-13 35-32 43C19 84 6 67 6 47V19z" fill="#6EC1B4"/></svg></span>
+        <span style="width:50px"></span>
+        <span style="width:60px"></span>
+      </div>
       <div id="ranking-table"></div>
       <p class="ranking-note" id="ranking-regle" style="display:none;">Il faut avoir joué au moins 3 matchs pour que ta position au classement ne soit plus virtuelle. En cas de forfait, on t'attribue une note en dessous de la moyenne des participants.</p>
     </section>
@@ -7552,6 +7573,16 @@ function classePseudo(u, tab){
   return (tab === 'final' && !positionAcquise(u)) ? 'rt-name virtuel' : 'rt-name assidu';
 }
 
+// Les vingt-quatre badges de la vitrine. Celui qui n'en a aucun n'affiche rien
+// plutot qu'un « 0/24 » : un classement n'a pas a souligner ce qu'on n'a pas
+// encore. Le serveur ne renvoie ce compte que pour le coef expert.
+const BADGES_TOTAL = 24;
+
+function badgesTexte(u){
+  const n = (u && typeof u.badges === 'number') ? u.badges : 0;
+  return n > 0 ? (n + '/' + BADGES_TOTAL) : '';
+}
+
 function assiduite(u){
   const total = u.attendanceTotal;
   const joues = (u.attendancePlayed !== undefined && u.attendancePlayed !== null)
@@ -7668,6 +7699,7 @@ async function loadRanking(tab){
         <span class="rt-rank">${ordinal(u.rank)}</span>
         <span class="${classePseudo(u, tab)}">${u.userName}</span>
         <span class="rt-mvt">${fleche(u)}</span>
+        <span class="rt-badges">${badgesTexte(u)}</span>
         <span class="rt-games">${assiduite(u)}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`;
@@ -7684,6 +7716,14 @@ async function loadRanking(tab){
     // de note de possession.
     document.getElementById('ranking-regle').style.display =
       (tab === 'final') ? 'block' : 'none';
+
+    // Seul le coef expert porte le compte des badges : les classements par
+    // categorie et la note record n'en renvoient pas.
+    const entete = document.getElementById('ranking-entete');
+    if(entete){
+      entete.style.display = (tab === 'final' && liste.some(u => u.badges > 0))
+        ? 'flex' : 'none';
+    }
 
     cadrerClassement(boite);
   }catch(e){
