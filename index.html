@@ -1642,7 +1642,9 @@
 
   .picto{ width:18px; height:18px; vertical-align:-4px; }
   .picto-titre{ width:22px; height:22px; vertical-align:-4px; margin-right:4px; opacity:.85; }
-  .rt-mvt{ flex:0 0 auto; }
+  /* Les places gagnees ou perdues, dans une colonne a elles, juste avant les
+     matchs joues : c'est la que le lecteur compare deux nombres. */
+  .rt-mvt{ width:30px; flex:0 0 auto; text-align:center; }
   /* Le classement d'un groupe. Les marges ont ete resserrees le 17 septembre
      2026 pour loger les cinq colonnes des places : 8px aux deux bords de
      l'encadre, 4px entre le rang et le pseudo. */
@@ -2251,11 +2253,8 @@
      (1er, 2e, 3e) et « 12e » ne tenait pas dans vingt-six. */
   .rt-rank{ width:23px; color:var(--text-dim); font-family:'Oswald',sans-serif; }
   .rt-rank .ord{ font-size:9px; }
-  /* Le pseudo et sa fleche forment un seul bloc : la fleche se colle au nom
-     au lieu de flotter dans une colonne a l'autre bout de la ligne. Le bloc
-     prend la place restante, le pseudo se tronque avant la fleche. */
-  .rt-nom-bloc{ flex:1; min-width:0; display:flex; align-items:baseline; gap:5px; }
-  .rt-name{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rt-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;
+            white-space:nowrap; }
   .rt-games{ width:30px; text-align:center; color:var(--text-dim); font-size:12px;
              font-variant-numeric:tabular-nums; }
 
@@ -3488,8 +3487,7 @@
       <div id="ranking-loading" class="placeholder">Chargement…</div>
       <div class="rt-entete" id="ranking-entete" style="display:none;">
         <span class="creux"></span>
-        <span class="titre" style="width:26px" aria-label="ballons remportés">B</span>
-        <span class="rt-badges" id="entete-badges" aria-label="badges débloqués"><svg width="12" height="16" viewBox="0 0 76 100" aria-hidden="true"><path d="M38 6 70 19v28c0 20-13 35-32 43C19 84 6 67 6 47V19z" fill="#6EC1B4"/></svg></span>
+        <span style="width:30px"></span>
         <span class="titre" style="width:30px" aria-label="matchs joués">M</span>
         <span class="titre" style="width:48px">Coef</span>
       </div>
@@ -7248,7 +7246,8 @@ async function chargerVoisinage(tab){
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
         <span class="rt-rank">${ordinal(u.rank)}</span>
-        <span class="rt-nom-bloc"><span class="${classePseudo(u, tab)}">${u.userName}</span><span class="rt-mvt">${fleche(u)}</span></span>
+        <span class="${classePseudo(u, tab)}">${u.userName}</span>
+        <span class="rt-mvt">${fleche(u)}</span>
         <span class="rt-games">${assiduite(u)}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`).join('');
@@ -7746,9 +7745,8 @@ async function loadRanking(tab){
       <div class="ranking-table-row ${u.id === userId ? 'me' : ''}">
         <span class="rt-barre" style="width:${largeurBarre(u.score)}%"></span>
         <span class="rt-rank">${ordinal(u.rank)}</span>
-        <span class="rt-nom-bloc"><span class="${classePseudo(u, tab)}">${u.userName}</span><span class="rt-mvt">${fleche(u)}</span></span>
-        <span class="rt-ballon">${ballonHtml(u)}</span>
-        <span class="rt-badges">${badgesTexte(u)}</span>
+        <span class="${classePseudo(u, tab)}">${u.userName}</span>
+        <span class="rt-mvt">${fleche(u)}</span>
         <span class="rt-games">${assiduite(u)}</span>
         <span class="rt-score">${fmtNote(u.score)}</span>
       </div>`;
@@ -7766,16 +7764,10 @@ async function loadRanking(tab){
     document.getElementById('ranking-regle').style.display =
       (tab === 'final') ? 'block' : 'none';
 
-    // L'en-tete ne sert qu'au coef expert : les classements par categorie et
-    // la note record n'ont ni ballons, ni badges.
+    // L'en-tete nomme les deux colonnes de chiffres du coef expert. Les
+    // classements par categorie et la note record gardent leur mise en page.
     const entete = document.getElementById('ranking-entete');
     if(entete){ entete.style.display = (tab === 'final') ? 'flex' : 'none'; }
-    // L'ecusson ne coiffe la colonne des badges que s'il y a des badges a
-    // coiffer -- tant que le serveur ne les renvoie pas, la case reste nue.
-    const ecusson = document.getElementById('entete-badges');
-    if(ecusson){
-      ecusson.style.visibility = liste.some(u => u.badges > 0) ? 'visible' : 'hidden';
-    }
 
     cadrerClassement(boite);
   }catch(e){
