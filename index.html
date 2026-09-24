@@ -7197,6 +7197,24 @@ function verrouiller(bouton, texte){
   return function(){ bouton.disabled = false; bouton.textContent = avant; };
 }
 
+// Ouvert ou privé, tournoi par tournoi (24 septembre 2026). Le détail d'un
+// tournoi (Group/ById) ne le dit pas ; la liste des tournois du joueur, si.
+// On la retient au passage, et on la redemande si on arrive directement sur
+// un tournoi (lien, rafraîchissement).
+const tournoiPublic = {};
+function retenirPortes(liste){
+  (liste || []).forEach(t => { if(t && t.id){ tournoiPublic[t.id] = (t.public !== false); } });
+}
+async function estTournoiPublic(id){
+  if(id in tournoiPublic) return tournoiPublic[id];
+  try{
+    const res = await fetch(`${API_BASE}/Group/Tournois/${getUserId()}`);
+    const j = await res.json();
+    if(j.success && j.data){ retenirPortes(j.data.open); retenirPortes(j.data.running); }
+  }catch(e){}
+  return (id in tournoiPublic) ? tournoiPublic[id] : true;
+}
+
 async function enterGroupsScreen(){
   const userId = getUserId();
   const zoneO = document.getElementById('tournois-ouverts');
@@ -7208,6 +7226,7 @@ async function enterGroupsScreen(){
     const res2 = await fetch(`${API_BASE}/Group/Tournois/${userId}`);
     const j2 = await res2.json();
     const d2 = (j2.success && j2.data) ? j2.data : { open:[], running:[] };
+    retenirPortes(d2.open); retenirPortes(d2.running);
 
     const versLigne = (t) => ({
       id: t.id, nom: t.name, code: t.inviteCode, joueurs: t.memberCount,
@@ -7330,6 +7349,7 @@ async function creerGroupe(nom){
     const json = await res.json();
     if(!json.success || !json.data) return null;
     const g = versGroupe(json.data);
+    if(json.data.id){ tournoiPublic[json.data.id] = !!tournoiOuvert; }
     // Le tout premier cree devient le tournoi personnel ; les suivants ne le
     // remplacent pas.
     if(!monGroupe){ monGroupe = g; }
@@ -8685,8 +8705,22 @@ async function openGroupDetail(groupId){
       name: g.name,
       membres: (g.ranking || []).map(m => m.userId || m.id)
     };
+    // Pas de bouton dans un tournoi privé (24 septembre 2026) : on y invite par
+    // WhatsApp ou par X, pour que ce soit l'occasion de faire venir des joueurs
+    // de l'extérieur. On le cache d'abord, le temps de savoir si le tournoi est
+    // ouvert, pour qu'il n'apparaisse pas une seconde puis disparaisse.
     const btnIns = document.getElementById('btn-inscrire');
-    if(btnIns){ btnIns.style.display = complet ? 'none' : 'block'; }
+    if(btnIns){
+      btnIns.style.display = 'none';
+      if(!complet){
+        const idTournoi = g.id || groupId;
+        estTournoiPublic(idTournoi).then(ouvert => {
+          if(ouvert && tournoiAInscrire && tournoiAInscrire.id === idTournoi){
+            btnIns.style.display = 'block';
+          }
+        });
+      }
+    }
 
     // Un tournoi d'une seule personne n'a ni classement, ni record, ni calendrier
     // qui vaillent : on affichait un classement d'un joueur, un « record du
@@ -8704,8 +8738,7 @@ async function openGroupDetail(groupId){
     if(titreInvite && labelInvite){
       titreInvite.textContent = seul ? 'Ton tournoi est créé' : 'Invite un nouveau membre dans le tournoi';
       labelInvite.innerHTML = seul
-        ? 'Il n\'attend plus que tes amis. Partage-leur ce code, ou envoie-leur '
-          + 'l\'invitation directement.<br><br>Code d\'invitation'
+        ? 'Tu n\'as plus qu\'à partager l\'invitation avec tes amis.<br><br>Code d\'invitation'
         : 'Code d\'invitation à partager';
     }
 
