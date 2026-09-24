@@ -4114,6 +4114,14 @@ function restoreRoute(brut){
     // qui dort dans les courriels partis le 21 septembre et qu'on honore sans
     // plus jamais l'ecrire (23 septembre 2026).
     else if(nom === 'tournois' || nom === 'creer-groupe'){ goToGroups(); }
+    // Les formulaires de création : sans ces lignes, rafraîchir la page
+    // « Créer un tournoi » ou « Créer un kop » renvoyait au prochain match
+    // (24 septembre 2026). Le formulaire se rouvre vide, comme au premier clic.
+    else if(nom === 'group-create'){ creerUnGroupe(); }
+    else if(nom === 'kop-create'){ ouvrirCreationKop(); }
+    // La liste « Inviter des membres du jeu » dépend du tournoi d'où l'on
+    // vient, que le rafraîchissement a oublié : on retombe sur les tournois.
+    else if(nom === 'inscrire'){ goToGroups(); }
     // L'accueil est une destination comme les autres : sans cette ligne, le
     // bouton « précédent » qui y ramène ne faisait rien, et le clic suivant
     // sortait du site.
