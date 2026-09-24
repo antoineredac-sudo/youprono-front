@@ -7455,7 +7455,7 @@ async function createNamedGroup(){
   errEl.classList.remove('show');
 
   if(!nom){
-    errEl.textContent = 'Merci de donner un nom à ton groupe.';
+    errEl.textContent = 'Merci de donner un nom à ton tournoi.';
     errEl.classList.add('show');
     return;
   }
@@ -7465,7 +7465,7 @@ async function createNamedGroup(){
   relache();
 
   if(!g){
-    errEl.textContent = "Impossible de créer le groupe. Réessaie dans un instant.";
+    errEl.textContent = "Impossible de créer le tournoi. Réessaie dans un instant.";
     errEl.classList.add('show');
     return;
   }
@@ -8614,7 +8614,7 @@ async function openGroupDetail(groupId){
     const res = await fetch(`${API_BASE}/Group/ById/${groupId}`);
     const json = await res.json();
     if(!json.success){
-      rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce groupe.</div>';
+      rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce tournoi.</div>';
       return;
     }
     const g = json.data;
@@ -8755,7 +8755,7 @@ async function openGroupDetail(groupId){
       + ligneSommeil(g.sleepingCount)
       + '<p class="ranking-note">À égalité, c\'est le coef expert sur les matchs du tournoi qui départage.</p>';
   }catch(e){
-    rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce groupe.</div>';
+    rankingEl.innerHTML = '<div class="placeholder">Impossible de charger ce tournoi.</div>';
   }
 }
 
@@ -10624,7 +10624,7 @@ const VERDICT_METAUX = {
   4: { annonce: "Tu as remporté le Ballon d'Argent des experts du PSG.",
        mot: "Une récompense rare. Tu as été aux meilleures places à chaque match, dans un tournoi fourni. Tu peux être fier de toi." },
   3: { annonce: "Tu as remporté le Ballon de Bronze des experts du PSG.",
-       mot: "Plus haut, il n'y a que l'argent et l'or. Tu as été performant et régulier, et il y avait du monde dans ton groupe. Bravo à toi." },
+       mot: "Plus haut, il n'y a que l'argent et l'or. Tu as été performant et régulier, et il y avait du monde dans ton tournoi. Bravo à toi." },
   2: { annonce: "Tu as gagné le Ballon de Cuir des experts du PSG.",
        mot: "Le deuxième niveau. Tu as été assidu et tu as réussi quelques coups. Bien joué." },
   1: { annonce: "Tu as gagné un ballon de baudruche.",
