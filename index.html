@@ -1096,7 +1096,7 @@
   .salon-cta.dore{ border-color:var(--gold); }
   .salon-cta-info{ font-size:16px; font-weight:600; }
   .salon-cta-info small{ display:block; color:var(--text-dim); font-size:11px; margin-top:2px; }
-  .salon-cta-fleche{ color:var(--red); font-size:13px; font-weight:600; }
+  .salon-cta-fleche{ color:var(--red); font-size:13px; font-weight:600;  white-space:nowrap;}
 
   .salon-choix{
     background:var(--surface);
@@ -5677,7 +5677,7 @@ async function refreshHomeSalon(courant, precedent){
 const SOLO_ETATS = {
   closed:      { libelle:'Ma prédiction',                       cta:'Voir →' },
   composition: { libelle:'La compo officielle est tombée',  cta:'Voir →' },
-  results:     { libelle:null,                              cta:'Voir mes résultats →' }
+  results:     { libelle:'Mon dernier résultat',            cta:'Voir →' }
 };
 
 // A-t-il joué ce match ? Sans pronostic, il n'y a rien derrière le clic.
@@ -5691,9 +5691,49 @@ async function aPronostiqueSur(cible){
   }catch(e){ return false; }
 }
 
+// Le dernier match où le joueur a une note, jouée ou de forfait, d'après la
+// courbe du tableau de bord. null s'il n'a encore jamais rien eu.
+async function dernierMatchNote(){
+  try{
+    const teamId = await getPsgTeamId();
+    const json = await fetch(`${API_BASE}/UserStats/Courbe/${getUserId()}/${teamId}?limit=10`)
+      .then(r => r.json());
+    const points = (json.success && json.data) ? json.data : [];
+    if(!points.length) return null;
+    return points.slice().sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0))[0];
+  }catch(e){ return null; }
+}
+
 async function renderHomeSolo(bloc, cible, etat){
   const aPronostique = await aPronostiqueSur(cible);
-  if(!aPronostique) return;
+
+  // Sans prédiction sur ce match, le joueur a quand même un dernier résultat :
+  // une note de forfait sur ce match, ou sa note d'un match précédent. On lui
+  // montre « Mon dernier résultat » au-dessus du prochain match, qui ouvre la
+  // page « Dernier résultat » sur ce match-là (24 septembre 2026). Seul celui
+  // qui n'a encore jamais été noté n'a pas d'encadré.
+  if(!aPronostique){
+    const dernier = await dernierMatchNote();
+    if(!dernier) return;
+    const surCible = (dernier.matchId === cible.id);
+    const afficheCible = teamLabel(cible.homeTeam, 'PSG') + ' / ' + teamLabel(cible.awayTeam, 'Adversaire');
+    // Forfait : on le dit dès le lien, pour qu'il ne découvre pas sa note
+    // sans savoir d'où elle vient.
+    const sousTitre = dernier.isForfait
+      ? (surCible ? afficheCible + '<br>' : '')
+        + 'Forfait : note attribuée sous la moyenne des participants'
+      : (surCible ? afficheCible : '');
+    bloc.innerHTML = `
+      <div class="salon-cta" onclick="goToResults('${dernier.matchId}')">
+        <div class="salon-cta-info">
+          Mon dernier résultat
+          ${sousTitre ? `<small>${sousTitre}</small>` : ''}
+        </div>
+        <span class="salon-cta-fleche">Voir →</span>
+      </div>`;
+    bloc.style.display = 'block';
+    return;
+  }
 
   const affiche = teamLabel(cible.homeTeam, 'PSG') + ' / ' + teamLabel(cible.awayTeam, 'Adversaire');
   const conf = SOLO_ETATS[etat] || SOLO_ETATS.closed;
@@ -6637,6 +6677,15 @@ async function enterResultsScreen(matchId){
     if(el){ el.style.display = 'none'; el.innerHTML = ''; }
   });
 
+  // Le dernier match noté, forfait compris (24 septembre 2026) : un joueur
+  // forfait sur OM-PSG voyait jusqu'ici sa note du match d'avant, et ne
+  // découvrait jamais sa note de forfait. La recherche ci-dessous reste en
+  // secours si la courbe ne répond pas.
+  if(!matchId){
+    const dernier = await dernierMatchNote();
+    if(dernier && dernier.matchId){ matchId = dernier.matchId; }
+  }
+
   if(!matchId){
     // "Dernier résultat" : le dernier match que CE joueur a pronostiqué et
     // qui a été noté. Celui qui saute un match retrouve donc son résultat
@@ -6687,6 +6736,9 @@ async function enterResultsScreen(matchId){
       // Un nouvel inscrit n'a aucun pronostic : le calcul échoue et le jeu
       // désignait le prochain match, pas encore joué. On lui montre le dernier
       // match noté plutôt qu'un écran vide.
+      // Mais un forfait n'a pas de pronostic non plus : on vérifie d'abord
+      // qu'il n'a pas une note de forfait à découvrir sur ce match.
+      if(await afficherForfait(matchId)) return;
       const decouvert = await afficherDecouverte();
       if(!decouvert){
         const emptyEl = document.getElementById('results-empty');
