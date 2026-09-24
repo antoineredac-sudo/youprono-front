@@ -2797,7 +2797,7 @@
       <button data-view="profile" onclick="navFromMenu('profile')">Tableau de bord</button>
       <button data-view="results" onclick="navFromMenu('results')">Dernier résultat</button>
       <button data-view="ranking" onclick="navFromMenu('ranking')">Classement</button>
-      <button data-view="kops" onclick="navFromMenu('kops')" id="menu-kops">Rejoins un kop</button>
+      <button data-view="kops" onclick="navFromMenu('kops')" id="menu-kops" style="display:none;">Rejoins un kop</button>
       <button data-view="trophies" onclick="navFromMenu('trophies')">Trophées</button>
       <button data-view="badges" onclick="navFromMenu('badges')">Badges</button>
       <button data-view="faq" onclick="navFromMenu('faq')">FAQ</button>
@@ -9295,7 +9295,16 @@ function installerLeJeu(){
 // Le repère n'est posé qu'à ce moment-là, et retiré dès qu'il l'a ouvert.
 const LS_KOP_A_MONTRER = 'youprono_kop_a_montrer';
 
+// LES KOPS SONT RETIRÉS DU JEU (24 septembre 2026). Les tournois font la même
+// chose en mieux, et les kops n'ont pas recruté sur X : un seul kop en deux
+// semaines, dix membres. Rien n'est effacé côté serveur ; le site ne mène
+// simplement plus nulle part vers eux. Toute porte d'entrée (menu, adresse,
+// ancien lien d'invitation, rappel) retombe sur la salle des tournois.
+// Pour les rallumer un jour : passer cet interrupteur à true.
+const KOPS_ACTIFS = false;
+
 function kopAMontrer(){
+  if(!KOPS_ACTIFS) return false;
   try{ return localStorage.getItem(LS_KOP_A_MONTRER) === '1'; }catch(e){ return false; }
 }
 
@@ -9439,6 +9448,7 @@ let monKopMembres = 0;
 let kopCourant = null;     // le kop actuellement ouvert
 
 function goToKops(){
+  if(!KOPS_ACTIFS){ goToGroups(); return; }
   switchView('kops');
   chargerKops();
 }
@@ -9491,7 +9501,7 @@ function majLibelleMenuKop(){
   const libelle = monKopId ? (monKopNom || 'Mon kop') : 'Rejoins un kop';
 
   const btn = document.getElementById('menu-kops');
-  if(btn){ btn.textContent = libelle; }
+  if(btn){ btn.textContent = libelle; btn.style.display = KOPS_ACTIFS ? '' : 'none'; }
 
   const titre = document.getElementById('kops-titre');
   if(titre){ titre.textContent = monKopId ? 'MON KOP' : 'REJOINS UN KOP'; }
@@ -9582,6 +9592,7 @@ function filtrerKops(){
 }
 
 function ouvrirCreationKop(){
+  if(!KOPS_ACTIFS){ goToGroups(); return; }
   document.getElementById('kop-create-name').value = '';
   document.getElementById('kop-create-error').classList.remove('show');
   majCompteurKop();
@@ -9656,6 +9667,7 @@ function rejoindreCeKop(){
 let kopBienvenue = false;
 
 async function openKop(groupId, options){
+  if(!KOPS_ACTIFS){ goToGroups(); return; }
   kopBienvenue = !!(options && options.bienvenue);
   marquerKopVu();
   switchView('kop');
@@ -10909,6 +10921,8 @@ async function acceptPendingInvite(){
     const json = await res.json();
 
     if(json.success && json.data && estUnKop(json.data)){
+      // Kops retirés : l'invité ne rejoint rien, il arrive sur les tournois.
+      if(!KOPS_ACTIFS){ goToGroups(); return; }
       if(json.data.alreadyMember){ openKop(json.data.id); return; }
 
       // Nouveau venu : il a cliqué sur le lien, puis créé son compte. Lui
