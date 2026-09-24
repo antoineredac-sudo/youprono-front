@@ -1943,6 +1943,22 @@
   .cc-match:active{ background:var(--surface); }
   .cc-match .fl{ color:var(--text-dim); font-size:17px; font-style:normal;
     flex:0 0 auto; margin-left:-4px; }
+  /* L'encart du défi sur l'accueil : petit, doré, cliquable en entier. */
+  .cc-encart{
+    display:flex; align-items:center; gap:12px; cursor:pointer;
+    background:var(--surface); border:1px solid var(--gold); border-radius:12px;
+    padding:14px 14px 14px 16px; margin-bottom:14px;
+  }
+  .cc-encart-txt{ flex:1; min-width:0; }
+  .cc-encart-titre{
+    font-family:'Oswald',sans-serif; font-size:12px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--gold);
+  }
+  .cc-encart-question{ font-size:16px; font-weight:600; color:var(--text); margin:4px 0 8px; line-height:1.3; }
+  .cc-encart-cta{ font-size:13px; font-weight:600; color:var(--red); }
+  .cc-encart-lot{ flex:0 0 70px; text-align:center; }
+  .cc-encart-lot img{ width:70px; height:auto; display:block; filter:drop-shadow(0 4px 8px rgba(0,0,0,.35)); }
+  .cc-encart-gain{ font-size:11px; font-weight:600; color:var(--gold); margin-top:3px; }
   .cc-affiche{
     display:flex; align-items:center; gap:6px; overflow:hidden;
     background:var(--surface); border:1px solid var(--border); border-radius:14px;
@@ -2864,6 +2880,21 @@
       <div id="home-loading" class="placeholder">Chargement du prochain match…</div>
 
       <div id="home-salon" style="display:none;"></div>
+
+      <!-- Le défi culture club, pendant la trêve (24 septembre 2026) : les
+           nouveaux inscrits arrivent ici et n'ont pas de match avant quinze
+           jours. Un seul texte pour tous, sans compteur à tenir à jour. -->
+      <div class="cc-encart" id="home-cc-encart" style="display:none;" onclick="goToCultureClub()">
+        <div class="cc-encart-txt">
+          <div class="cc-encart-titre">Défi culture club</div>
+          <div class="cc-encart-question">Prêt à tester ta culture du PSG&nbsp;?</div>
+          <span class="cc-encart-cta">Je relève le défi →</span>
+        </div>
+        <div class="cc-encart-lot">
+          <img src="maillot-psg.png" alt="">
+          <div class="cc-encart-gain">à gagner</div>
+        </div>
+      </div>
 
       <div id="home-match-card" class="match-card" style="display:none;">
         <div class="live-badge" id="home-live-badge" style="display:none;">
@@ -4910,7 +4941,28 @@ function ccTemps(ms){
   return (Math.round(ms / 100) / 10).toFixed(1).replace('.', ',') + ' s';
 }
 
+// Le calendrier d'affichage du défi, arrêté par Antoine (24 septembre 2026) :
+// l'encart de l'accueil disparaît le dimanche 4 octobre à 18 h, à la clôture
+// du défi (le serveur refuse toute réponse à partir de cette heure) ; l'entrée
+// du menu et la page restent jusqu'au mercredi 7 octobre à 14 h, pour que
+// chacun puisse revoir le classement final et le gagnant.
+const CC_FIN_ENCART = Date.parse('2026-10-04T18:00:00+02:00');
+const CC_FIN_MENU   = Date.parse('2026-10-07T14:00:00+02:00');
+
+function ccAppliquerCalendrier(){
+  const maintenant = Date.now();
+  const encart = document.getElementById('home-cc-encart');
+  if(encart){ encart.style.display = (maintenant < CC_FIN_ENCART) ? 'flex' : 'none'; }
+  const menu = document.getElementById('menu-culture-club');
+  if(menu){ menu.style.display = (maintenant < CC_FIN_MENU) ? '' : 'none'; }
+}
+// Le script est placé après le menu et l'accueil : les deux existent déjà.
+ccAppliquerCalendrier();
+setInterval(ccAppliquerCalendrier, 10 * 60 * 1000);
+
 async function goToCultureClub(){
+  // Passé le 7 octobre à 14 h, un ancien lien ou un favori ramène à l'accueil.
+  if(Date.now() >= CC_FIN_MENU){ switchView('home'); return; }
   switchView('culture-club');
   closeMenu();
   ccArreterChrono();
