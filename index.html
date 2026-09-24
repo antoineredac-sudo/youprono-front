@@ -4280,6 +4280,39 @@ let quitteA = null;
 const RELIRE_APRES_MS = 60 * 1000;
 const RECHARGER_APRES_MS = 30 * 60 * 1000;
 
+// La version du jeu en ligne (24 septembre 2026). Des joueurs revenus au bout
+// de quelques minutes gardaient l'ancienne version jusqu'à un rafraîchissement
+// à la main. Le serveur du site donne à chaque version une étiquette (ETag) :
+// on la note au chargement, et au retour sur le jeu on la redemande — une
+// requête de quelques octets, sans télécharger la page. Si elle a changé, une
+// nouvelle version a été déposée : on recharge. Jamais pendant qu'on remplit
+// ses prédictions ou un formulaire, pour ne rien faire perdre.
+let versionDuJeu = null;
+async function lireVersionDuJeu(){
+  try{
+    const r = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+    return r.headers.get('etag') || r.headers.get('last-modified') || null;
+  }catch(e){ return null; }
+}
+lireVersionDuJeu().then(v => { versionDuJeu = v; });
+
+function saisieEnCours(){
+  // L'écran réellement affiché : les étapes des prédictions n'écrivent pas
+  // leur nom dans l'adresse, on ne peut donc pas se fier à elle.
+  const vue = Array.prototype.find.call(document.querySelectorAll('main .view'),
+    v => v.style.display === 'block');
+  const ecran = vue ? vue.id.replace('view-', '') : '';
+  if(ROUTES_VOLATILES.indexOf(ecran) !== -1) return true;
+  if(ecran === 'group-create' || ecran === 'kop-create') return true;
+  return false;
+}
+
+async function nouvelleVersionEnLigne(){
+  if(!versionDuJeu || saisieEnCours()) return false;
+  const v = await lireVersionDuJeu();
+  return !!(v && v !== versionDuJeu);
+}
+
 document.addEventListener('visibilitychange', async () => {
   if(document.hidden){ quitteA = Date.now(); return; }
 
@@ -4287,6 +4320,11 @@ document.addEventListener('visibilitychange', async () => {
   quitteA = null;
 
   if(absence > RECHARGER_APRES_MS){
+    location.reload();
+    return;
+  }
+
+  if(absence >= RELIRE_APRES_MS && await nouvelleVersionEnLigne()){
     location.reload();
     return;
   }
