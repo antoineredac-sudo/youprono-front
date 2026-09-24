@@ -9896,7 +9896,16 @@ function afficherRecordDuGroupe(g){
   const bloc = document.getElementById('group-record-block');
   if(!bloc) return;
   const r = g.record;
-  if(!r){ bloc.style.display = 'none'; return; }
+  // Le record d'un tournoi ne peut venir que d'un match joué dans ce tournoi
+  // (24 septembre 2026). Le serveur renvoie la meilleure note des membres sur
+  // tout leur historique : un tournoi créé la veille affichait ainsi le record
+  // de Mookie sur OM-PSG, alors qu'aucun match n'y avait encore été joué.
+  // Deux garde-fous : aucun match joué dans le tournoi, pas de record ; et un
+  // record tiré d'un match antérieur à la création du tournoi n'est pas montré.
+  const aucunMatch = !(g.matchesPlayed > 0);
+  const avantCreation = r && r.matchDate && g.createdDate
+    && new Date(r.matchDate) < new Date(g.createdDate);
+  if(!r || aucunMatch || avantCreation){ bloc.style.display = 'none'; return; }
   bloc.style.display = 'block';
 
   document.getElementById('group-record-nom').textContent = r.displayName;
