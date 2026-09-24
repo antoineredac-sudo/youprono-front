@@ -1425,7 +1425,23 @@
      disparaître. Il dit que le jeu tourne. */
   .tn-carte.clos{ background:rgba(20,48,111,.45); border-color:#20407f; }
   .tn-carte.mien{ border-color:var(--gold); }
-  .tn-info{ flex:1; min-width:0; }
+  .tn-info{ flex:1; min-width:0; cursor:pointer; }
+  .tn-chevron{ color:var(--gold); font-size:13px; margin-left:2px; }
+  /* L'aperçu des inscrits, accroché sous la carte du tournoi. */
+  .tn-apercu{
+    background:rgba(20,48,111,.6); border:1px solid var(--border); border-top:none;
+    border-radius:0 0 12px 12px; margin:-14px 0 9px; padding:16px 14px 8px;
+  }
+  .tn-apercu-titre{ font-size:12px; color:#8b99d0; margin-bottom:6px; }
+  .tn-apercu-ligne{
+    display:flex; align-items:center; gap:10px; padding:6px 0;
+    border-top:1px solid rgba(255,255,255,.06); font-size:14px;
+  }
+  .tn-apercu-rang{ width:34px; color:var(--text-dim); font-size:13px; }
+  .tn-apercu-ligne .rt-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tn-apercu-coef{ font-family:'Oswald',sans-serif; color:var(--text); font-size:15px; }
+  .tn-apercu-coef.nc{ font-family:inherit; font-size:12px; color:#8b99d0; }
+  .tn-apercu-vide{ font-size:13px; color:#8b99d0; padding:4px 0 8px; }
   .tn-nom{
     font-family:'Oswald',sans-serif; font-size:17px; font-weight:600;
     color:var(--text); letter-spacing:.03em; overflow:hidden;
@@ -7160,9 +7176,72 @@ function carteTournoi(t, ouvert){
     action = '<span class="tn-etat">Fermé</span>';
   }
 
-  return '<div class="' + classes + '"><div class="tn-info">'
-       + '<div class="tn-nom">' + nom + '</div>'
-       + '<div class="tn-meta">' + meta + '</div></div>' + action + '</div>';
+  // Un clic sur le nom ouvre, sous la carte, la liste des inscrits rangés
+  // selon leur coef expert : on voit le niveau de la table avant de s'asseoir
+  // (24 septembre 2026).
+  return '<div class="' + classes + '"><div class="tn-info" onclick="basculerApercu(\'' + t.id + '\')">'
+       + '<div class="tn-nom">' + nom + ' <span class="tn-chevron" id="chevron-' + t.id + '">▾</span></div>'
+       + '<div class="tn-meta">' + meta + '</div></div>' + action + '</div>'
+       + '<div class="tn-apercu" id="apercu-' + t.id + '" style="display:none;"></div>';
+}
+
+// ===== L'APERÇU DES INSCRITS D'UN TOURNOI =====
+// Chaque inscrit avec son rang au classement général et son coef expert, du
+// mieux classé au moins bien classé. Ceux qui n'ont encore joué aucun match
+// n'ont pas de coef : ils viennent en dernier.
+async function basculerApercu(id){
+  const zone = document.getElementById('apercu-' + id);
+  const chevron = document.getElementById('chevron-' + id);
+  if(!zone) return;
+  if(zone.style.display === 'block'){
+    zone.style.display = 'none';
+    if(chevron) chevron.textContent = '▾';
+    return;
+  }
+  zone.style.display = 'block';
+  if(chevron) chevron.textContent = '▴';
+  if(zone.dataset.charge === '1') return;
+
+  zone.innerHTML = '<div class="tn-apercu-vide">Chargement…</div>';
+  try{
+    const [resG, general] = await Promise.all([
+      fetch(`${API_BASE}/Group/ById/${id}`).then(r => r.json()),
+      ensureRanking('final')
+    ]);
+    const membres = (resG.success && resG.data && resG.data.ranking) ? resG.data.ranking : [];
+    const parId = {};
+    (general || []).forEach(u => { parId[u.id] = u; });
+
+    const lignes = membres.map(m => {
+      const uid = m.userId || m.id;
+      return { nom: m.displayName, g: parId[uid] || null };
+    });
+    lignes.sort((a, b) => {
+      if(a.g && b.g) return a.g.rank - b.g.rank;
+      if(a.g) return -1;
+      if(b.g) return 1;
+      return String(a.nom).localeCompare(String(b.nom));
+    });
+
+    if(!lignes.length){
+      zone.innerHTML = '<div class="tn-apercu-vide">Personne n\'est encore inscrit.</div>';
+    } else {
+      zone.innerHTML = '<div class="tn-apercu-titre">Les inscrits au classement général</div>'
+        + lignes.map(l => l.g
+          ? '<div class="tn-apercu-ligne">'
+            + '<span class="tn-apercu-rang">' + ordinal(l.g.rank) + '</span>'
+            + '<span class="' + classePseudo(l.g, 'final') + '">' + echapper(l.nom) + '</span>'
+            + '<span class="tn-apercu-coef">' + fmtNote(l.g.score) + '</span></div>'
+          : '<div class="tn-apercu-ligne">'
+            + '<span class="tn-apercu-rang">–</span>'
+            + '<span class="rt-name virtuel">' + echapper(l.nom) + '</span>'
+            + '<span class="tn-apercu-coef nc">pas encore classé</span></div>'
+        ).join('');
+    }
+    zone.dataset.charge = '1';
+  }catch(e){
+    zone.innerHTML = '<div class="tn-apercu-vide">Impossible de charger les inscrits.</div>';
+  }
 }
 
 async function rejoindreTournoi(bouton, code){
