@@ -7151,12 +7151,15 @@ function carteTournoi(t, ouvert){
   const nom = echapper(t.nom);
 
   let meta;
+  // Les places prises sur les onze (24 septembre 2026) : « Joueurs 2/11 » dit
+  // en un coup d'œil combien il en reste.
+  const places = 'Joueurs ' + t.joueurs + '/' + GROUPE_MAX_MEMBRES;
   if(ouvert){
-    meta = t.joueurs + (t.joueurs > 1 ? ' joueurs' : ' joueur')
+    meta = places
          + (t.complet ? ' · complet' : '')
          + ' · ferme <span class="h">' + heureDeFermeture(t.ferme) + '</span>';
   } else {
-    meta = t.joueurs + (t.joueurs > 1 ? ' joueurs' : ' joueur')
+    meta = places
          + ' · ' + t.matchs + (t.matchs > 1 ? ' matchs joués' : ' match joué')
          + (t.meneur ? ' · en tête <span class="h">' + echapper(t.meneur) + '</span>' : '');
   }
