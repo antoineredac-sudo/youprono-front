@@ -5570,6 +5570,22 @@ function classerPourAccueil(liste){
   });
 }
 
+// Un tournoi n'a de résultats que pour les matchs joués depuis sa création
+// (24 septembre 2026). Un joueur qui venait de créer « Paname » voyait sur
+// l'accueil « Les résultats de tournoi » d'OM-PSG, un match antérieur à son
+// tournoi, à la place de son résultat personnel. Le serveur compare les deux
+// dates telles qu'il les stocke, sans fuseau : on fait de même.
+function dateServeur(d){
+  const t = Date.parse(String(d || '').replace(/Z$/, ''));
+  return isNaN(t) ? null : t;
+}
+function tournoiConcerneParMatch(g, match){
+  const cree = dateServeur(g && g.createdDate);
+  const coup = dateServeur(match && match.dateTime);
+  if(cree === null || coup === null) return true;
+  return cree <= coup - CLOTURE_AVANT_MS;
+}
+
 async function refreshHomeSalon(courant, precedent){
   const bloc = document.getElementById('home-salon');
   if(!bloc) return;
@@ -5583,7 +5599,9 @@ async function refreshHomeSalon(courant, precedent){
     const userId = getUserId();
     const res = await fetch(`${API_BASE}/Group/ByUserId/${userId}`);
     const json = await res.json();
-    salonMesGroupes = ((json.success && json.data) ? json.data : []).filter(g => !estUnKop(g));
+    salonMesGroupes = ((json.success && json.data) ? json.data : [])
+      .filter(g => !estUnKop(g))
+      .filter(g => tournoiConcerneParMatch(g, cible));
   }catch(e){ salonMesGroupes = []; }
 
   const etat = await salonEtatDuMatch(cible);
@@ -8476,7 +8494,7 @@ function switchGroupTab(tab){
 // Le lien vers les pronos du tournoi, sous le classement. Même destination que
 // le bloc de l'accueil, même libellé selon l'état du match : les pronos bruts,
 // les compos notées, ou tous les résultats.
-async function loadGroupSalonLien(groupId){
+async function loadGroupSalonLien(groupId, creeLe){
   const bloc = document.getElementById('group-salon-lien');
   if(!bloc) return;
   bloc.innerHTML = '';
@@ -8494,6 +8512,8 @@ async function loadGroupSalonLien(groupId){
 
     const cible = salonMatchVise(courant, precedent);
     if(!cible) return;
+    // Un match joué avant la création du tournoi n'a rien à y montrer.
+    if(!tournoiConcerneParMatch({ createdDate: creeLe }, cible)) return;
 
     const etat = await salonEtatDuMatch(cible);
     // Sur la page d'un tournoi, le lien parle du match, pas du tournoi : on est
@@ -8859,7 +8879,7 @@ async function openGroupDetail(groupId){
     // Les matchs restants du mini-championnat (chargement en parallèle : le
     // classement s'affiche sans attendre le calendrier).
     loadGroupCalendar(seasonLength, played);
-    loadGroupSalonLien(groupId);
+    loadGroupSalonLien(groupId, g.createdDate);
     afficherRecordDuGroupe(g);
 
     const championEl = document.getElementById('group-detail-champion');
