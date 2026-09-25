@@ -7623,6 +7623,14 @@ async function enterGroupsScreen(){
     const encours = tousCommences.filter(t => t.public && !t.termine);
     const termines = tousCommences.filter(t => t.public && t.termine);
 
+    // Sans tournoi privé, l'encadré du haut propose le privé : le bouton du bas
+    // devient « Créer un tournoi public », qui n'offre que l'ouvert à tous
+    // (25 septembre 2026). Avec des tournois privés, il propose les deux.
+    const boutonBas = document.getElementById('group-invite-btn');
+    if(boutonBas){
+      boutonBas.textContent = prives.length ? 'Créer un tournoi' : 'Créer un tournoi public';
+      boutonBas.onclick = prives.length ? creerUnGroupe : creerTournoiPublic;
+    }
     if(zoneO){
       zoneO.innerHTML = prives.length
         ? '<div class="tn-sect">Mes tournois privés <b>' + prives.length + '</b></div>'
@@ -7863,15 +7871,27 @@ function creerUnGroupe(){
 // Depuis l'encadré « Tu n'as pas encore de tournoi privé » (25 septembre 2026) :
 // le même écran, mais seule l'option privée est proposée. C'est le tournoi qui
 // fait venir des amis de l'extérieur.
+// mode : true = privé seul, 'public' = ouvert à tous seul (25 septembre 2026,
+// pour le joueur qui n'a pas de tournoi privé), false = les deux options.
 function modeCreationPrive(prive){
+  const seul = (prive === true || prive === 'public');
   const titre = document.getElementById('group-create-title');
   const label = document.getElementById('group-create-label');
   const ouvert = document.getElementById('porte-ouvert');
-  if(titre) titre.textContent = prive ? 'CRÉER MON TOURNOI PRIVÉ' : 'CRÉER UN TOURNOI';
-  if(label) label.style.display = prive ? 'none' : '';
-  if(ouvert) ouvert.style.display = prive ? 'none' : '';
+  const ferme = document.getElementById('porte-prive');
+  if(titre) titre.textContent = prive === true ? 'CRÉER MON TOURNOI PRIVÉ'
+    : prive === 'public' ? 'CRÉER UN TOURNOI PUBLIC' : 'CRÉER UN TOURNOI';
+  if(label) label.style.display = seul ? 'none' : '';
+  if(ouvert) ouvert.style.display = prive === true ? 'none' : '';
+  if(ferme) ferme.style.display = prive === 'public' ? 'none' : '';
   const portes = document.querySelector('#view-group-create .tn-portes');
-  if(portes) portes.style.marginTop = prive ? '18px' : '';
+  if(portes) portes.style.marginTop = seul ? '18px' : '';
+}
+
+function creerTournoiPublic(){
+  creerUnGroupe();
+  choisirPorte(true);
+  modeCreationPrive('public');
 }
 
 function creerTournoiPrive(){
