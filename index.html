@@ -7641,7 +7641,7 @@ async function enterGroupsScreen(){
           + '<p class="d">Crée le tien et invite tes amis sur WhatsApp ou sur X : '
           + 'c\'est entre vous, personne d\'autre ne le voit.</p>'
           + '<button class="cta-play" style="margin-top:12px;" onclick="creerTournoiPrive()">'
-          + 'Créer mon tournoi privé</button></div>';
+          + 'Créer un tournoi privé</button></div>';
     }
     if(zoneC){
       const famille = (titre, liste, ouvert) => liste.length
@@ -7879,7 +7879,7 @@ function modeCreationPrive(prive){
   const label = document.getElementById('group-create-label');
   const ouvert = document.getElementById('porte-ouvert');
   const ferme = document.getElementById('porte-prive');
-  if(titre) titre.textContent = prive === true ? 'CRÉER MON TOURNOI PRIVÉ'
+  if(titre) titre.textContent = prive === true ? 'CRÉER UN TOURNOI PRIVÉ'
     : prive === 'public' ? 'CRÉER UN TOURNOI PUBLIC' : 'CRÉER UN TOURNOI';
   if(label) label.style.display = seul ? 'none' : '';
   if(ouvert) ouvert.style.display = prive === true ? 'none' : '';
