@@ -3395,7 +3395,7 @@
                 onclick="ouvrirInscription()">Inviter des membres du jeu</button>
       </div>
       <span class="small-link" id="group-back-link" onclick="goToGroups()">← Retour aux tournois</span>
-      <span class="small-link" style="margin-top:8px;" onclick="leaveGroup()">Quitter le tournoi</span>
+      <span class="small-link" id="group-leave-link" style="margin-top:8px;" onclick="leaveGroup()">Quitter le tournoi</span>
     </section>
     <section id="view-compo" class="view" style="display:none;">
       <div id="compo-loading" class="placeholder">Chargement de la composition…</div>
@@ -7197,6 +7197,7 @@ async function confirmerInscription(id, pseudo){
 
 function messageRefusInscription(code, pseudo){
   if(code === -5) return pseudo + ' est déjà dans ce tournoi.';
+  if(code === -20) return pseudo + ' participe déjà à 5 tournois publics en même temps.';
   if(code === -6) return 'Ton tournoi est au complet : onze joueurs, pas un de plus.';
   if(code === -7) return 'Trop tard : les inscriptions de ce tournoi sont fermées.';
   if(code === -3) return 'Il faut être membre du tournoi pour y inscrire quelqu\'un.';
@@ -7383,14 +7384,21 @@ async function rejoindreTournoi(bouton, code){
     // -4 : plus de place. -6 : la porte s'est fermée entre l'affichage et le clic.
     const code2 = (json.data && json.data.code) || json.code;
     relache();
-    alert(code2 === -6
+    alert(messagePlafond(code2) || (code2 === -6
       ? "Trop tard : les inscriptions de ce tournoi viennent de fermer."
-      : "Ce tournoi n'a plus de place.");
+      : "Ce tournoi n'a plus de place."));
     enterGroupsScreen();
   }catch(e){
     relache();
     alert("On n'a pas réussi à t'inscrire. Réessaie dans un instant.");
   }
+}
+
+// Cinq tournois publics au plus en même temps, les privés sans limite
+// (25 septembre 2026). Le serveur répond -20 quand le plafond est atteint.
+function messagePlafond(code){
+  if(code === -20) return "Tu participes déjà à 5 tournois publics en même temps. Termine-en un avant d'en rejoindre un nouveau.";
+  return null;
 }
 
 // Un bouton qui attend le serveur ne doit pas pouvoir être cliqué deux fois.
@@ -7534,6 +7542,8 @@ async function mesGroupesCrees(){
 // La porte du tournoi qu'on est en train de creer. Ouverte par defaut : le jeu
 // cherche du monde, et c'est l'ouverture qui remplit la salle.
 let tournoiOuvert = true;
+// Le code d'erreur de la dernière création refusée, pour dire pourquoi.
+let dernierRefusCreation = null;
 
 function choisirPorte(ouvert){
   tournoiOuvert = !!ouvert;
@@ -7552,6 +7562,7 @@ async function creerGroupe(nom){
       body: JSON.stringify({ name: nom, isPublic: tournoiOuvert })
     });
     const json = await res.json();
+    dernierRefusCreation = json.success ? null : ((json.data && json.data.code) || json.code);
     if(!json.success || !json.data) return null;
     const g = versGroupe(json.data);
     if(json.data.id){ tournoiPublic[json.data.id] = !!tournoiOuvert; }
@@ -7686,7 +7697,7 @@ async function inviteFromGroupsScreen(){
 
   if(crees.length === 0){
     const g = await creerGroupe(nomDeMonGroupe());
-    if(!g){ alert("Impossible de contacter le serveur. Réessaie dans un instant."); return; }
+    if(!g){ alert(messagePlafond(dernierRefusCreation) || "Impossible de contacter le serveur. Réessaie dans un instant."); return; }
     ouvrirWhatsApp(g, false);
     return;
   }
@@ -7708,7 +7719,7 @@ async function inviteFromGroupsScreenSurX(){
 
   if(crees.length === 0){
     const g = await creerGroupe(nomDeMonGroupe());
-    if(!g){ alert("Impossible de contacter le serveur. Réessaie dans un instant."); return; }
+    if(!g){ alert(messagePlafond(dernierRefusCreation) || "Impossible de contacter le serveur. Réessaie dans un instant."); return; }
     ouvrirX(g, false);
     return;
   }
@@ -7736,7 +7747,8 @@ async function createNamedGroup(){
   relache();
 
   if(!g){
-    errEl.textContent = "Impossible de créer le tournoi. Réessaie dans un instant.";
+    errEl.textContent = messagePlafond(dernierRefusCreation)
+      || "Impossible de créer le tournoi. Réessaie dans un instant.";
     errEl.classList.add('show');
     return;
   }
@@ -7818,7 +7830,7 @@ async function joinGroup(){
       return;
     }
     if(!json.success){
-      errEl.textContent = json.message || "Ce code n'est pas valide, ou le tournoi est déjà complet.";
+      errEl.textContent = messagePlafond(json.code) || json.message || "Ce code n'est pas valide, ou le tournoi est déjà complet.";
       errEl.classList.add('show');
       return;
     }
@@ -8948,6 +8960,12 @@ async function openGroupDetail(groupId){
         ? 'Tu n\'as plus qu\'à partager l\'invitation avec tes amis.<br><br>Code d\'invitation'
         : 'Code d\'invitation à partager';
     }
+
+    // S'inscrire engage jusqu'au bout des cinq matchs (25 septembre 2026) :
+    // on peut partir tant que le premier match du cycle n'est pas joué, plus
+    // ensuite. Le serveur tient le même verrou.
+    const lienQuitter = document.getElementById('group-leave-link');
+    if(lienQuitter){ lienQuitter.style.display = (g.matchesPlayed || 0) > 0 ? 'none' : ''; }
 
     // Le renommage n'est proposé qu'au créateur du groupe.
     groupeAffiche = g;
@@ -11248,7 +11266,7 @@ async function rejoindreGroupeDAmis(code){
     await enterGroupsScreen();
     document.getElementById('group-join-code').value = code;
     const errEl = document.getElementById('group-join-error');
-    errEl.textContent = json.message || "On n'a pas pu te faire rejoindre ce tournoi automatiquement.";
+    errEl.textContent = messagePlafond(json.code) || json.message || "On n'a pas pu te faire rejoindre ce tournoi automatiquement.";
     errEl.classList.add('show');
   }catch(e){
     switchView('groups');
