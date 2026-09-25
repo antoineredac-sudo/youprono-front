@@ -2780,7 +2780,7 @@
       <label>Pseudo</label>
       <input type="text" id="auth-username" autocomplete="username" maxlength="16"
              placeholder="Ton pseudo" oninput="majCompteurPseudo()">
-      <div class="pseudo-note" id="pseudo-note" style="display:none;">De 2 à 16 caractères. <span id="pseudo-compteur">0/16</span></div>
+      <div class="pseudo-note" id="pseudo-note" style="display:none;">De 2 à 16 caractères : lettres, chiffres, point, tiret ou tiret bas. <span id="pseudo-compteur">0/16</span></div>
 
       <label>Mot de passe</label>
       <input type="password" id="auth-password" autocomplete="current-password" placeholder="Ton mot de passe">
@@ -3966,6 +3966,18 @@ let authMode = 'register';
 // Les mêmes bornes que le serveur, PSEUDO_MIN et PSEUDO_MAX dans UserService.
 const PSEUDO_MIN = 2;
 const PSEUDO_MAX = 16;
+// Lettres (accents compris), chiffres, point, tiret, tiret bas ; au moins une
+// lettre ; quelques noms réservés au jeu. Même règle que ControlePseudo au
+// serveur (25 septembre 2026).
+const MSG_PSEUDO_CARACTERES = 'Lettres, chiffres, point, tiret ou tiret bas uniquement : pas d\'espace ni d\'emoji, et au moins une lettre.';
+const MSG_PSEUDO_RESERVE = 'Ce pseudo est réservé. Choisis-en un autre.';
+const PSEUDOS_RESERVES = ['thegoldenfan','goldenfan','admin','administrateur','moderateur','contact','psg'];
+function controlePseudo(p){
+  if(!/^[\p{L}\p{M}0-9._-]+$/u.test(p) || !/\p{L}/u.test(p)) return 1;
+  const nu = p.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[._-]/g, '');
+  if(PSEUDOS_RESERVES.includes(nu) || nu.includes('goldenfan')) return 2;
+  return 0;
+}
 
 function majCompteurPseudo(){
   const champ = document.getElementById('auth-username');
@@ -4049,6 +4061,16 @@ async function submitAuth(){
     showError('Ton pseudo doit faire entre ' + PSEUDO_MIN + ' et ' + PSEUDO_MAX + ' caractères.');
     return;
   }
+  // Les caractères permis (25 septembre 2026), les mêmes qu'au serveur. Seulement
+  // à l'inscription : les pseudos déjà créés se connectent comme avant.
+  if(authMode === 'register' && controlePseudo(displayName) === 1){
+    showError(MSG_PSEUDO_CARACTERES);
+    return;
+  }
+  if(authMode === 'register' && controlePseudo(displayName) === 2){
+    showError(MSG_PSEUDO_RESERVE);
+    return;
+  }
   if(authMode === 'register' && !adressePlausible(email)){
     showError('Merci d\'indiquer une adresse e-mail valide.');
     return;
@@ -4080,6 +4102,8 @@ async function submitAuth(){
     if(!json.success){
       const msg = authMode === 'login'
         ? 'Pseudo ou mot de passe incorrect.'
+        : json.code === -6 ? MSG_PSEUDO_CARACTERES
+        : json.code === -7 ? MSG_PSEUDO_RESERVE
         : 'Ce pseudo est déjà pris, ou une erreur est survenue.';
       showError(msg);
       btn.disabled = false;
