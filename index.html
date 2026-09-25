@@ -60,6 +60,32 @@
 <!-- Ce que Google affiche sous le titre (25 septembre 2026). Sans cette ligne,
      il piochait dans les mentions légales l'adresse d'OVH à Roubaix. -->
 <meta name="description" content="Le jeu des experts du PSG. Devine la compo et les stats du match, puis compare ta note à celle des autres supporters.">
+<!-- La fiche d'identite du site pour Google (25 septembre 2026) : son nom
+     officiel, ecrit avec et sans espaces, et son compte X. Google s'en sert pour
+     le nom affiche au-dessus du resultat et pour relier « the golden fan » a
+     thegoldenfan.fr. Invisible pour les joueurs. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "The Golden Fan",
+      "alternateName": ["TheGoldenFan", "Golden Fan", "The Golden Fan PSG"],
+      "url": "https://thegoldenfan.fr/",
+      "inLanguage": "fr",
+      "description": "Le jeu des experts du PSG. Devine la compo et les stats du match, puis compare ta note à celle des autres supporters."
+    },
+    {
+      "@type": "Organization",
+      "name": "The Golden Fan",
+      "url": "https://thegoldenfan.fr/",
+      "logo": "https://thegoldenfan.fr/thegoldenfan-og.png",
+      "sameAs": ["https://x.com/the_golden_fan"]
+    }
+  ]
+}
+</script>
 <meta name="description" content="Devine le onze de départ, la possession, les tirs, les fautes, les centres et le score. Après le match, ta note tombe.">
 
 <!-- Carte de partage (X, WhatsApp, iMessage, LinkedIn) -->
