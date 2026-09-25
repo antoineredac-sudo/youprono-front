@@ -1474,7 +1474,7 @@
   }
   .tn-carte.clos .tn-nom{ color:var(--text-dim); }
   .tn-meta{ font-size:12.5px; color:#8b99d0; margin-top:3px; line-height:1.4; }
-  .tn-meta .h{ color:var(--gold); }
+  .tn-meta .h{ color:var(--gold); white-space:nowrap; }
   .tn-carte.clos .tn-meta .h{ color:var(--text-dim); }
   .tn-bouton{
     background:var(--red); color:#fff; border:none; border-radius:9px;
@@ -7374,13 +7374,14 @@ function heureDeFermeture(iso){
   if(isNaN(d.getTime())) return '';
   const jours = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
   const maintenant = new Date();
-  const heure = d.getHours() + ' h ' + String(d.getMinutes()).padStart(2, '0');
+  // « 15:00 » plutôt que « 15 h 00 » (Antoine, 25 septembre 2026).
+  const heure = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 
   // Dans la semaine qui vient, le jour suffit : « samedi a 17 h 00 » se situe
   // sans effort. Au-dela, on donne la date.
   const ecart = (d - maintenant) / 86400000;
   if(ecart < 7){ return jours[d.getDay()] + ' à ' + heure; }
-  return dateFr(d.toLocaleDateString('fr-FR', { day:'numeric', month:'long' })) + ' à ' + heure;
+  return 'le ' + dateFr(d.toLocaleDateString('fr-FR', { day:'numeric', month:'long' })) + ' à ' + heure;
 }
 
 const CADENAS = '<svg class="tn-cadenas" viewBox="0 0 24 24" aria-hidden="true"><path fill="#e8b923" '
@@ -7399,7 +7400,7 @@ function carteTournoi(t, ouvert){
     // « Complet » est dit par la famille où la carte est rangée, et par
     // l'étiquette d'un tournoi privé : inutile de le répéter ici.
     meta = places
-         + ' · ferme <span class="h">' + heureDeFermeture(t.ferme) + '</span>';
+         + ' · <span class="h">ferme ' + heureDeFermeture(t.ferme) + '</span>';
   } else if(t.termine){
     // Terminé (25 septembre 2026) : le vainqueur en doré.
     meta = places + ' · terminé'
