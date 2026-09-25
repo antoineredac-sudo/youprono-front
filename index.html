@@ -1409,6 +1409,11 @@
   .annonce-tournoi p{ color:var(--text); font-size:14.5px; line-height:1.55; }
   .annonce-tournoi .lien{ display:block; color:var(--text-dim); font-size:13px;
                           margin-top:11px; cursor:pointer; }
+  .annonce-tournoi .surtitre{ color:var(--gold); font-weight:700; letter-spacing:1.5px;
+                              font-size:12.5px; margin-bottom:6px; }
+  .annonce-tournoi p + p{ margin-top:8px; }
+  .annonce-tournoi p.discret{ color:var(--text-dim); font-size:13.5px; }
+  .tn-meta .vainqueur{ color:var(--gold) !important; }
 
   /* ===== LA SALLE DES TOURNOIS ===== */
   .tn-sect{
@@ -2863,6 +2868,10 @@
       <!-- Quelqu'un l'a inscrit a un tournoi pendant son absence : on le lui dit
            ici, une fois, et on n'y revient plus (23 septembre 2026). -->
       <div id="annonces-tournois"></div>
+
+      <!-- Le createur d'un tournoi prive termine : il a dix jours pour le
+           relancer avec les memes joueurs (25 septembre 2026). -->
+      <div id="relances-tournois"></div>
 
       <!-- Celui qui vient d'entrer dans un tournoi par un lien d'invitation :
            il atterrit sur le match, pas sur la liste de ses coequipiers, et ce
@@ -5635,6 +5644,9 @@ function tournoiConcerneParMatch(g, match){
   const cree = dateServeur(g && g.createdDate);
   const coup = dateServeur(match && match.dateTime);
   if(cree === null || coup === null) return true;
+  // Un tournoi terminé ne concerne plus les matchs d'après (25 septembre 2026).
+  const fin = dateServeur(g && g.lastMatchDate);
+  if(fin !== null && coup > fin) return false;
   return cree <= coup - CLOTURE_AVANT_MS;
 }
 
@@ -7221,15 +7233,78 @@ async function annoncerLesInscriptions(){
 
     cible.innerHTML = liste.map(a =>
       '<div class="annonce-tournoi" id="annonce-' + a.groupId + '">'
-      + '<p><strong>' + echapper(a.parrainName) + '</strong> t\'a inscrit au tournoi '
-      + '<strong>' + echapper(a.groupName) + '</strong>'
-      + (a.memberCount > 1 ? ' — vous êtes ' + a.memberCount + ' à la table.' : '.')
-      + '</p>'
+      + (a.relance
+        ? '<p><strong>' + echapper(a.parrainName) + '</strong> a relancé le tournoi '
+          + '<strong>' + echapper(a.groupName) + '</strong> : tu es de la partie pour '
+          + '5 nouveaux matchs, avec les mêmes joueurs.</p>'
+          + '<p class="discret">Tu peux le quitter jusqu\'au premier match.</p>'
+        : '<p><strong>' + echapper(a.parrainName) + '</strong> t\'a inscrit au tournoi '
+          + '<strong>' + echapper(a.groupName) + '</strong>'
+          + (a.memberCount > 1 ? ' — vous êtes ' + a.memberCount + ' à la table.' : '.')
+          + '</p>')
       + '<button class="cta-play" onclick="voirTournoiAnnonce(\'' + a.groupId + '\')">'
       + 'Voir le tournoi</button>'
       + '<span class="lien" onclick="fermerAnnonce(\'' + a.groupId + '\')">Plus tard</span>'
       + '</div>').join('');
   }catch(e){ cible.innerHTML = ''; }
+}
+
+// ===== RELANCER UN TOURNOI PRIVE TERMINE =====
+// Le createur a dix jours. Le bandeau revient a chaque visite tant qu'il ne
+// l'a pas relance : « Plus tard » ne le masque que jusqu'a la prochaine.
+function joursPourRelancer(iso){
+  const fin = new Date(iso).getTime();
+  if(isNaN(fin)) return '';
+  const jours = Math.ceil((fin - Date.now()) / 86400000);
+  if(jours <= 1) return 'Dernier jour pour le relancer';
+  return 'Plus que ' + jours + ' jours pour le relancer';
+}
+
+async function annoncerLesRelances(){
+  const userId = getUserId();
+  const cible = document.getElementById('relances-tournois');
+  if(!userId || !cible) return;
+  try{
+    const res = await fetch(`${API_BASE}/Group/ARelancer/${userId}`);
+    const json = await res.json();
+    const liste = (json.success && Array.isArray(json.data)) ? json.data : [];
+    cible.innerHTML = liste.map(t =>
+      '<div class="annonce-tournoi" id="relance-' + t.id + '">'
+      + '<p class="surtitre">TON TOURNOI EST TERMINÉ</p>'
+      + '<p><strong>' + echapper(t.name) + '</strong> a rendu son verdict'
+      + (t.leader ? ' : <strong>' + echapper(t.leader) + '</strong> l\'emporte.' : '.') + '</p>'
+      + '<p>Relance-le pour 5 nouveaux matchs avec les mêmes joueurs. Chacun pourra le '
+      + 'quitter avant le premier match, et tu pourras inviter du monde s\'il reste de la place.</p>'
+      + '<button class="cta-play" onclick="relancerTournoi(this, \'' + t.id + '\')">Relancer le tournoi</button>'
+      + '<span class="lien" onclick="document.getElementById(\'relance-' + t.id + '\').remove()">'
+      + joursPourRelancer(t.relaunchUntil) + ' · Plus tard</span>'
+      + '</div>').join('');
+  }catch(e){ cible.innerHTML = ''; }
+}
+
+async function relancerTournoi(bouton, groupId){
+  const relache = verrouiller(bouton, 'Un instant…');
+  try{
+    const res = await fetch(`${API_BASE}/Group/Relancer/${groupId}/${getUserId()}`, { method:'POST' });
+    const json = await res.json();
+    if(json.success && json.data){
+      const bandeau = document.getElementById('relance-' + groupId);
+      if(bandeau) bandeau.remove();
+      // Le nouveau tournoi est privé : on le retient, pour que sa page ne
+      // propose pas le bouton réservé aux tournois ouverts.
+      tournoiPublic[json.data.id] = false;
+      openGroupDetail(json.data.id);
+      return;
+    }
+    relache();
+    const code = (json.data && json.data.code) || json.code;
+    alert(code === -4 ? 'Ce tournoi a déjà été relancé.'
+        : code === -5 ? 'Trop tard : les dix jours pour le relancer sont passés.'
+        : "On n'a pas réussi à relancer le tournoi. Réessaie dans un instant.");
+  }catch(e){
+    relache();
+    alert("On n'a pas réussi à relancer le tournoi. Réessaie dans un instant.");
+  }
 }
 
 async function marquerAnnonceVue(groupId){
@@ -7281,6 +7356,10 @@ function carteTournoi(t, ouvert){
     meta = places
          + (t.complet ? ' · complet' : '')
          + ' · ferme <span class="h">' + heureDeFermeture(t.ferme) + '</span>';
+  } else if(t.termine){
+    // Terminé (25 septembre 2026) : le vainqueur en doré.
+    meta = places + ' · terminé'
+         + (t.meneur ? ' · vainqueur <span class="h vainqueur">' + echapper(t.meneur) + '</span>' : '');
   } else {
     meta = places
          + ' · ' + t.matchs + (t.matchs > 1 ? ' matchs joués' : ' match joué')
@@ -7292,7 +7371,9 @@ function carteTournoi(t, ouvert){
   if(!t.public){ meta += ' · <span class="tn-prive">privé</span>'; }
 
   let action;
-  if(t.member){
+  if(t.relancable){
+    action = '<button class="tn-bouton" onclick="relancerTournoi(this, \'' + t.id + '\')">Relancer</button>';
+  } else if(t.member){
     action = '<button class="tn-bouton voir" onclick="openGroupDetail(\'' + t.id + '\')">Voir</button>';
   } else if(ouvert && !t.complet){
     action = '<button class="tn-bouton" onclick="rejoindreTournoi(this, \'' + t.code + '\')">Rejoindre</button>';
@@ -7445,11 +7526,14 @@ async function enterGroupsScreen(){
       id: t.id, nom: t.name, code: t.inviteCode, joueurs: t.memberCount,
       complet: !!t.full, member: !!t.member, ferme: t.closesAt,
       matchs: t.matchesPlayed || 0, meneur: t.leader || '',
-      public: t.public !== false
+      public: t.public !== false,
+      termine: !!t.finished, relancable: !!t.canRelaunch
     });
 
     const ouverts = (d2.open || []).map(versLigne);
-    const encours = (d2.running || []).map(versLigne);
+    const tousCommences = (d2.running || []).map(versLigne);
+    const encours = tousCommences.filter(t => !t.termine);
+    const termines = tousCommences.filter(t => t.termine);
 
     if(zoneO){
       zoneO.innerHTML = ouverts.length
@@ -7460,10 +7544,14 @@ async function enterGroupsScreen(){
           + 'clôture du prochain match.</p></div>';
     }
     if(zoneC){
-      zoneC.innerHTML = encours.length
+      zoneC.innerHTML = (encours.length
         ? '<div class="tn-sect">En cours <b>' + encours.length + '</b></div>'
           + encours.map(t => carteTournoi(t, false)).join('')
-        : '';
+        : '')
+        + (termines.length
+        ? '<div class="tn-sect">Terminés <b>' + termines.length + '</b></div>'
+          + termines.map(t => carteTournoi(t, false)).join('')
+        : '');
     }
 
     majLibelleGroupes(ouverts.concat(encours).filter(t => t.member).length);
@@ -7533,6 +7621,7 @@ async function mesGroupesCrees(){
     return tous
       .filter(g => !estUnKop(g))
       .filter(g => (g.creatorId || '').toLowerCase() === userId.toLowerCase())
+      .filter(g => !g.finished)
       .sort((a, b) => new Date(a.createdDate) - new Date(b.createdDate));
   }catch(e){
     return [];
@@ -7771,6 +7860,7 @@ function majInvitationAccueil(){
   // Les inscriptions faites par d'autres s'annoncent a chaque passage sur
   // l'accueil : le serveur ne renvoie que celles qu'il n'a pas encore lues.
   try{ annoncerLesInscriptions(); }catch(e){}
+  try{ annoncerLesRelances(); }catch(e){}
 
   const boite = document.getElementById('home-invite-box');
   if(!boite) return;
@@ -8910,8 +9000,11 @@ async function openGroupDetail(groupId){
     // Un tournoi d'amis plein n'invite plus : le bloc de partage laisse place à
     // « Ton tournoi est au complet » (16 septembre 2026).
     const complet = (g.ranking || []).length >= GROUPE_MAX_MEMBRES;
-    document.getElementById('group-invite-box').style.display = complet ? 'none' : 'block';
-    document.getElementById('group-complet-box').style.display = complet ? 'block' : 'none';
+    // Un tournoi terminé n'invite plus personne (25 septembre 2026) : ni le
+    // bloc de partage, ni « au complet ».
+    const fini = !!g.isSeasonComplete;
+    document.getElementById('group-invite-box').style.display = (complet || fini) ? 'none' : 'block';
+    document.getElementById('group-complet-box').style.display = (complet && !fini) ? 'block' : 'none';
 
     // Le bouton qui ouvre le classement general pour y choisir des joueurs :
     // a tous les membres du tournoi, et tant que la table n'est pas pleine.
@@ -8931,7 +9024,7 @@ async function openGroupDetail(groupId){
     const btnIns = document.getElementById('btn-inscrire');
     if(btnIns){
       btnIns.style.display = 'none';
-      if(!complet){
+      if(!complet && !fini){
         const idTournoi = g.id || groupId;
         estTournoiPublic(idTournoi).then(ouvert => {
           if(ouvert && tournoiAInscrire && tournoiAInscrire.id === idTournoi){
