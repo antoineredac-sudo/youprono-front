@@ -1414,6 +1414,26 @@
   .annonce-tournoi p + p{ margin-top:8px; }
   .annonce-tournoi p.discret{ color:var(--text-dim); font-size:13.5px; }
   .tn-meta .vainqueur{ color:var(--gold) !important; }
+  /* Les tournois privés du joueur, en tête de page (25 septembre 2026) :
+     cadenas, bande dorée à gauche, étiquette d'état. */
+  .tn-carte.priv{ background:linear-gradient(90deg,rgba(232,185,35,.10),rgba(28,61,130,.55));
+                  border:1px solid rgba(232,185,35,.55); border-left:4px solid var(--gold); }
+  .tn-carte.priv .tn-nom{ color:var(--text); }
+  .tn-cadenas{ width:13px; height:13px; vertical-align:-1px; margin-right:6px; }
+  .tn-etiq{ display:inline-block; font-family:'Oswald',sans-serif; font-size:10.5px;
+            letter-spacing:.08em; border-radius:5px; padding:2px 6px; margin-right:6px;
+            vertical-align:1px; }
+  .tn-etiq.o{ background:rgba(39,192,122,.18); color:#5fd9a0; }
+  .tn-etiq.c{ background:rgba(232,185,35,.18); color:var(--gold); }
+  .tn-etiq.t{ background:rgba(255,255,255,.1); color:#c2cae8; }
+  .tn-sous{ font-size:11.5px; letter-spacing:1.4px; color:#8b99d0; margin:16px 0 8px;
+            text-transform:uppercase; }
+  .tn-vide-prive{ border:1.5px dashed var(--gold); border-radius:12px; padding:16px;
+                  text-align:center; background:rgba(232,185,35,.06); margin-bottom:6px; }
+  .tn-vide-prive p{ color:var(--text); font-size:14.5px; line-height:1.55; }
+  .tn-vide-prive p.d{ color:var(--text-dim); font-size:13.5px; margin-top:6px; }
+  .tn-ajout-prive{ display:block; text-align:center; color:var(--gold); font-size:14px;
+                   margin:4px 0 6px; cursor:pointer; }
 
   /* ===== LA SALLE DES TOURNOIS ===== */
   .tn-sect{
@@ -3268,11 +3288,6 @@
     <section id="view-groups" class="view" style="display:none;">
       <h2 class="play-title" id="groups-title">TOURNOIS</h2>
 
-      <p class="groups-intro">Cinq matchs, un vainqueur. On s'inscrit jusqu'à la clôture
-        des prédictions du prochain match — ensuite, le tournoi est fermé. Onze joueurs
-        au maximum, comme sur un terrain de foot : plus vous êtes nombreux, plus les
-        trophées sont précieux.</p>
-
       <div id="tournois-ouverts"></div>
       <div id="tournois-encours"></div>
 
@@ -3293,12 +3308,12 @@
       <div id="inscrire-liste"><div class="placeholder">Chargement…</div></div>
     </section>
     <section id="view-group-create" class="view" style="display:none;">
-      <h2 class="play-title">CRÉER UN TOURNOI</h2>
+      <h2 class="play-title" id="group-create-title">CRÉER UN TOURNOI</h2>
       <div class="groupe-complet-note" id="group-create-notice" style="display:none;"></div>
       <input type="text" id="group-create-name" style="margin-top:18px;" placeholder="Nom du tournoi" aria-label="Nom du tournoi">
       <div class="field-error" id="group-create-error"></div>
 
-      <label style="margin-top:20px;">Qui peut s'y inscrire ?</label>
+      <label style="margin-top:20px;" id="group-create-label">Qui peut s'y inscrire ?</label>
       <div class="tn-portes">
         <button type="button" class="tn-porte choisie" id="porte-ouvert"
                 onclick="choisirPorte(true)">
@@ -7368,17 +7383,22 @@ function heureDeFermeture(iso){
   return dateFr(d.toLocaleDateString('fr-FR', { day:'numeric', month:'long' })) + ' à ' + heure;
 }
 
+const CADENAS = '<svg class="tn-cadenas" viewBox="0 0 24 24" aria-hidden="true"><path fill="#e8b923" '
+  + 'd="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5m-3 5a3 3 0 0 1 6 0v3H9z"/></svg>';
+
 function carteTournoi(t, ouvert){
-  const classes = 'tn-carte' + (ouvert ? '' : ' clos') + (t.member ? ' mien' : '');
-  const nom = echapper(t.nom);
+  const priv = !t.public;
+  const classes = 'tn-carte' + (priv ? ' priv' : ((ouvert ? '' : ' clos') + (t.member ? ' mien' : '')));
+  const nom = (priv ? CADENAS : '') + echapper(t.nom);
 
   let meta;
   // Les places prises sur les onze (24 septembre 2026) : « Joueurs 2/11 » dit
   // en un coup d'œil combien il en reste.
   const places = 'Joueurs ' + t.joueurs + '/' + GROUPE_MAX_MEMBRES;
   if(ouvert){
+    // « Complet » est dit par la famille où la carte est rangée, et par
+    // l'étiquette d'un tournoi privé : inutile de le répéter ici.
     meta = places
-         + (t.complet ? ' · complet' : '')
          + ' · ferme <span class="h">' + heureDeFermeture(t.ferme) + '</span>';
   } else if(t.termine){
     // Terminé (25 septembre 2026) : le vainqueur en doré.
@@ -7390,9 +7410,15 @@ function carteTournoi(t, ouvert){
          + (t.meneur ? ' · en tête <span class="h">' + echapper(t.meneur) + '</span>' : '');
   }
 
-  // Le cadenas ne s'affiche que sur les siens : les tournois prives des autres
-  // ne figurent pas dans la salle.
-  if(!t.public){ meta += ' · <span class="tn-prive">privé</span>'; }
+  // Un tournoi privé porte son état en étiquette : il est rangé avec les autres
+  // tournois privés du joueur, quel que soit son avancement.
+  if(priv){
+    const etiq = t.termine ? '<span class="tn-etiq t">TERMINÉ</span>'
+      : !ouvert ? '<span class="tn-etiq c">EN COURS</span>'
+      : t.complet ? '<span class="tn-etiq c">COMPLET</span>'
+      : '<span class="tn-etiq o">OUVERT</span>';
+    meta = etiq + meta.replace(' · complet', '').replace(' · terminé', '');
+  }
 
   let action;
   if(t.relancable){
@@ -7403,6 +7429,8 @@ function carteTournoi(t, ouvert){
     action = '<button class="tn-bouton" onclick="rejoindreTournoi(this, \'' + t.code + '\')">Rejoindre</button>';
   } else if(ouvert){
     action = '<span class="tn-etat">Complet</span>';
+  } else if(t.termine){
+    action = '<span class="tn-etat">Terminé</span>';
   } else {
     action = '<span class="tn-etat">Fermé</span>';
   }
@@ -7554,31 +7582,47 @@ async function enterGroupsScreen(){
       termine: !!t.finished, relancable: !!t.canRelaunch
     });
 
-    const ouverts = (d2.open || []).map(versLigne);
+    // L'ordre de la page (25 septembre 2026) : les tournois privés du joueur
+    // d'abord, tous états confondus ; puis les publics en quatre familles.
+    const tousOuverts = (d2.open || []).map(versLigne);
     const tousCommences = (d2.running || []).map(versLigne);
-    const encours = tousCommences.filter(t => !t.termine);
-    const termines = tousCommences.filter(t => t.termine);
+    const prives = tousOuverts.filter(t => !t.public).map(t => Object.assign(t, { ouvertAuxInscriptions: true }))
+      .concat(tousCommences.filter(t => !t.public).map(t => Object.assign(t, { ouvertAuxInscriptions: false })));
+    const ouverts = tousOuverts.filter(t => t.public && !t.complet);
+    const complets = tousOuverts.filter(t => t.public && t.complet);
+    const encours = tousCommences.filter(t => t.public && !t.termine);
+    const termines = tousCommences.filter(t => t.public && t.termine);
 
     if(zoneO){
-      zoneO.innerHTML = ouverts.length
-        ? '<div class="tn-sect">Ouverts aux inscriptions <b>' + ouverts.length + '</b></div>'
-          + ouverts.map(t => carteTournoi(t, true)).join('')
-        : '<div class="tn-vide"><p>Aucun tournoi n\'est ouvert pour l\'instant.<br>'
-          + 'Ouvre le tien : les autres joueurs pourront s\'y inscrire jusqu\'à la '
-          + 'clôture du prochain match.</p></div>';
+      zoneO.innerHTML = prives.length
+        ? '<div class="tn-sect">Mes tournois privés <b>' + prives.length + '</b></div>'
+          + prives.map(t => carteTournoi(t, t.ouvertAuxInscriptions)).join('')
+          + '<span class="tn-ajout-prive" onclick="creerTournoiPrive()">+ Créer un autre tournoi privé</span>'
+        : '<div class="tn-sect">Mes tournois privés</div>'
+          + '<div class="tn-vide-prive"><p><strong>Tu n\'as pas encore de tournoi privé.</strong></p>'
+          + '<p class="d">Crée le tien et invite tes amis sur WhatsApp ou sur X : '
+          + 'c\'est entre vous, personne d\'autre ne le voit.</p>'
+          + '<button class="cta-play" style="margin-top:12px;" onclick="creerTournoiPrive()">'
+          + 'Créer mon tournoi privé</button></div>';
     }
     if(zoneC){
-      zoneC.innerHTML = (encours.length
-        ? '<div class="tn-sect">En cours <b>' + encours.length + '</b></div>'
-          + encours.map(t => carteTournoi(t, false)).join('')
-        : '')
-        + (termines.length
-        ? '<div class="tn-sect">Terminés <b>' + termines.length + '</b></div>'
-          + termines.map(t => carteTournoi(t, false)).join('')
-        : '');
+      const famille = (titre, liste, ouvert) => liste.length
+        ? '<div class="tn-sous">' + titre + ' · ' + liste.length + '</div>'
+          + liste.map(t => carteTournoi(t, ouvert)).join('')
+        : '';
+      const rien = !ouverts.length && !complets.length && !encours.length && !termines.length;
+      zoneC.innerHTML = '<div class="tn-sect">Tournois publics</div>'
+        + (rien
+          ? '<div class="tn-vide"><p>Aucun tournoi public pour l\'instant.<br>'
+            + 'Ouvre le tien : les autres joueurs pourront s\'y inscrire jusqu\'à la '
+            + 'clôture du prochain match.</p></div>'
+          : famille('Ouverts aux inscriptions', ouverts, true)
+            + famille('Complets', complets, true)
+            + famille('En cours', encours, false)
+            + famille('Terminés', termines, false));
     }
 
-    majLibelleGroupes(ouverts.concat(encours).filter(t => t.member).length);
+    majLibelleGroupes(tousOuverts.concat(tousCommences).filter(t => t.member && !t.termine).length);
   }catch(e){
     if(zoneO) zoneO.innerHTML = '<div class="placeholder">Impossible de charger les tournois.</div>';
   }
@@ -7779,10 +7823,31 @@ function creerUnGroupe(){
   // Chaque creation repart du meme etat : sinon le choix fait la fois d'avant
   // s'appliquerait en silence a un tournoi qui n'a rien a voir.
   choisirPorte(true);
+  modeCreationPrive(false);
   document.getElementById('group-create-name').value = '';
   document.getElementById('group-create-error').classList.remove('show');
   document.getElementById('group-create-notice').style.display = 'none';
   switchView('group-create');
+}
+
+// Depuis l'encadré « Tu n'as pas encore de tournoi privé » (25 septembre 2026) :
+// le même écran, mais seule l'option privée est proposée. C'est le tournoi qui
+// fait venir des amis de l'extérieur.
+function modeCreationPrive(prive){
+  const titre = document.getElementById('group-create-title');
+  const label = document.getElementById('group-create-label');
+  const ouvert = document.getElementById('porte-ouvert');
+  if(titre) titre.textContent = prive ? 'CRÉER MON TOURNOI PRIVÉ' : 'CRÉER UN TOURNOI';
+  if(label) label.style.display = prive ? 'none' : '';
+  if(ouvert) ouvert.style.display = prive ? 'none' : '';
+  const portes = document.querySelector('#view-group-create .tn-portes');
+  if(portes) portes.style.marginTop = prive ? '18px' : '';
+}
+
+function creerTournoiPrive(){
+  creerUnGroupe();
+  choisirPorte(false);
+  modeCreationPrive(true);
 }
 
 // Le tournoi visé est complet (code -4 du serveur) : plutôt que de laisser
