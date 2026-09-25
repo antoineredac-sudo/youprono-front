@@ -5574,7 +5574,7 @@ async function ccChargerClassement(){
   bloc.innerHTML = '<div class="placeholder">Chargement du classement…</div>';
 
   try{
-    const res = await fetch(`${API_BASE}/UserMatch/Quiz/Classement/${getUserId()}?limit=20`);
+    const res = await fetch(`${API_BASE}/UserMatch/Quiz/Classement/${getUserId()}?limit=1000`);
     const json = await res.json();
     if(!json.success || !json.data) throw new Error('classement');
     const d = json.data;
@@ -5596,7 +5596,7 @@ async function ccChargerClassement(){
             + '<span class="cc-s">' + l.points + '</span></div>';
     });
 
-    // Le joueur qui n'est pas dans les vingt premiers se retrouve quand meme.
+    // Filet de securite : le classement est complet, le joueur y figure deja.
     if(d.moi && !d.lignes.some(l => l.moi)){
       html += '<div class="cc-sep">···</div>'
             + '<div class="cc-row moi"><span class="cc-r">' + d.moi.rang + '</span>'
@@ -5611,6 +5611,13 @@ async function ccChargerClassement(){
 
     html += ccBlocLot();
     bloc.innerHTML = html;
+
+    // Tout le classement est affiché ; on centre l'écran sur le joueur connecté
+    // (25 septembre 2026). Il remonte ou descend ensuite en faisant défiler.
+    const moi = bloc.querySelector('.cc-row.moi');
+    if(moi){
+      requestAnimationFrame(() => moi.scrollIntoView({ block:'center', behavior:'smooth' }));
+    }
   }catch(e){
     bloc.innerHTML = '<div class="cc-verdict rate">Impossible de charger le classement.</div>';
   }
