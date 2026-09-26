@@ -3462,7 +3462,7 @@
         <!-- Le recrutement interne vient en dernier : les tournois servent
              d'abord a ramener du monde de l'exterieur (Antoine, 23 septembre). -->
         <button class="cta-play" id="btn-inscrire" style="margin-top:11px;display:none;"
-                onclick="ouvrirInscription()">Inviter des membres du jeu</button>
+                onclick="ouvrirInscription()">Inscrire un membre du jeu</button>
       </div>
       <span class="small-link" id="group-back-link" onclick="goToGroups()">← Retour aux tournois</span>
       <span class="small-link" id="group-leave-link" style="margin-top:8px;" onclick="leaveGroup()">Quitter le tournoi</span>
@@ -9275,21 +9275,14 @@ async function openGroupDetail(groupId){
       name: g.name,
       membres: (g.ranking || []).map(m => m.userId || m.id)
     };
-    // Pas de bouton dans un tournoi privé (24 septembre 2026) : on y invite par
-    // WhatsApp ou par X, pour que ce soit l'occasion de faire venir des joueurs
-    // de l'extérieur. On le cache d'abord, le temps de savoir si le tournoi est
-    // ouvert, pour qu'il n'apparaisse pas une seconde puis disparaisse.
+    // Le bouton vaut aussi pour les tournois privés depuis le 26 septembre 2026
+    // (Antoine) : tout le monde n'a pas dix amis supporters du PSG autour de
+    // lui, et les membres du jeu complètent la table.
     const btnIns = document.getElementById('btn-inscrire');
     if(btnIns){
-      btnIns.style.display = 'none';
-      if(!complet && !fini){
-        const idTournoi = g.id || groupId;
-        estTournoiPublic(idTournoi).then(ouvert => {
-          if(ouvert && tournoiAInscrire && tournoiAInscrire.id === idTournoi){
-            btnIns.style.display = 'block';
-          }
-        });
-      }
+      // Passé la clôture des inscriptions, le serveur refuserait : pas de bouton.
+      const porteOuverte = g.inscriptionsFermeture ? inscriptionsOuvertes(g) : true;
+      btnIns.style.display = (!complet && !fini && porteOuverte) ? 'block' : 'none';
     }
 
     // Un tournoi d'une seule personne n'a ni classement, ni record, ni calendrier
