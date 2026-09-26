@@ -605,6 +605,17 @@
   }
   .player-row.picked .player-shirt{ background:var(--red); color:var(--text); border-color:var(--red); }
   .player-name{ flex:1; font-size:15px; }
+  /* Deux joueurs par ligne, rangés par poste (26 septembre 2026). */
+  .squad-poste{ font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+                color:var(--text-dim); margin:14px 2px 7px; }
+  .squad-grille{ display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .squad-grille .player-row{ margin-bottom:0; padding:9px 9px; gap:8px; min-width:0; }
+  .squad-grille .player-shirt{ width:28px; height:28px; font-size:13px; }
+  .squad-grille .player-name{ font-size:14px; font-weight:600; line-height:1.2; min-width:0;
+                              overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .squad-grille .player-name small{ display:block; font-size:11px; font-weight:400;
+                                    color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; }
+  .squad-grille .player-order{ min-width:12px; font-size:14px; }
   .player-order{
     font-family:'Oswald',sans-serif;
     color:var(--gold);
@@ -5721,7 +5732,7 @@ async function ccChargerClassement(){
 const SALON_ETATS = {
   closed:      { titre:'LES PRÉDICTIONS DU TOURNOI',            cta:'Les prédictions du tournoi' },
   composition: { titre:'LES COMPOS DU TOURNOI',            cta:'Les compos du tournoi sont notées' },
-  results:     { titre:'LES RÉSULTATS DU TOURNOI',         cta:'Les résultats du tournoi' }
+  results:     { titre:'LES RÉSULTATS DU TOURNOI',         cta:'Les résultats de tournoi' }
 };
 
 let salonMesGroupes = [];
@@ -11739,21 +11750,52 @@ async function enterCompositionScreen(){
   renderSquad();
 }
 
+// L'ordre de l'effectif dans l'étape 1, donné par Antoine le 26 septembre 2026,
+// poste par poste, deux par ligne (gauche, droite). Un joueur absent de cette
+// liste se range à la fin de son poste : il reste sélectionnable.
+const ORDRE_EFFECTIF = [
+  'safonov', 'chevalier', 'longoni',
+  'hakimi', 'boly', 'marquinhos', 'zabarnyi', 'pacho', 'hernandez', 'mendes', 'digne',
+  'vitinha', 'beraldo', 'neves', 'zaire-emery', 'ruiz', 'fernandez', 'mayulu',
+  'doue', 'akliouche', 'dembele', 'torres', 'kvaratskhelia', 'godts', 'ndjantou'
+];
+function rangEffectif(p){
+  const cle = String((p && (p.lastName || p.firstName)) || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const i = ORDRE_EFFECTIF.indexOf(cle);
+  return i < 0 ? 999 : i;
+}
+
 function renderSquad(){
   const list = document.getElementById('squad-list');
-  const sorted = [...squadData].sort((a,b)=> (POSITION_ORDER[a.position] ?? 99) - (POSITION_ORDER[b.position] ?? 99));
+  const sorted = [...squadData].sort((a,b)=>
+    ((POSITION_ORDER[a.position] ?? 99) - (POSITION_ORDER[b.position] ?? 99))
+    || (rangEffectif(a) - rangEffectif(b)));
 
+  // Deux joueurs par ligne, rangés par poste (26 septembre 2026) : l'effectif
+  // tient en deux écrans au lieu de cinq. Le prénom en petit au-dessus, le nom
+  // en grand : un nom long ne se coupe jamais.
   let html = '';
+  let poste = null;
   sorted.forEach(p=>{
+    if(p.position !== poste){
+      if(poste !== null) html += '</div>';
+      poste = p.position;
+      html += '<div class="squad-poste">' + (POSITION_PLURAL[poste] || 'Autres') + '</div><div class="squad-grille">';
+    }
     const order = pickedPlayerIds.indexOf(p.id);
     const isPicked = order >= 0;
+    const prenom = (p.firstName || '').trim();
+    const nom = (p.lastName || '').trim();
+    const seul = !prenom || !nom || prenom.toLowerCase() === nom.toLowerCase();
     html += `
       <div class="player-row ${isPicked?'picked':''}" onclick="togglePlayer('${p.id}')">
         <div class="player-shirt">${p.shirtNumber || '-'}</div>
-        <div class="player-name">${nomJoueurAffiche(p.firstName, p.lastName)}</div>
+        <div class="player-name">${seul ? '' : '<small>' + echapper(prenom) + '</small>'}${echapper(seul ? (nom || prenom) : nom)}</div>
         <div class="player-order">${isPicked ? order+1 : ''}</div>
       </div>`;
   });
+  if(poste !== null) html += '</div>';
   list.innerHTML = html;
 
   document.getElementById('squad-count').textContent = pickedPlayerIds.length + ' / 11 joueurs sélectionnés';
