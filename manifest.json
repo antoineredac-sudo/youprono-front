@@ -1,7 +1,7 @@
 {
   "name": "The Golden Fan — le jeu des experts du PSG",
   "short_name": "Golden Fan",
-  "description": "Pronostique la compo, la possession, les tirs, les fautes, les centres et le score avant chaque match du PSG.",
+  "description": "Devine la compo, la possession, les tirs, les fautes, les centres et le score avant chaque match du PSG.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
