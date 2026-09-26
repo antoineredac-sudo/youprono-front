@@ -9530,7 +9530,7 @@ async function loadDashboard(){
           score: p.score,
           date: p.date,
           isForfait: !!p.isForfait,
-          court: opponent.slice(0, 3).toUpperCase()
+          court: sigleClub(opponent)
         };
       });
       document.getElementById('profil-courbe').innerHTML = courbeDesNotes(pourCourbe);
@@ -11765,6 +11765,37 @@ function rangEffectif(p){
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const i = ORDRE_EFFECTIF.indexOf(cle);
   return i < 0 ? 999 : i;
+}
+
+// Le sigle d'un club sous la courbe du tableau de bord (Antoine, 26 septembre
+// 2026) : les sigles d'usage des clubs de Ligue 1, et un code de trois lettres
+// pour les clubs européens. Un club inconnu garde ses trois premières lettres.
+const SIGLES_CLUBS = [
+  ['angers', 'SCO'], ['auxerre', 'AJA'], ['brest', 'SB29'], ['havre', 'HAC'],
+  ['le mans', 'LMFC'], ['lens', 'RCL'], ['lille', 'LOSC'], ['losc', 'LOSC'],
+  ['lorient', 'FCL'], ['lyon', 'OL'], ['marseille', 'OM'], ['monaco', 'ASM'],
+  ['nice', 'OGCN'], ['paris fc', 'PFC'], ['saint-germain', 'PSG'], ['rennes', 'SRFC'],
+  ['rennais', 'SRFC'], ['strasbourg', 'RCS'], ['toulouse', 'TFC'], ['troyes', 'ESTAC'],
+  ['estac', 'ESTAC'], ['nantes', 'FCN'], ['metz', 'FCM'], ['saint-etienne', 'ASSE'],
+  // Ligue des champions 2026-2027 : codes de trois lettres, à la manière de l'UEFA.
+  ['manchester city', 'MCI'], ['manchester united', 'MUN'], ['aston villa', 'AVL'],
+  ['arsenal', 'ARS'], ['liverpool', 'LIV'], ['chelsea', 'CHE'], ['tottenham', 'TOT'],
+  ['inter', 'INT'], ['napoli', 'NAP'], ['naples', 'NAP'], ['roma', 'ROM'], ['como', 'COM'],
+  ['milan', 'MIL'], ['juventus', 'JUV'],
+  ['barcelone', 'BAR'], ['barcelona', 'BAR'], ['real madrid', 'RMA'], ['villarreal', 'VIL'],
+  ['atletico', 'ATM'], ['betis', 'BET'],
+  ['bayern', 'BAY'], ['dortmund', 'BVB'], ['leipzig', 'RBL'], ['stuttgart', 'VFB'],
+  ['psv', 'PSV'], ['feyenoord', 'FEY'], ['porto', 'POR'], ['benfica', 'BEN'],
+  ['brugge', 'BRU'], ['bruges', 'BRU'], ['slavia', 'SLA'], ['galatasaray', 'GAL'],
+  ['shakhtar', 'SHK'], ['sabah', 'SAB'], ['lask', 'LAS'], ['glimt', 'BOD'],
+  ['aek', 'AEK'], ['levski', 'LEV'], ['viking', 'VIK'], ['dinamo', 'DIN'],
+  ['celje', 'CEL'], ['bratislava', 'SBR'], ['fenerbahce', 'FEN']
+];
+function sigleClub(nom){
+  const n = String(nom || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if(!n) return '';
+  const trouve = SIGLES_CLUBS.find(([cle]) => n.indexOf(cle) >= 0);
+  return trouve ? trouve[1] : n.replace(/[^a-z]/g, '').slice(0, 3).toUpperCase();
 }
 
 function renderSquad(){
