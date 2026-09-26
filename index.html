@@ -1448,6 +1448,17 @@
   .tn-carte.priv{ background:linear-gradient(90deg,rgba(232,185,35,.10),rgba(28,61,130,.55));
                   border:1px solid rgba(232,185,35,.55); border-left:4px solid var(--gold); }
   .tn-carte.priv .tn-nom{ color:var(--text); }
+  /* Le niveau d'un tournoi (26 septembre 2026) : la moyenne des coefs expert
+     de ses membres, en six nuances de bleu, de la plus sourde à la plus vive.
+     Les tournois privés gardent leur contour doré. */
+  .tn-carte.niv0{ background:#161f3d !important; }
+  .tn-carte.niv1{ background:#192a57 !important; }
+  .tn-carte.niv2{ background:#1b3572 !important; }
+  .tn-carte.niv3{ background:#1c418f !important; }
+  .tn-carte.niv4{ background:#1d4fae !important; }
+  .tn-carte.niv5{ background:#2361d4 !important; }
+  .tn-carte.niv4 .tn-meta, .tn-carte.niv5 .tn-meta{ color:#cdd6f6; }
+  .tn-moy b{ color:var(--text); font-weight:600; }
   .tn-cadenas{ width:13px; height:13px; vertical-align:-1px; margin-right:6px; }
   .tn-etiq{ display:inline-block; font-family:'Oswald',sans-serif; font-size:10.5px;
             letter-spacing:.08em; border-radius:5px; padding:2px 6px; margin-right:6px;
@@ -7484,21 +7495,39 @@ function heureDeFermeture(iso){
   // sans effort. Au-dela, on donne la date.
   const ecart = (d - maintenant) / 86400000;
   if(ecart < 7){ return jours[d.getDay()] + ' à ' + heure; }
-  return 'le ' + dateFr(d.toLocaleDateString('fr-FR', { day:'numeric', month:'long' })) + ' à ' + heure;
+  // « le 10/10 à 15:00 » (Antoine, 26 septembre 2026) : plus court que le mois
+  // en toutes lettres, pour laisser la place à la moyenne des coefs.
+  return 'le ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + ' à ' + heure;
 }
 
 const CADENAS = '<svg class="tn-cadenas" viewBox="0 0 24 24" aria-hidden="true"><path fill="#e8b923" '
   + 'd="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5m-3 5a3 3 0 0 1 6 0v3H9z"/></svg>';
 
+// Le niveau d'un tournoi selon la moyenne des coefs de ses membres (Antoine,
+// 26 septembre 2026) : moins de 50, 50, 60, 70, 75, 80 et plus. Sans moyenne
+// (personne n'a encore joué), le niveau le plus sourd.
+function niveauTournoi(moy){
+  if(typeof moy !== 'number') return 0;
+  if(moy >= 80) return 5;
+  if(moy >= 75) return 4;
+  if(moy >= 70) return 3;
+  if(moy >= 60) return 2;
+  if(moy >= 50) return 1;
+  return 0;
+}
+
 function carteTournoi(t, ouvert){
   const priv = !t.public;
-  const classes = 'tn-carte' + (priv ? ' priv' : ((ouvert ? '' : ' clos') + (t.member ? ' mien' : '')));
+  const classes = 'tn-carte' + (priv ? ' priv' : ((ouvert ? '' : ' clos') + (t.member ? ' mien' : '')))
+                + ' niv' + niveauTournoi(t.moy);
   const nom = (priv ? CADENAS : '') + echapper(t.nom);
 
   let meta;
   // Les places prises sur les onze (24 septembre 2026) : « Joueurs 2/11 » dit
   // en un coup d'œil combien il en reste.
-  const places = 'Joueurs ' + t.joueurs + '/' + GROUPE_MAX_MEMBRES;
+  // « Joueurs » retiré le 26 septembre 2026 : « 3/11 » se comprend seul sous le
+  // nom d'un tournoi, et la place sert à la moyenne des coefs.
+  const places = t.joueurs + '/' + GROUPE_MAX_MEMBRES;
   if(ouvert){
     // « Complet » est dit par la famille où la carte est rangée, et par
     // l'étiquette d'un tournoi privé : inutile de le répéter ici.
@@ -7544,7 +7573,9 @@ function carteTournoi(t, ouvert){
   // (24 septembre 2026).
   return '<div class="' + classes + '"><div class="tn-info" onclick="basculerApercu(\'' + t.id + '\')">'
        + '<div class="tn-nom">' + nom + ' <span class="tn-chevron" id="chevron-' + t.id + '">▾</span></div>'
-       + '<div class="tn-meta">' + meta + '</div></div>' + action + '</div>'
+       + '<div class="tn-meta">' + meta + '</div>'
+       + '<div class="tn-meta tn-moy">Moy. coef <b>' + (typeof t.moy === 'number' ? fmtNote(t.moy) : '—') + '</b></div>'
+       + '</div>' + action + '</div>'
        + '<div class="tn-apercu" id="apercu-' + t.id + '" style="display:none;"></div>';
 }
 
@@ -7685,7 +7716,8 @@ async function enterGroupsScreen(){
       complet: !!t.full, member: !!t.member, ferme: t.closesAt,
       matchs: t.matchesPlayed || 0, meneur: t.leader || '',
       public: t.public !== false,
-      termine: !!t.finished, relancable: !!t.canRelaunch
+      termine: !!t.finished, relancable: !!t.canRelaunch,
+      moy: (typeof t.averageCoef === 'number') ? t.averageCoef : null
     });
 
     // L'ordre de la page (25 septembre 2026) : les tournois privés du joueur
