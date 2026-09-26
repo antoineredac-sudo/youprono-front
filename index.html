@@ -609,6 +609,7 @@
   .squad-poste{ font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
                 color:var(--text-dim); margin:14px 2px 7px; }
   .squad-grille{ display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  #squad-list{ margin-bottom:20px; }
   .squad-grille .player-row{ margin-bottom:0; padding:9px 9px; gap:8px; min-width:0; }
   .squad-grille .player-shirt{ width:28px; height:28px; font-size:13px; }
   .squad-grille .player-name{ font-size:14px; font-weight:600; line-height:1.2; min-width:0;
@@ -5730,8 +5731,8 @@ async function ccChargerClassement(){
 // de céder la place au match suivant à sa propre clôture, et pas avant.
 
 const SALON_ETATS = {
-  closed:      { titre:'LES PRÉDICTIONS DU TOURNOI',            cta:'Les prédictions du tournoi' },
-  composition: { titre:'LES COMPOS DU TOURNOI',            cta:'Les compos du tournoi sont notées' },
+  closed:      { titre:'LES PRÉDICTIONS DU TOURNOI',            cta:'Les prédictions de tournoi' },
+  composition: { titre:'LES COMPOS DU TOURNOI',            cta:'Les compos de tournoi sont notées' },
   results:     { titre:'LES RÉSULTATS DU TOURNOI',         cta:'Les résultats de tournoi' }
 };
 
