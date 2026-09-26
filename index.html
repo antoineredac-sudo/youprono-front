@@ -4019,6 +4019,29 @@ const API_BASE = 'https://youprono-back.onrender.com';
   };
 })();
 
+// Le jeton vit 30 jours : a chaque visite, on l'echange contre un neuf, au plus
+// une fois par jour (26 septembre 2026). Un joueur qui revient au moins une fois
+// par mois reste donc connecte. En cas d'echec, on ne touche a rien.
+async function renouvelerJeton(){
+  try{
+    const auth = getAuth();
+    if(!auth || !auth.token) return;
+    const CLE = 'tgf_jeton_renouvele';
+    const aujourdhui = new Date().toISOString().slice(0, 10);
+    try{ if(localStorage.getItem(CLE) === aujourdhui) return; }catch(e){}
+    const res = await fetch(API_BASE + '/User/Jeton', { method:'POST' });
+    const j = await res.json();
+    if(j && j.success && typeof j.data === 'string' && j.data.split('.').length === 3){
+      const actuel = getAuth();
+      if(actuel && actuel.token === auth.token){
+        localStorage.setItem(LS_AUTH, JSON.stringify(Object.assign({}, actuel, { token: j.data })));
+      }
+      try{ localStorage.setItem(CLE, aujourdhui); }catch(e){}
+    }
+  }catch(e){}
+}
+window.addEventListener('load', () => setTimeout(renouvelerJeton, 1500));
+
 // Certains joueurs sont enregistrés en base avec le même prénom et nom —
 // « Vitinha Vitinha », « Marquinhos Marquinhos ». On n'affiche le mot qu'une fois.
 function nomJoueurAffiche(prenom, nom){
