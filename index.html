@@ -7887,6 +7887,9 @@ function choisirPorte(ouvert){
 
 async function creerGroupe(nom){
   const userId = getUserId();
+  // Un nom fabriqué par le jeu (« Les amis de… ») prend un numéro s'il est déjà
+  // pris, sans rien demander au joueur.
+  if(nom){ nom = await nomLibre(nom, null); }
   try{
     const res = await fetch(`${API_BASE}/Group/Create/${userId}`, {
       method:'POST',
@@ -8094,6 +8097,21 @@ async function inviteFromGroupsScreenSurX(){
   switchView('group-create');
 }
 
+// Deux tournois ne portent pas le meme nom (26 septembre 2026). Le serveur
+// renvoie le nom s'il est libre, sinon le meme suivi d'un numero. En cas de
+// panne, on laisse passer : le serveur refusera de toute facon un doublon.
+async function nomLibre(nom, sauf){
+  try{
+    const res = await fetch(`${API_BASE}/Group/NomLibre?nom=${encodeURIComponent(nom)}`
+      + (sauf ? `&sauf=${sauf}` : ''));
+    const j = await res.json();
+    return (j.success && typeof j.data === 'string' && j.data) ? j.data : nom;
+  }catch(e){ return nom; }
+}
+function messageNomPris(propose){
+  return 'Ce nom est déjà pris. Que penses-tu de « ' + propose + ' » ?';
+}
+
 // --- Ecran de nommage, a partir du deuxieme tournoi ---
 async function createNamedGroup(){
   const champ = document.getElementById('group-create-name');
@@ -8108,6 +8126,15 @@ async function createNamedGroup(){
   }
 
   const relache = verrouille('group-create-submit', 'group-create-submit', 'Création…');
+  const libre = await nomLibre(nom, null);
+  if(libre !== nom){
+    relache();
+    champ.value = libre;
+    try{ majCompteurTournoi(); }catch(e){}
+    errEl.textContent = messageNomPris(libre);
+    errEl.classList.add('show');
+    return;
+  }
   const g = await creerGroupe(nom);
   relache();
 
@@ -8951,6 +8978,17 @@ async function validerRenommage(){
   }
 
   const relache = verrouille('group-rename-submit', 'group-rename-submit', 'Enregistrement…');
+  const pareil = nom.toLowerCase() === String(groupeAffiche.name || '').trim().toLowerCase();
+  if(!pareil && !estUnKop(groupeAffiche)){
+    const libre = await nomLibre(nom, groupeAffiche.id);
+    if(libre !== nom){
+      relache();
+      champ.value = libre;
+      err.textContent = messageNomPris(libre);
+      err.classList.add('show');
+      return;
+    }
+  }
   try{
     const res = await fetch(`${API_BASE}/Group/Rename/${groupeAffiche.id}/${getUserId()}`, {
       method: 'POST',
