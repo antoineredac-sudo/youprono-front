@@ -1448,16 +1448,23 @@
   .tn-carte.priv{ background:linear-gradient(90deg,rgba(232,185,35,.10),rgba(28,61,130,.55));
                   border:1px solid rgba(232,185,35,.55); border-left:4px solid var(--gold); }
   .tn-carte.priv .tn-nom{ color:var(--text); }
-  /* Le niveau d'un tournoi (26 septembre 2026) : la moyenne des coefs expert
-     de ses membres, en six nuances de bleu, de la plus sourde à la plus vive.
+  /* Le level d'un tournoi (26 septembre 2026) : la moyenne des coefs expert
+     de ses membres, en dix nuances de bleu, de la plus sourde à la plus vive,
+     et le numéro du level dans un ballon.
      Les tournois privés gardent leur contour doré. */
-  .tn-carte.niv0{ background:#161f3d !important; }
-  .tn-carte.niv1{ background:#192a57 !important; }
-  .tn-carte.niv2{ background:#1b3572 !important; }
-  .tn-carte.niv3{ background:#1c418f !important; }
-  .tn-carte.niv4{ background:#1d4fae !important; }
-  .tn-carte.niv5{ background:#2361d4 !important; }
-  .tn-carte.niv4 .tn-meta, .tn-carte.niv5 .tn-meta{ color:#cdd6f6; }
+  .tn-carte.niv1{ background:#151c35 !important; }
+  .tn-carte.niv2{ background:#172347 !important; }
+  .tn-carte.niv3{ background:#192a58 !important; }
+  .tn-carte.niv4{ background:#1a3169 !important; }
+  .tn-carte.niv5{ background:#1b387b !important; }
+  .tn-carte.niv6{ background:#1c418f !important; }
+  .tn-carte.niv7{ background:#1d4aa2 !important; }
+  .tn-carte.niv8{ background:#1e53b5 !important; }
+  .tn-carte.niv9{ background:#2059c4 !important; }
+  .tn-carte.niv10{ background:#2363d8 !important; }
+  .tn-carte.niv8 .tn-meta, .tn-carte.niv9 .tn-meta, .tn-carte.niv10 .tn-meta{ color:#cdd6f6; }
+  .tn-moy{ display:flex; align-items:center; gap:7px; margin-top:5px; }
+  .tn-ballon{ flex:none; width:24px; height:24px; }
   .tn-moy b{ color:var(--text); font-weight:600; }
   .tn-cadenas{ width:13px; height:13px; vertical-align:-1px; margin-right:6px; }
   .tn-etiq{ display:inline-block; font-family:'Oswald',sans-serif; font-size:10.5px;
@@ -7503,23 +7510,32 @@ function heureDeFermeture(iso){
 const CADENAS = '<svg class="tn-cadenas" viewBox="0 0 24 24" aria-hidden="true"><path fill="#e8b923" '
   + 'd="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5m-3 5a3 3 0 0 1 6 0v3H9z"/></svg>';
 
-// Le niveau d'un tournoi selon la moyenne des coefs de ses membres (Antoine,
-// 26 septembre 2026) : moins de 50, 50, 60, 70, 75, 80 et plus. Sans moyenne
-// (personne n'a encore joué), le niveau le plus sourd.
-function niveauTournoi(moy){
+// Le level d'un tournoi selon la moyenne des coefs de ses membres (Antoine,
+// 26 septembre 2026) : 10 levels. Sans moyenne (personne n'a encore joué),
+// la couleur la plus sourde et pas de ballon.
+const LEVELS_BORNES = [50, 60, 65, 70, 72, 74, 76, 78, 80];
+function levelTournoi(moy){
   if(typeof moy !== 'number') return 0;
-  if(moy >= 80) return 5;
-  if(moy >= 75) return 4;
-  if(moy >= 70) return 3;
-  if(moy >= 60) return 2;
-  if(moy >= 50) return 1;
-  return 0;
+  let n = 1;
+  LEVELS_BORNES.forEach(b => { if(moy >= b) n++; });
+  return n;
+}
+
+// Le ballon du level : blanc, cerclé d'or, le numéro au centre.
+function ballonLevel(n){
+  return '<svg class="tn-ballon" viewBox="0 0 40 40" aria-label="Level ' + n + '">'
+    + '<circle cx="20" cy="20" r="19" fill="#eef1f8" stroke="#e8b923" stroke-width="2"/>'
+    + '<g fill="#0b2265" opacity=".13"><polygon points="20,3 25,7 23,12 17,12 15,7"/>'
+    + '<polygon points="3,17 8,14 11,19 8,24 3,22"/><polygon points="37,17 37,22 32,24 29,19 32,14"/>'
+    + '<polygon points="11,33 15,28 21,29 22,35 16,37"/><polygon points="29,33 24,37 19,35 25,29 30,29"/></g>'
+    + '<text x="20" y="27" text-anchor="middle" font-family="Oswald,sans-serif" font-weight="700" '
+    + 'font-size="' + (n < 10 ? 20 : 17) + '" fill="#0b2265">' + n + '</text></svg>';
 }
 
 function carteTournoi(t, ouvert){
   const priv = !t.public;
   const classes = 'tn-carte' + (priv ? ' priv' : ((ouvert ? '' : ' clos') + (t.member ? ' mien' : '')))
-                + ' niv' + niveauTournoi(t.moy);
+                + ' niv' + Math.max(1, levelTournoi(t.moy));
   const nom = (priv ? CADENAS : '') + echapper(t.nom);
 
   let meta;
@@ -7574,7 +7590,8 @@ function carteTournoi(t, ouvert){
   return '<div class="' + classes + '"><div class="tn-info" onclick="basculerApercu(\'' + t.id + '\')">'
        + '<div class="tn-nom">' + nom + ' <span class="tn-chevron" id="chevron-' + t.id + '">▾</span></div>'
        + '<div class="tn-meta">' + meta + '</div>'
-       + '<div class="tn-meta tn-moy">Moy. coef <b>' + (typeof t.moy === 'number' ? fmtNote(t.moy) : '—') + '</b></div>'
+       + '<div class="tn-meta tn-moy">' + (levelTournoi(t.moy) ? ballonLevel(levelTournoi(t.moy)) : '')
+       + '<span>Moy. coef <b>' + (typeof t.moy === 'number' ? fmtNote(t.moy) : '—') + '</b></span></div>'
        + '</div>' + action + '</div>'
        + '<div class="tn-apercu" id="apercu-' + t.id + '" style="display:none;"></div>';
 }
