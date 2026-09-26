@@ -2149,8 +2149,12 @@
   }
   .cc-head span:nth-child(1){ width:24px; }
   .cc-head span:nth-child(2){ flex:1; }
-  .cc-head span:nth-child(3){ width:56px; text-align:right; }
-  .cc-head span:nth-child(4){ width:40px; text-align:right; }
+  .cc-head span:nth-child(3){ width:62px; text-align:right; }
+  .cc-head span:nth-child(4){ width:56px; text-align:right; }
+  .cc-head span:nth-child(5){ width:40px; text-align:right; }
+  /* Questions jouees sur questions deja sorties (26 septembre 2026). */
+  .cc-nq{ font-size:12px; color:var(--text-dim); width:62px; text-align:right; }
+  .cc-nq.complet{ color:var(--text); }
   .cc-sep{ text-align:center; color:var(--text-dim); margin:2px 0 6px; }
   .cc-lot{
     border:1px solid var(--gold); border-radius:10px; padding:13px 14px;
@@ -5569,6 +5573,16 @@ async function ccBilanJour(jour){
   corps.appendChild(barre);
 }
 
+// Le nombre de questions deja sorties : trois par jour, du mardi 22 septembre
+// au vendredi 2 octobre, a partir de minuit heure de Paris. 33 au plus.
+function ccQuestionsSorties(){
+  const jour = new Intl.DateTimeFormat('en-CA', { timeZone:'Europe/Paris' }).format(new Date());
+  const debut = Date.UTC(2026, 8, 22);
+  const [a, m, j] = jour.split('-').map(Number);
+  const jours = Math.floor((Date.UTC(a, m - 1, j) - debut) / 86400000) + 1;
+  return Math.max(0, Math.min(11, jours)) * 3;
+}
+
 async function ccChargerClassement(){
   const bloc = document.getElementById('cc-classement');
   bloc.innerHTML = '<div class="placeholder">Chargement du classement…</div>';
@@ -5585,13 +5599,17 @@ async function ccChargerClassement(){
       return;
     }
 
+    const sorties = ccQuestionsSorties();
     let html = '<div class="cc-head"><span>#</span><span>Joueur</span>'
-             + '<span>Temps</span><span>Pts</span></div>';
+             + '<span>Questions</span><span>Temps</span><span>Pts</span></div>';
+    const q = l => '<span class="cc-nq' + (l.questions >= sorties ? ' complet' : '') + '">'
+                 + (l.questions || 0) + '/' + sorties + '</span>';
 
     d.lignes.forEach(l => {
       html += '<div class="cc-row' + (l.moi ? ' moi' : '') + '">'
             + '<span class="cc-r' + (l.rang <= CC_PLACES_TIRAGE ? ' top' : '') + '">' + l.rang + '</span>'
             + '<span class="cc-n">' + echapper(l.displayName) + '</span>'
+            + q(l)
             + '<span class="cc-t">' + ccTemps(l.tempsMs) + '</span>'
             + '<span class="cc-s">' + l.points + '</span></div>';
     });
@@ -5601,6 +5619,7 @@ async function ccChargerClassement(){
       html += '<div class="cc-sep">···</div>'
             + '<div class="cc-row moi"><span class="cc-r">' + d.moi.rang + '</span>'
             + '<span class="cc-n">' + echapper(d.moi.displayName) + '</span>'
+            + q(d.moi)
             + '<span class="cc-t">' + ccTemps(d.moi.tempsMs) + '</span>'
             + '<span class="cc-s">' + d.moi.points + '</span></div>';
     }
