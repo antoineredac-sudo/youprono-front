@@ -3343,7 +3343,9 @@
     <section id="view-group-create" class="view" style="display:none;">
       <h2 class="play-title" id="group-create-title">CRÉER UN TOURNOI</h2>
       <div class="groupe-complet-note" id="group-create-notice" style="display:none;"></div>
-      <input type="text" id="group-create-name" style="margin-top:18px;" placeholder="Nom du tournoi" aria-label="Nom du tournoi">
+      <input type="text" id="group-create-name" style="margin-top:18px;" placeholder="Nom du tournoi" aria-label="Nom du tournoi"
+             maxlength="25" oninput="majCompteurTournoi()">
+      <div class="kop-hint" style="text-align:right;"><span id="group-create-count">0/25</span></div>
       <div class="field-error" id="group-create-error"></div>
 
       <label style="margin-top:20px;" id="group-create-label">Qui peut s'y inscrire ?</label>
@@ -3384,7 +3386,7 @@
 
       <div id="group-rename-bloc" style="display:none;margin-top:10px;">
         <label>Nouveau nom</label>
-        <input type="text" id="group-rename-input" maxlength="30" placeholder="Le nom de ton tournoi">
+        <input type="text" id="group-rename-input" maxlength="25" placeholder="Le nom de ton tournoi">
         <div class="field-error" id="group-rename-error"></div>
         <button class="cta-play" id="group-rename-submit" style="margin-top:12px;"
                 onclick="validerRenommage()">Enregistrer</button>
@@ -7888,7 +7890,7 @@ function creerUnGroupe(){
   // s'appliquerait en silence a un tournoi qui n'a rien a voir.
   choisirPorte(true);
   modeCreationPrive(false);
-  document.getElementById('group-create-name').value = '';
+  document.getElementById('group-create-name').value = ''; majCompteurTournoi();
   document.getElementById('group-create-error').classList.remove('show');
   document.getElementById('group-create-notice').style.display = 'none';
   switchView('group-create');
@@ -7956,7 +7958,7 @@ async function inviteFromGroupsScreen(){
     return;
   }
 
-  document.getElementById('group-create-name').value = '';
+  document.getElementById('group-create-name').value = ''; majCompteurTournoi();
   document.getElementById('group-create-error').classList.remove('show');
   switchView('group-create');
 }
@@ -7978,7 +7980,7 @@ async function inviteFromGroupsScreenSurX(){
     return;
   }
 
-  document.getElementById('group-create-name').value = '';
+  document.getElementById('group-create-name').value = ''; majCompteurTournoi();
   document.getElementById('group-create-error').classList.remove('show');
   switchView('group-create');
 }
@@ -8800,11 +8802,22 @@ async function loadRanking(tab){
 // son créateur peut changer le nom ; le code d'invitation, lui, ne bouge pas.
 let groupeAffiche = null;
 
+// Le nom d'un tournoi : 25 caracteres au plus, espaces compris (Antoine,
+// 26 septembre 2026). Le serveur applique la meme limite.
+const TOURNOI_NOM_MAX = 25;
+function majCompteurTournoi(){
+  const champ = document.getElementById('group-create-name');
+  const c = document.getElementById('group-create-count');
+  if(champ && c){ c.textContent = champ.value.length + '/' + TOURNOI_NOM_MAX; }
+}
+
 function ouvrirRenommage(){
   const bloc = document.getElementById('group-rename-bloc');
   const champ = document.getElementById('group-rename-input');
   if(!bloc || !groupeAffiche) return;
   champ.value = groupeAffiche.name || '';
+  // 25 caracteres pour un tournoi, 30 pour un kop (26 septembre 2026).
+  champ.maxLength = estUnKop(groupeAffiche) ? 30 : TOURNOI_NOM_MAX;
   document.getElementById('group-rename-error').classList.remove('show');
   bloc.style.display = 'block';
   document.getElementById('group-rename-link').style.display = 'none';
