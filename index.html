@@ -3996,6 +3996,29 @@
 <script>
 const API_BASE = 'https://youprono-back.onrender.com';
 
+// Le jeton de connexion part avec chaque demande qui modifie quelque chose
+// (26 septembre 2026). Le serveur saura ainsi que c'est bien le joueur connecte
+// qui agit, et pas quelqu'un qui aurait recopie son identifiant. Les simples
+// lectures n'en ont pas besoin : on leur evite un aller-retour de plus.
+(function(){
+  const fetchOrigine = window.fetch.bind(window);
+  window.fetch = function(url, options){
+    try{
+      const methode = ((options && options.method) || 'GET').toUpperCase();
+      if(typeof url === 'string' && url.indexOf(API_BASE) === 0 && methode !== 'GET'){
+        const auth = getAuth();
+        if(auth && auth.token){
+          options = Object.assign({}, options);
+          const h = new Headers(options.headers || {});
+          if(!h.has('Authorization')){ h.set('Authorization', 'Bearer ' + auth.token); }
+          options.headers = h;
+        }
+      }
+    }catch(e){}
+    return fetchOrigine(url, options);
+  };
+})();
+
 // Certains joueurs sont enregistrés en base avec le même prénom et nom —
 // « Vitinha Vitinha », « Marquinhos Marquinhos ». On n'affiche le mot qu'une fois.
 function nomJoueurAffiche(prenom, nom){
